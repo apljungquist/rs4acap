@@ -50,7 +50,7 @@ fn flat(service: &ServiceDiscovery) -> anyhow::Result<HashMap<String, String>> {
     flat.insert("IP".to_string(), address.to_string());
     let addr = format!("{host}:{port}");
     debug!("Resolving address: {}", &addr);
-    for (i, ip) in &addr
+    for (i, ip) in addr
         .to_socket_addrs()?
         .filter(|a| &a.ip().to_string() != address)
         .enumerate()
