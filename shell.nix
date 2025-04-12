@@ -9,6 +9,7 @@ pkgs.mkShellNoCC {
     clang
     clippy
     fd
+    git
     mkhelp
     nixfmt-rfc-style
     rustfmt
