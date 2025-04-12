@@ -10,7 +10,6 @@
 ## Verbs
 ## =====
 
-# TODO: Install mkhelp in the nix shell
 help:
 	@mkhelp $(firstword $(MAKEFILE_LIST))
 
