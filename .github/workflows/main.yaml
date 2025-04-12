@@ -17,8 +17,8 @@ jobs:
       - name: Print nixpkgs version
         run: nix-instantiate --eval -E '(import <nixpkgs> {}).lib.version'
       - name: Install dependencies
-        run: nix-shell --run "exit"
+        run: nix-shell --pure --run "exit"
       - name: Verify that dependencies were installed
-        run: nix-shell --run "make"
+        run: nix-shell --pure --run "make"
       - name: Run checks
-        run: nix-shell --run "make check"
+        run: nix-shell --pure --run "make check"
