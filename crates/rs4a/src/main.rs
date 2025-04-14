@@ -13,9 +13,9 @@ struct Cli {
 }
 
 impl Cli {
-    pub fn exec(self) -> anyhow::Result<()> {
+    pub async fn exec(self) -> anyhow::Result<()> {
         match self.command {
-            Commands::DiscoverDevices(cmd) => cmd.exec()?,
+            Commands::DiscoverDevices(cmd) => cmd.exec().await?,
         }
         Ok(())
     }
@@ -27,7 +27,8 @@ enum Commands {
     DiscoverDevices(DiscoverDevicesCommand),
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     env_logger::init();
-    Cli::parse().exec()
+    Cli::parse().exec().await
 }

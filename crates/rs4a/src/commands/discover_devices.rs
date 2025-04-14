@@ -1,7 +1,11 @@
 use std::{collections::HashMap, iter::once, net::ToSocketAddrs, time::Duration};
 
+use anyhow::Context;
 use itertools::Itertools;
 use log::{debug, error};
+use rs4a_vapix::{basic_device_info_1::UnrestrictedProperties, system_ready_1::SystemreadyData};
+use tokio::task::JoinSet;
+use url::Host;
 use zeroconf::{
     prelude::{TEventLoop, TMdnsBrowser, TTxtRecord},
     MdnsBrowser, ServiceDiscovery, ServiceType,
@@ -101,21 +105,103 @@ fn print_table(row: &[HashMap<String, String>]) {
 }
 
 #[derive(clap::Parser, Debug, Clone)]
-pub struct DiscoverDevicesCommand {}
+pub struct DiscoverDevicesCommand {
+    /// Probe devices for additional information
+    #[arg(long)]
+    probe: bool,
+}
+
+async fn probe(host: String, addr: String) -> anyhow::Result<(String, HashMap<String, String>)> {
+    let mut details = HashMap::new();
+    let client = rs4a_vapix::Client::detect_scheme(
+        &Host::parse(&addr)?,
+        reqwest::Client::builder()
+            .danger_accept_invalid_certs(true)
+            .build()?,
+    )
+    .await
+    .context("Could not create client")?;
+
+    let SystemreadyData {
+        needsetup,
+        systemready,
+        ..
+    } = client.system_ready_1().system_ready().send().await?;
+    details
+        .insert("Need Setup".to_string(), needsetup.to_string())
+        .inspect(|_| panic!("Each key is added at most once"));
+    details
+        .insert("System Ready".to_string(), systemready.to_string())
+        .inspect(|_| panic!("Each key is added at most once"));
+
+    let UnrestrictedProperties {
+        build_date,
+        hardware_id,
+        prod_nbr,
+        prod_short_name,
+        prod_type,
+        serial_number,
+        version,
+        ..
+    } = client
+        .basic_device_info_1()
+        .get_all_unrestricted_properties()
+        .send()
+        .await?
+        .property_list;
+    details
+        .insert("Build Date".to_string(), build_date)
+        .inspect(|_| panic!("Each key is added at most once"));
+    details
+        .insert("Hardware ID".to_string(), hardware_id)
+        .inspect(|_| panic!("Each key is added at most once"));
+    details
+        .insert("Product Short Name".to_string(), prod_short_name)
+        .inspect(|_| panic!("Each key is added at most once"));
+    details
+        .insert("Product Type".to_string(), prod_type)
+        .inspect(|_| panic!("Each key is added at most once"));
+    details
+        .insert("Product Number".to_string(), prod_nbr)
+        .inspect(|_| panic!("Each key is added at most once"));
+    details
+        .insert("Serial Number".to_string(), serial_number)
+        .inspect(|_| panic!("Each key is added at most once"));
+    details
+        .insert("Version".to_string(), version)
+        .inspect(|_| panic!("Each key is added at most once"));
+
+    Ok((host, details))
+}
 
 impl DiscoverDevicesCommand {
-    pub fn exec(self) -> anyhow::Result<()> {
+    pub async fn exec(self) -> anyhow::Result<()> {
         let found = discover_services()?;
-        let mut flattened = Vec::new();
-        for s in found {
-            match flat(&s) {
-                Ok(f) => flattened.push(f),
+        let mut flattened = HashMap::new();
+        for s in &found {
+            match flat(s) {
+                Ok(f) => {
+                    flattened.insert(s.host_name().clone(), f);
+                }
                 Err(e) => {
                     error!("Could not flatten service {s:?} because {e:?}")
                 }
             }
         }
-        print_table(&flattened);
+        if self.probe {
+            let mut join_set = JoinSet::new();
+            for s in &found {
+                join_set.spawn(probe(s.host_name().clone(), s.address().clone()));
+            }
+            while let Some(r) = join_set.join_next().await {
+                let (host_name, details) = r??;
+                let entry = flattened.entry(host_name).or_insert_with(HashMap::new);
+                for (k, v) in details {
+                    entry.insert(k, v);
+                }
+            }
+        }
+        print_table(&flattened.into_values().collect_vec());
         Ok(())
     }
 }
