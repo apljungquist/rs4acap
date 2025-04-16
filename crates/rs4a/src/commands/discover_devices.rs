@@ -2,7 +2,7 @@ use std::{collections::HashMap, iter::once, net::ToSocketAddrs, time::Duration};
 
 use anyhow::Context;
 use itertools::Itertools;
-use log::{debug, error};
+use log::{debug, error, warn};
 use rs4a_vapix::{basic_device_info_1::UnrestrictedProperties, system_ready_1::SystemreadyData};
 use tokio::task::JoinSet;
 use url::Host;
@@ -129,10 +129,10 @@ async fn probe(host: String, addr: String) -> anyhow::Result<(String, HashMap<St
     } = client.system_ready_1().system_ready().send().await?;
     details
         .insert("Need Setup".to_string(), needsetup.to_string())
-        .inspect(|_| panic!("Each key is added at most once"));
+        .inspect(|_| panic!("Each key is created at most once"));
     details
         .insert("System Ready".to_string(), systemready.to_string())
-        .inspect(|_| panic!("Each key is added at most once"));
+        .inspect(|_| panic!("Each key is created at most once"));
 
     let UnrestrictedProperties {
         build_date,
@@ -151,25 +151,25 @@ async fn probe(host: String, addr: String) -> anyhow::Result<(String, HashMap<St
         .property_list;
     details
         .insert("Build Date".to_string(), build_date)
-        .inspect(|_| panic!("Each key is added at most once"));
+        .inspect(|_| panic!("Each key is created at most once"));
     details
         .insert("Hardware ID".to_string(), hardware_id)
-        .inspect(|_| panic!("Each key is added at most once"));
+        .inspect(|_| panic!("Each key is created at most once"));
     details
         .insert("Product Short Name".to_string(), prod_short_name)
-        .inspect(|_| panic!("Each key is added at most once"));
+        .inspect(|_| panic!("Each key is created at most once"));
     details
         .insert("Product Type".to_string(), prod_type)
-        .inspect(|_| panic!("Each key is added at most once"));
+        .inspect(|_| panic!("Each key is created at most once"));
     details
         .insert("Product Number".to_string(), prod_nbr)
-        .inspect(|_| panic!("Each key is added at most once"));
+        .inspect(|_| panic!("Each key is created at most once"));
     details
         .insert("Serial Number".to_string(), serial_number)
-        .inspect(|_| panic!("Each key is added at most once"));
+        .inspect(|_| panic!("Each key is created at most once"));
     details
         .insert("Version".to_string(), version)
-        .inspect(|_| panic!("Each key is added at most once"));
+        .inspect(|_| panic!("Each key is created at most once"));
 
     Ok((host, details))
 }
@@ -181,7 +181,9 @@ impl DiscoverDevicesCommand {
         for s in &found {
             match flat(s) {
                 Ok(f) => {
-                    flattened.insert(s.host_name().clone(), f);
+                    flattened
+                        .insert(s.host_name().clone(), f)
+                        .inspect(|s| warn!("Overwriting service {s:?}"));
                 }
                 Err(e) => {
                     error!("Could not flatten service {s:?} because {e:?}")
@@ -194,10 +196,14 @@ impl DiscoverDevicesCommand {
                 join_set.spawn(probe(s.host_name().clone(), s.address().clone()));
             }
             while let Some(r) = join_set.join_next().await {
-                let (host_name, details) = r??;
-                let entry = flattened.entry(host_name).or_insert_with(HashMap::new);
-                for (k, v) in details {
-                    entry.insert(k, v);
+                let (host_name, new_info) = r??;
+                let all_info = flattened
+                    .get_mut(&host_name)
+                    .expect("The keys augmented are a subset of the keys previously inserted");
+                for (k, v) in new_info {
+                    all_info
+                        .insert(k, v)
+                        .inspect(|_| panic!("Each key is created at most once"));
                 }
             }
         }
