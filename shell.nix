@@ -14,6 +14,7 @@ pkgs.mkShellNoCC {
     llvmPackages.libclang
     mkhelp
     nixfmt-rfc-style
+    rustc
     rustfmt
   ];
 
