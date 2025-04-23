@@ -7,10 +7,11 @@ edition.workspace = true
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 env_logger = { workspace = true }
+futures-util = { workspace = true }
 itertools = { workspace = true }
 log = { workspace = true }
-reqwest = { workspace = true}
+mdns = { workspace = true }
+reqwest = { workspace = true }
 rs4a-vapix = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 url = { workspace = true }
-zeroconf = { workspace = true }

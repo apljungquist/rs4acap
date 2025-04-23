@@ -1,70 +1,91 @@
-use std::{collections::HashMap, iter::once, net::ToSocketAddrs, time::Duration};
+use std::{collections::HashMap, iter::once, time::Duration};
 
 use anyhow::Context;
+use futures_util::{pin_mut, stream::StreamExt};
 use itertools::Itertools;
-use log::{debug, error, warn};
+use log::{debug, error, info, warn};
+use mdns::{RecordKind, Response};
 use rs4a_vapix::{basic_device_info_1::UnrestrictedProperties, system_ready_1::SystemreadyData};
-use tokio::task::JoinSet;
-use url::Host;
-use zeroconf::{
-    prelude::{TEventLoop, TMdnsBrowser, TTxtRecord},
-    MdnsBrowser, ServiceDiscovery, ServiceType,
+use tokio::{
+    task::JoinSet,
+    time::{error::Elapsed, timeout},
 };
+use url::Host;
 
 // TODO: Consider gathering information from more services
 // The ones axis use are documented on https://help.axis.com/en-us/axis-os-knowledge-base#bonjour
 // and I have a vague memory of reading that avahi supports browsing services with any name.
-fn discover_services() -> anyhow::Result<Vec<ServiceDiscovery>> {
-    let mut result = Vec::new();
+async fn discover_services() -> anyhow::Result<Vec<Response>> {
+    let mut result = HashMap::new();
 
     for name in ["axis-video", "axis-bwsc", "axis-nvr"] {
-        let service_type =
-            ServiceType::new(name, "tcp").expect("hard coded arguments are known to be valid");
-        let mut browser = MdnsBrowser::new(service_type);
+        let service_name = format!("_{name}._tcp.local");
+        info!("Discovering services with name {service_name}");
+        let stream = mdns::discover::all(&service_name, Duration::from_secs(1))?.listen();
+        pin_mut!(stream);
 
-        let (tx, rx) = std::sync::mpsc::channel();
-        browser.set_service_discovered_callback(Box::new(move |r, _| {
-            debug!("Discovered {r:?}");
-            match tx.send(r) {
-                Ok(()) => (),
-                Err(e) => {
-                    error!("Could not send value because {e:?}");
+        loop {
+            let response = match timeout(Duration::from_secs(2), stream.next()).await {
+                Err(Elapsed { .. }) => {
+                    debug!("Discovery timeout elapsed");
+                    break;
                 }
+                Ok(None) => unreachable!("The underlying stream selects on an infinite interval"),
+                Ok(Some(r)) => r,
+            };
+            let response = response?;
+            let Some(hostname) = response.hostname().map(String::from) else {
+                warn!("Got a response without a hostname: {response:?}");
+                continue;
+            };
+            // I think this should happen only once we have sent the second request.
+            // By then all responses from the first request have hopefully been received.
+            if result.insert(hostname, response).is_some() {
+                break;
             }
-        }));
-
-        // TODO: Consider changing the waiting strategy
-        browser.browse_services()?.poll(Duration::from_secs(1))?;
-        drop(browser);
-
-        while let Ok(s) = rx.recv_timeout(Duration::from_secs(1)) {
-            result.push(s?);
         }
     }
-    Ok(result)
+    Ok(result.into_values().collect())
 }
 
-fn flat(service: &ServiceDiscovery) -> anyhow::Result<HashMap<String, String>> {
+fn flat(service: &Response) -> anyhow::Result<HashMap<String, String>> {
     let mut flat = HashMap::new();
-    flat.insert("Name".to_string(), service.name().to_string());
 
-    let host = service.host_name();
-    let port = service.port();
-    let address = service.address();
-    flat.insert("IP".to_string(), address.to_string());
-    let addr = format!("{host}:{port}");
-    debug!("Resolving address: {}", &addr);
-    for (i, ip) in addr
-        .to_socket_addrs()?
-        .filter(|a| &a.ip().to_string() != address)
-        .enumerate()
-    {
-        flat.insert(format!("IP ({})", i + 2), ip.ip().to_string());
+    // I don't know why, but `Record::hostname()` is not what I consider a hostname.
+    if let Some(name) = service.hostname() {
+        flat.insert("Name".to_string(), name.to_string());
     }
 
-    if let Some(txt) = service.txt() {
-        if let Some(mac_address) = txt.get("macaddress") {
-            flat.insert("MAC".to_string(), mac_address);
+    if let Some(hostname) = service.records().find_map(|r| match &r.kind {
+        RecordKind::SRV { target, .. } => Some(target.clone()),
+        _ => None,
+    }) {
+        flat.insert("Host".to_string(), hostname.to_string());
+    }
+
+    let address = service.ip_addr().map(|a| a.to_string());
+    if let Some(address) = &address {
+        flat.insert("IP".to_string(), address.clone());
+    }
+
+    for (i, ip) in service
+        .records()
+        .filter_map(|r| match r.kind {
+            RecordKind::A(a) => Some(a.to_string()),
+            RecordKind::AAAA(a) => Some(a.to_string()),
+            _ => None,
+        })
+        .filter(|a| Some(a) != address.as_ref())
+        .enumerate()
+    {
+        flat.insert(format!("IP ({})", i + 2), ip)
+            .inspect(|_| panic!("Each key is created at most once"));
+    }
+
+    for txt in service.txt_records() {
+        if let Some(mac_address) = txt.strip_prefix("macaddress=") {
+            flat.insert("MAC".to_string(), mac_address.to_string())
+                .inspect(|old| warn!("Overwriting MAC {old:?}"));
         }
     }
 
@@ -83,7 +104,7 @@ fn print_table(row: &[HashMap<String, String>]) {
         .iter()
         .map(|c| {
             row.iter()
-                .map(|d| d[*c].len())
+                .filter_map(|d| d.get(*c).map(String::len))
                 .chain(once(c.len()))
                 .max()
                 .unwrap()
@@ -176,13 +197,13 @@ async fn probe(host: String, addr: String) -> anyhow::Result<(String, HashMap<St
 
 impl DiscoverDevicesCommand {
     pub async fn exec(self) -> anyhow::Result<()> {
-        let found = discover_services()?;
+        let found = discover_services().await?;
         let mut flattened = HashMap::new();
         for s in &found {
             match flat(s) {
                 Ok(f) => {
                     flattened
-                        .insert(s.host_name().clone(), f)
+                        .insert(format!("{s:?}"), f)
                         .inspect(|s| warn!("Overwriting service {s:?}"));
                 }
                 Err(e) => {
@@ -193,7 +214,11 @@ impl DiscoverDevicesCommand {
         if self.probe {
             let mut join_set = JoinSet::new();
             for s in &found {
-                join_set.spawn(probe(s.host_name().clone(), s.address().clone()));
+                if let Some(addr) = s.ip_addr() {
+                    join_set.spawn(probe(format!("{s:?}"), addr.to_string()));
+                } else {
+                    warn!("Service {s:?} has no IP address");
+                }
             }
             while let Some(r) = join_set.join_next().await {
                 let (host_name, new_info) = r??;
