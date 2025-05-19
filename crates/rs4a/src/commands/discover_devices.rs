@@ -125,7 +125,7 @@ fn print_table(row: &[HashMap<String, String>]) {
     }
 }
 
-#[derive(clap::Parser, Debug, Clone)]
+#[derive(Clone, Debug, clap::Parser)]
 pub struct DiscoverDevicesCommand {
     /// Probe devices for additional information
     #[arg(long)]
