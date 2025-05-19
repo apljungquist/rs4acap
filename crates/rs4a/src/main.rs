@@ -2,9 +2,11 @@
 
 use clap::{Parser, Subcommand};
 
-use crate::commands::discover_devices::DiscoverDevicesCommand;
+use crate::commands::{discover_devices::DiscoverDevicesCommand, export_loans::ExportLoansCommand};
 
 mod commands;
+mod psst;
+mod vlt;
 
 #[derive(Parser)]
 struct Cli {
@@ -16,6 +18,7 @@ impl Cli {
     pub async fn exec(self) -> anyhow::Result<()> {
         match self.command {
             Commands::DiscoverDevices(cmd) => cmd.exec().await?,
+            Commands::ExportLoans(cmd) => cmd.exec().await?,
         }
         Ok(())
     }
@@ -25,6 +28,10 @@ impl Cli {
 enum Commands {
     /// Discover devices on the local network
     DiscoverDevices(DiscoverDevicesCommand),
+    /// Print export statements for the current loan
+    ///
+    /// Example: `pbpaste | rs4a export-loans | source /dev/stdin`.
+    ExportLoans(ExportLoansCommand),
 }
 
 #[tokio::main]

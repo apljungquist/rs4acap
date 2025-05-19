@@ -1444,6 +1444,8 @@ dependencies = [
  "mdns",
  "reqwest",
  "rs4a-vapix",
+ "serde",
+ "serde_json",
  "tokio",
  "url",
 ]

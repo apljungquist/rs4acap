@@ -15,4 +15,8 @@ pkgs.mkShellNoCC {
     rustc
     rustfmt
   ];
+
+  shellHook = ''
+    export PATH="$PATH:$HOME/.cargo/bin"
+  '';
 }
