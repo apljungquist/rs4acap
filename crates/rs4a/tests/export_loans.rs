@@ -37,8 +37,8 @@ fn can_export_loans_from_get_response() {
         exports.insert(k.to_string(), v.to_string());
     }
     assert_eq!(exports["AXIS_DEVICE_IP"], "195.60.68.51");
-    assert_eq!(exports["AXIS_DEVICE_USERNAME"], "VLTuser");
-    assert_eq!(exports["AXIS_DEVICE_PASSWORD"], "nAy0cuvW");
+    assert_eq!(exports["AXIS_DEVICE_USER"], "VLTuser");
+    assert_eq!(exports["AXIS_DEVICE_PASS"], "nYy3cuvX");
     assert_eq!(exports["AXIS_DEVICE_HTTP_PORT"], "12051");
     assert_eq!(exports["AXIS_DEVICE_HTTPS_PORT"], "42051");
     assert_eq!(exports["AXIS_DEVICE_SSH_PORT"], "22051");
