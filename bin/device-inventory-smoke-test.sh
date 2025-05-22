@@ -1,36 +1,22 @@
 #!/usr/bin/env sh
 set -eu
 
-base_cmd="device-inventory --offline"
-export RUST_LOG=debug
+echo '+ device-inventory help'
+device-inventory help
 
-for cmd in \
-  "$base_cmd help" \
-  "$base_cmd help login" \
-  "$base_cmd help add" \
-  "$base_cmd help import" \
-  "$base_cmd help list" \
-  "$base_cmd help export" \
-  "$base_cmd help remove"
-do
-  echo "$ $cmd"
-  $cmd
-  echo
-done
+unset RUST_LOG
+export DEVICE_INVENTORY_LOCATION=$(mktemp -d)
+export DEVICE_INVENTORY_OFFLINE=true
 
-echo "$ $base_cmd import --source=json < crates/device-inventory/test-data/get-loans-response.json"
-$base_cmd import --source=json < crates/device-inventory/test-data/get-loans-response.json
-echo
-
-for cmd in \
-  "$base_cmd list" \
-  "$base_cmd export" \
-  "$base_cmd remove --alias vlt-12345"
-do
-  echo "$ $cmd"
-  $cmd
-  echo
-done
-
-echo "$ $base_cmd list"
-$base_cmd list
+set -x
+device-inventory help login
+device-inventory help add
+device-inventory help import
+device-inventory help list
+device-inventory help export
+device-inventory help remove
+device-inventory import --source=json < crates/device-inventory/test-data/get-loans-response.json
+device-inventory list
+device-inventory export
+device-inventory remove --alias vlt-8
+device-inventory list

@@ -111,6 +111,8 @@ Cargo.lock: $(wildcard crates/*/Cargo.toml)
 	cargo metadata --format-version=1 > /dev/null
 
 snapshots/device-inventory-smoke-test:
+	cargo build --bin device-inventory
+	PATH=$$(pwd)/target/debug:$$PATH \
 	./bin/device-inventory-smoke-test.sh \
-	> $@
+	> $@ 2>&1
 .PHONY: snapshots/device-inventory-smoke-test

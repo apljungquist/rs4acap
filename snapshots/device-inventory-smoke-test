@@ -1,4 +1,4 @@
-$ device-inventory --offline help
++ device-inventory help
 Usage: device-inventory [OPTIONS] <COMMAND>
 
 Commands:
@@ -11,19 +11,17 @@ Commands:
   help    Print this message or the help of the given subcommand(s)
 
 Options:
-      --inventory <INVENTORY>  Location of the application data
-      --offline                
+      --inventory <INVENTORY>  Location of the application data [env: DEVICE_INVENTORY_LOCATION=]
+      --offline                [env: DEVICE_INVENTORY_OFFLINE=]
   -h, --help                   Print help
-
-$ device-inventory --offline help login
++ device-inventory help login
 Login to a pool of shared devices
 
 Usage: device-inventory login
 
 Options:
   -h, --help  Print help
-
-$ device-inventory --offline help add
++ device-inventory help add
 Add a device
 
 Usage: device-inventory add [OPTIONS] <ALIAS> <HOST> <USERNAME> <PASSWORD>
@@ -39,8 +37,7 @@ Options:
       --https-port <HTTPS_PORT>  HTTPS port to use, if different from default
       --ssh-port <SSH_PORT>      SSH port to use, if different from default
   -h, --help                     Print help
-
-$ device-inventory --offline help import
++ device-inventory help import
 Import devices
 
 Usage: device-inventory import [OPTIONS]
@@ -57,16 +54,14 @@ Options:
 
   -h, --help
           Print help (see a summary with '-h')
-
-$ device-inventory --offline help list
++ device-inventory help list
 List available devices
 
 Usage: device-inventory list
 
 Options:
   -h, --help  Print help
-
-$ device-inventory --offline help export
++ device-inventory help export
 Print export statements for a device
 
 Example: `device-inventory export | source /dev/stdin`
@@ -79,8 +74,7 @@ Options:
 
   -h, --help
           Print help (see a summary with '-h')
-
-$ device-inventory --offline help remove
++ device-inventory help remove
 Remove a device
 
 Usage: device-inventory remove --alias <ALIAS>
@@ -88,14 +82,11 @@ Usage: device-inventory remove --alias <ALIAS>
 Options:
       --alias <ALIAS>  The alias of the device to remove
   -h, --help           Print help
-
-$ device-inventory --offline import --source=json < crates/device-inventory/test-data/get-loans-response.json
-
-$ device-inventory --offline list
++ device-inventory import --source=json
++ device-inventory list
 ALIAS  MODEL              HOST
 vlt-8  AXIS Q1615 Mk III  195.60.68.14
-
-$ device-inventory --offline export
++ device-inventory export
 export AXIS_DEVICE_IP=195.60.68.14
 export AXIS_DEVICE_USER=VLTuser
 export AXIS_DEVICE_PASS=nYy3cuvX
@@ -103,9 +94,6 @@ export AXIS_DEVICE_SSH_PORT=22051
 export AXIS_DEVICE_HTTP_PORT=12051
 export AXIS_DEVICE_HTTPS_PORT=42051
 export AXIS_DEVICE_HTTPS_SELF_SIGNED=1
-
-$ device-inventory --offline remove --alias vlt-12345
-
-$ device-inventory --offline list
-ALIAS  MODEL              HOST
-vlt-8  AXIS Q1615 Mk III  195.60.68.14
++ device-inventory remove --alias vlt-8
++ device-inventory list
+ALIAS  MODEL  HOST
