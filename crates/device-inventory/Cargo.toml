@@ -5,7 +5,7 @@ edition.workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-clap = { workspace = true, features = ["derive"] }
+clap = { workspace = true, features = ["derive", "env"] }
 dirs = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }

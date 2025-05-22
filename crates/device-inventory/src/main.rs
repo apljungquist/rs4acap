@@ -15,9 +15,9 @@ use crate::commands::{
 #[derive(Parser)]
 struct Cli {
     /// Location of the application data.
-    #[arg(long)]
+    #[clap(long, env = "DEVICE_INVENTORY_LOCATION")]
     inventory: Option<PathBuf>,
-    #[arg(long)]
+    #[clap(long, env = "DEVICE_INVENTORY_OFFLINE")]
     offline: bool,
     #[command(subcommand)]
     command: Commands,
