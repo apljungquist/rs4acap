@@ -1,0 +1,68 @@
+#![forbid(unsafe_code)]
+
+mod commands;
+
+use std::path::PathBuf;
+
+use clap::{Parser, Subcommand};
+use commands::{export::ExportCommand, import::ImportCommand};
+use device_inventory::db::Database;
+
+use crate::commands::{
+    add::AddCommand, list::ListCommand, login::LoginCommand, remove::RemoveCommand,
+};
+
+#[derive(Parser)]
+struct Cli {
+    /// Location of the application data.
+    #[arg(long)]
+    inventory: Option<PathBuf>,
+    #[arg(long)]
+    offline: bool,
+    #[command(subcommand)]
+    command: Commands,
+}
+
+impl Cli {
+    pub async fn exec(self) -> anyhow::Result<()> {
+        let Self {
+            inventory: db,
+            offline,
+            command,
+        } = self;
+        let db = Database::open_or_create(db)?;
+        match command {
+            Commands::Login(cmd) => cmd.exec(db, offline).await?,
+            Commands::Add(cmd) => cmd.exec(db).await?,
+            Commands::Import(cmd) => cmd.exec(db, offline).await?,
+            Commands::List(cmd) => cmd.exec(db, offline).await?,
+            Commands::Export(cmd) => cmd.exec(db, offline).await?,
+            Commands::Remove(cmd) => cmd.exec(db).await?,
+        }
+        Ok(())
+    }
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Login to a pool of shared devices
+    Login(LoginCommand),
+    /// Add a device
+    Add(AddCommand),
+    /// Import devices
+    Import(ImportCommand),
+    /// List available devices
+    List(ListCommand),
+    /// Print export statements for a device
+    ///
+    /// Example: `device-inventory export | source /dev/stdin`
+    Export(ExportCommand),
+    /// Remove a device
+    Remove(RemoveCommand),
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    env_logger::init();
+    Cli::parse().exec().await
+}
