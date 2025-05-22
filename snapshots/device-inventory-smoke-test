@@ -1,0 +1,111 @@
+$ device-inventory --offline help
+Usage: device-inventory [OPTIONS] <COMMAND>
+
+Commands:
+  login   Login to a pool of shared devices
+  add     Add a device
+  import  Import devices
+  list    List available devices
+  export  Print export statements for a device
+  remove  Remove a device
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+      --inventory <INVENTORY>  Location of the application data
+      --offline                
+  -h, --help                   Print help
+
+$ device-inventory --offline help login
+Login to a pool of shared devices
+
+Usage: device-inventory login
+
+Options:
+  -h, --help  Print help
+
+$ device-inventory --offline help add
+Add a device
+
+Usage: device-inventory add [OPTIONS] <ALIAS> <HOST> <USERNAME> <PASSWORD>
+
+Arguments:
+  <ALIAS>     An alias for the device unique within the inventory
+  <HOST>      The IP address or hostname of the device
+  <USERNAME>  The username of an administrator on the device, or root
+  <PASSWORD>  The password of an administrator on the device, or of root
+
+Options:
+      --http-port <HTTP_PORT>    HTTP port to use, if different from default
+      --https-port <HTTPS_PORT>  HTTPS port to use, if different from default
+      --ssh-port <SSH_PORT>      SSH port to use, if different from default
+  -h, --help                     Print help
+
+$ device-inventory --offline help import
+Import devices
+
+Usage: device-inventory import [OPTIONS]
+
+Options:
+      --source <SOURCE>
+          How to import devices
+          
+          [default: pool]
+
+          Possible values:
+          - json: Parse devices from the provided JSON
+          - pool: Fetch reserved devices from a shared pool
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+$ device-inventory --offline help list
+List available devices
+
+Usage: device-inventory list
+
+Options:
+  -h, --help  Print help
+
+$ device-inventory --offline help export
+Print export statements for a device
+
+Example: `device-inventory export | source /dev/stdin`
+
+Usage: device-inventory export [OPTIONS]
+
+Options:
+      --alias <ALIAS>
+          The alias of the device to export
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+$ device-inventory --offline help remove
+Remove a device
+
+Usage: device-inventory remove --alias <ALIAS>
+
+Options:
+      --alias <ALIAS>  The alias of the device to remove
+  -h, --help           Print help
+
+$ device-inventory --offline import --source=json < crates/device-inventory/test-data/get-loans-response.json
+
+$ device-inventory --offline list
+ALIAS  MODEL              HOST
+vlt-8  AXIS Q1615 Mk III  195.60.68.14
+
+$ device-inventory --offline export
+export AXIS_DEVICE_IP=195.60.68.14
+export AXIS_DEVICE_USER=VLTuser
+export AXIS_DEVICE_PASS=nYy3cuvX
+export AXIS_DEVICE_SSH_PORT=22051
+export AXIS_DEVICE_HTTP_PORT=12051
+export AXIS_DEVICE_HTTPS_PORT=42051
+export AXIS_DEVICE_HTTPS_SELF_SIGNED=1
+
+$ device-inventory --offline remove --alias vlt-12345
+
+$ device-inventory --offline list
+ALIAS  MODEL              HOST
+vlt-8  AXIS Q1615 Mk III  195.60.68.14
