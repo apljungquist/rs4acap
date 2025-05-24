@@ -9,7 +9,7 @@ use commands::{export::ExportCommand, import::ImportCommand};
 use device_inventory::db::Database;
 
 use crate::commands::{
-    add::AddCommand, for_each_command::ForEachCommand, list::ListCommand, login::LoginCommand,
+    add::AddCommand, for_each::ForEachCommand, list::ListCommand, login::LoginCommand,
     remove::RemoveCommand,
 };
 

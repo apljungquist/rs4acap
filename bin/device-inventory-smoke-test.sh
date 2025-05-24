@@ -19,6 +19,6 @@ device-inventory import --source=json < crates/device-inventory/test-data/get-lo
 device-inventory add local 192.168.0.90 root pass
 device-inventory list
 device-inventory export
-device-inventory for-each sh -- -c "echo; env | grep AXIS_DEVICE_"
+device-inventory for-each sh -- -c 'echo $AXIS_DEVICE_IP'
 device-inventory remove --alias vlt-8
 device-inventory list
