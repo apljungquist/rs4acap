@@ -2,13 +2,14 @@
 Usage: device-inventory [OPTIONS] <COMMAND>
 
 Commands:
-  login   Login to a pool of shared devices
-  add     Add a device
-  import  Import devices
-  list    List available devices
-  export  Print export statements for a device
-  remove  Remove a device
-  help    Print this message or the help of the given subcommand(s)
+  login     Login to a pool of shared devices
+  add       Add a device
+  import    Import devices
+  for-each  Run a command with environment variables set for each device
+  list      List available devices
+  export    Print export statements for a device
+  remove    Remove a device
+  help      Print this message or the help of the given subcommand(s)
 
 Options:
       --inventory <INVENTORY>  Location of the application data [env: DEVICE_INVENTORY_LOCATION=]
@@ -83,17 +84,20 @@ Options:
       --alias <ALIAS>  The alias of the device to remove
   -h, --help           Print help
 + device-inventory import --source=json
++ device-inventory add local 192.168.0.90 root pass
 + device-inventory list
 ALIAS  MODEL              HOST
+local                     192.168.0.90
 vlt-8  AXIS Q1615 Mk III  195.60.68.14
 + device-inventory export
-export AXIS_DEVICE_IP=195.60.68.14
-export AXIS_DEVICE_USER=VLTuser
-export AXIS_DEVICE_PASS=nYy3cuvX
-export AXIS_DEVICE_SSH_PORT=22051
-export AXIS_DEVICE_HTTP_PORT=12051
-export AXIS_DEVICE_HTTPS_PORT=42051
+export AXIS_DEVICE_IP=192.168.0.90
+export AXIS_DEVICE_USER=root
+export AXIS_DEVICE_PASS=pass
 export AXIS_DEVICE_HTTPS_SELF_SIGNED=1
++ device-inventory for-each sh -- -c 'echo $AXIS_DEVICE_IP'
+192.168.0.90
+195.60.68.14
 + device-inventory remove --alias vlt-8
 + device-inventory list
 ALIAS  MODEL  HOST
+local         192.168.0.90
