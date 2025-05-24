@@ -34,24 +34,10 @@ impl ExportCommand {
             }
         };
 
-        // TODO: Consider resolving to IPv4 if possible.
-        println!("export AXIS_DEVICE_IP={}", device.host);
-        println!("export AXIS_DEVICE_USER={}", device.username);
-        println!(
-            "export AXIS_DEVICE_PASS={}",
-            device.password.dangerous_reveal()
-        );
-        if let Some(p) = device.ssh_port {
-            println!("export AXIS_DEVICE_SSH_PORT={p}",);
+        let envs = device_inventory::env::envs(&device);
+        for (key, value) in envs {
+            println!("export {key}={value}");
         }
-        if let Some(p) = device.http_port {
-            println!("export AXIS_DEVICE_HTTP_PORT={p}",);
-        }
-        if let Some(p) = device.https_port {
-            println!("export AXIS_DEVICE_HTTPS_PORT={p}",);
-        }
-        // TODO: Don't assume that all stored devices use a self signed certificate.
-        println!("export AXIS_DEVICE_HTTPS_SELF_SIGNED=1");
 
         Ok(())
     }

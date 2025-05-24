@@ -9,7 +9,8 @@ use commands::{export::ExportCommand, import::ImportCommand};
 use device_inventory::db::Database;
 
 use crate::commands::{
-    add::AddCommand, list::ListCommand, login::LoginCommand, remove::RemoveCommand,
+    add::AddCommand, for_each_command::ForEachCommand, list::ListCommand, login::LoginCommand,
+    remove::RemoveCommand,
 };
 
 #[derive(Parser)]
@@ -35,6 +36,7 @@ impl Cli {
             Commands::Login(cmd) => cmd.exec(db, offline).await?,
             Commands::Add(cmd) => cmd.exec(db).await?,
             Commands::Import(cmd) => cmd.exec(db, offline).await?,
+            Commands::ForEach(cmd) => cmd.exec(db, offline).await?,
             Commands::List(cmd) => cmd.exec(db, offline).await?,
             Commands::Export(cmd) => cmd.exec(db, offline).await?,
             Commands::Remove(cmd) => cmd.exec(db).await?,
@@ -51,6 +53,8 @@ enum Commands {
     Add(AddCommand),
     /// Import devices
     Import(ImportCommand),
+    /// Run a command with environment variables set for each device
+    ForEach(ForEachCommand),
     /// List available devices
     List(ListCommand),
     /// Print export statements for a device
