@@ -8,6 +8,7 @@ anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 dirs = { workspace = true }
 env_logger = { workspace = true }
+glob = { workspace = true }
 log = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
