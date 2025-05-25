@@ -4,15 +4,24 @@ use device_inventory::{
 };
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct ListCommand;
+pub struct ListCommand {
+    /// The alias of the device to list
+    #[arg(long)]
+    alias: Option<String>,
+}
 
 impl ListCommand {
     pub async fn exec(self, db: Database, offline: bool) -> anyhow::Result<()> {
-        let devices = if offline {
+        let mut devices = if offline {
             db.read_devices()?
         } else {
             db_vlt::import(&db, offline).await?
         };
+
+        if let Some(pattern) = &self.alias {
+            let pattern = glob::Pattern::new(pattern)?;
+            devices.retain(|alias, _| pattern.matches(alias));
+        }
 
         let mut sorted_devices: Vec<_> = devices.into_iter().collect();
         sorted_devices.sort_by(|(left, _), (right, _)| left.cmp(right));
