@@ -5,7 +5,7 @@
 .DELETE_ON_ERROR: ;
 .SECONDARY:
 .SUFFIXES: ;
-
+.PHONY: .FORCE
 
 ## Verbs
 ## =====
@@ -53,7 +53,7 @@ check_format_rs:
 .PHONY: check_format_rs
 
 ## _
-check_generated_files: Cargo.lock snapshots/device-finder-smoke-test snapshots/device-inventory-smoke-test
+check_generated_files: Cargo.lock snapshots/device-finder-docs snapshots/device-inventory-docs snapshots/device-inventory-smoke-test
 	git update-index -q --refresh
 	git --no-pager diff --exit-code HEAD -- $^
 .PHONY: check_generated_files
@@ -110,16 +110,8 @@ fix_lint:
 Cargo.lock: $(wildcard crates/*/Cargo.toml)
 	cargo metadata --format-version=1 > /dev/null
 
-snapshots/device-finder-smoke-test:
-	cargo build --bin device-finder
+snapshots/%: bin/%.sh .FORCE
+	cargo build --bins
 	PATH=$$(pwd)/target/debug:$$PATH \
-	./bin/device-finder-smoke-test.sh \
+	$< \
 	> $@ 2>&1
-.PHONY: snapshots/device-finder-smoke-test
-
-snapshots/device-inventory-smoke-test:
-	cargo build --bin device-inventory
-	PATH=$$(pwd)/target/debug:$$PATH \
-	./bin/device-inventory-smoke-test.sh \
-	> $@ 2>&1
-.PHONY: snapshots/device-inventory-smoke-test
