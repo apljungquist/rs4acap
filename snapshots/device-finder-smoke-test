@@ -1,0 +1,9 @@
++ unset RUST_LOG
++ device-finder --help
+Discover devices on the local network
+
+Usage: device-finder [OPTIONS]
+
+Options:
+      --probe  Probe devices for additional information
+  -h, --help   Print help
