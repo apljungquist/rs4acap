@@ -53,7 +53,7 @@ check_format_rs:
 .PHONY: check_format_rs
 
 ## _
-check_generated_files: Cargo.lock snapshots/device-inventory-smoke-test
+check_generated_files: Cargo.lock snapshots/device-finder-smoke-test snapshots/device-inventory-smoke-test
 	git update-index -q --refresh
 	git --no-pager diff --exit-code HEAD -- $^
 .PHONY: check_generated_files
@@ -109,6 +109,13 @@ fix_lint:
 
 Cargo.lock: $(wildcard crates/*/Cargo.toml)
 	cargo metadata --format-version=1 > /dev/null
+
+snapshots/device-finder-smoke-test:
+	cargo build --bin device-finder
+	PATH=$$(pwd)/target/debug:$$PATH \
+	./bin/device-finder-smoke-test.sh \
+	> $@ 2>&1
+.PHONY: snapshots/device-finder-smoke-test
 
 snapshots/device-inventory-smoke-test:
 	cargo build --bin device-inventory
