@@ -7,6 +7,7 @@ _A collection of language agnostic tools that facilitate development for the AXI
 - [Preview](#preview)
   - [device-finder](#device-finder)
   - [device-inventory](#device-inventory)
+- [Installation](#installation)
 - [Related projects](#related-projects)
 
 ## Preview
@@ -50,6 +51,17 @@ Options:
       --offline                [env: DEVICE_INVENTORY_OFFLINE=]
   -h, --help                   Print help
 ```
+
+## Installation
+
+The tools in in this project can be installed using Cargo:
+
+```shell
+cargo install --locked --git https://github.com/apljungquist/rs4a.git device-finder
+cargo install --locked --git https://github.com/apljungquist/rs4a.git device-inventory
+```
+
+If you want to install them another way, open an issue and I may be able to help.
 
 ## Related projects
 
