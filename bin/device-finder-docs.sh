@@ -3,4 +3,5 @@ set -eux
 
 unset RUST_LOG
 
-device-finder --help
+device-finder help
+device-finder help completions

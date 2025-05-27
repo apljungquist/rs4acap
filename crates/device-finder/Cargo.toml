@@ -15,3 +15,5 @@ reqwest = { workspace = true }
 rs4a-vapix = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 url = { workspace = true }
+
+rs4a-bin-utils = { workspace = true }

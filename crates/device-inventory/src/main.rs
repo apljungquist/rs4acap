@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use commands::{export::ExportCommand, import::ImportCommand};
 use device_inventory::db::Database;
+use rs4a_bin_utils::completions_command::CompletionsCommand;
 
 use crate::commands::{
     add::AddCommand, for_each::ForEachCommand, list::ListCommand, login::LoginCommand,
@@ -40,6 +41,7 @@ impl Cli {
             Commands::List(cmd) => cmd.exec(db, offline).await?,
             Commands::Export(cmd) => cmd.exec(db, offline).await?,
             Commands::Remove(cmd) => cmd.exec(db).await?,
+            Commands::Completions(cmd) => cmd.exec::<Self>()?,
         }
         Ok(())
     }
@@ -63,6 +65,7 @@ enum Commands {
     Export(ExportCommand),
     /// Remove a device
     Remove(RemoveCommand),
+    Completions(CompletionsCommand),
 }
 
 #[tokio::main]

@@ -3,14 +3,15 @@
 Usage: device-inventory [OPTIONS] <COMMAND>
 
 Commands:
-  login     Login to a pool of shared devices
-  add       Add a device
-  import    Import devices
-  for-each  Run a command with environment variables set for each device
-  list      List available devices
-  export    Print export statements for a device
-  remove    Remove a device
-  help      Print this message or the help of the given subcommand(s)
+  login        Login to a pool of shared devices
+  add          Add a device
+  import       Import devices
+  for-each     Run a command with environment variables set for each device
+  list         List available devices
+  export       Print export statements for a device
+  remove       Remove a device
+  completions  Print a completion file for the given shell
+  help         Print this message or the help of the given subcommand(s)
 
 Options:
       --inventory <INVENTORY>  Location of the application data [env: DEVICE_INVENTORY_LOCATION=]
@@ -85,3 +86,17 @@ Usage: device-inventory remove --alias <ALIAS>
 Options:
       --alias <ALIAS>  The alias of the device to remove
   -h, --help           Print help
++ device-inventory help completions
+Print a completion file for the given shell.
+
+Example: `cargo-acap-sdk completions zsh | source /dev/stdin`.
+
+Usage: device-inventory completions <SHELL>
+
+Arguments:
+  <SHELL>
+          [possible values: bash, elvish, fish, powershell, zsh]
+
+Options:
+  -h, --help
+          Print help (see a summary with '-h')

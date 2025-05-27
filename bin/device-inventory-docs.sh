@@ -9,3 +9,4 @@ device-inventory help import
 device-inventory help list
 device-inventory help export
 device-inventory help remove
+device-inventory help completions
