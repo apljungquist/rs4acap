@@ -2,4 +2,5 @@
 set -eux
 
 unset RUST_LOG
+
 device-finder --help
