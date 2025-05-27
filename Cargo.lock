@@ -385,6 +385,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_complete"
+version = "4.5.51"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d2267df7f3c8e74e38268887ea5235d4dfadd39bfff2d56ab82d61776be355e"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "clap_derive"
 version = "4.5.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -435,6 +444,7 @@ dependencies = [
  "log",
  "mdns",
  "reqwest",
+ "rs4a-bin-utils",
  "rs4a-vapix",
  "tokio",
  "url",
@@ -451,6 +461,7 @@ dependencies = [
  "glob",
  "log",
  "reqwest",
+ "rs4a-bin-utils",
  "serde",
  "serde_json",
  "tokio",
@@ -1517,6 +1528,15 @@ dependencies = [
  "libc",
  "untrusted",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "rs4a-bin-utils"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "clap_complete",
 ]
 
 [[package]]

@@ -7,6 +7,7 @@ resolver = "2"
 [workspace.dependencies]
 anyhow = "1.0.97"
 clap = "4.5.35"
+clap_complete = "4.5.50"
 dirs = "6.0.0"
 env_logger = "0.11.8"
 futures-util = "0.3.31"
@@ -20,6 +21,7 @@ serde_json = "1.0.140"
 tokio = "1.0.0"
 url = "2.5.4"
 
+rs4a-bin-utils = {path = "crates/bin-utils" }
 rs4a-vapix = { path = "crates/vapix" }
 
 [workspace.package]
