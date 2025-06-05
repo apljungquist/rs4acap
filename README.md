@@ -54,7 +54,7 @@ Options:
 
 ## Installation
 
-The tools in in this project can be installed using Cargo:
+The tools in this project can be installed using Cargo:
 
 ```shell
 cargo install --locked --git https://github.com/apljungquist/rs4a.git device-finder
