@@ -135,14 +135,11 @@ pub struct DiscoverDevicesCommand {
 
 async fn probe(host: String, addr: String) -> anyhow::Result<(String, HashMap<String, String>)> {
     let mut details = HashMap::new();
-    let client = rs4a_vapix::Client::detect_scheme(
-        &Host::parse(&addr)?,
-        reqwest::Client::builder()
-            .danger_accept_invalid_certs(true)
-            .build()?,
-    )
-    .await
-    .context("Could not create client")?;
+    let client = rs4a_vapix::Client::builder(Host::parse(&addr)?)
+        .with_inner(|b| b.danger_accept_invalid_certs(true))
+        .build_with_automatic_scheme()
+        .await
+        .context("Could not create client")?;
 
     let SystemreadyData {
         needsetup,
