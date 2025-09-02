@@ -1544,6 +1544,7 @@ name = "rs4a-vapix"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64",
  "log",
  "reqwest",
  "serde",
