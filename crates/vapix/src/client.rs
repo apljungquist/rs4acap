@@ -164,10 +164,6 @@ impl Client {
         ClientBuilder::new(host)
     }
 
-    pub(crate) fn get(&self, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
-        Ok(self.client.get(self.url().join(path)?))
-    }
-
     pub(crate) fn post(&self, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
         Ok(self.client.post(self.url().join(path)?))
     }
