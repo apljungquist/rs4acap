@@ -3,7 +3,7 @@ use anyhow::{bail, Context};
 
 use crate::Client;
 
-pub struct Jpg {
+pub struct Jpg3 {
     client: Client,
 }
 
@@ -73,7 +73,7 @@ impl RequestBuilder {
     }
 }
 
-impl Jpg {
+impl Jpg3 {
     /// Get a jpg encoded snapshot.
     pub fn get_image(self) -> RequestBuilder {
         RequestBuilder {
@@ -85,8 +85,8 @@ impl Jpg {
 }
 
 impl Client {
-    pub fn jpg_3(&self) -> Jpg {
-        Jpg {
+    pub fn jpg_3(&self) -> Jpg3 {
+        Jpg3 {
             client: self.clone(),
         }
     }
