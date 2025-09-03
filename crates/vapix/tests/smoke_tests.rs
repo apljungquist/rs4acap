@@ -1,6 +1,7 @@
-use std::env;
+use std::{env, ops::Rem, time::SystemTime};
 
 use rs4a_vapix::{Client, ClientBuilder};
+use serde_json::json;
 
 async fn test_client() -> Option<Client> {
     if env::var_os("AXIS_DEVICE_IP").is_some() {
@@ -16,6 +17,16 @@ async fn test_client() -> Option<Client> {
         eprintln!("No device configured, skipping test.");
         None
     }
+}
+
+fn somewhat_unique_name(prefix: &str) -> String {
+    let four_weeks_as_seconds = 4 * 7 * 24 * 60 * 60;
+    let suffix = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        .rem(four_weeks_as_seconds);
+    format!("{prefix}{suffix}")
 }
 
 #[tokio::test]
@@ -114,6 +125,52 @@ async fn jpg_get_image_returns_ok() {
         .jpg_3()
         .get_image()
         .compression(100)
+        .send()
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn recording_group_1_create_returns_ok() {
+    let Some(client) = test_client().await else {
+        return;
+    };
+
+    let expected_recording_destination_id =
+        somewhat_unique_name("smoke_test_recording_destination_");
+
+    let actual_recording_destination_id = client
+        .remote_object_storage_1()
+        .create()
+        .data(json!({
+            "id":expected_recording_destination_id,
+            "s3": {
+                "accessKeyId": "myAccessKeyId",
+                "secretAccessKey": "mySecretAccessKey",
+                "bucket": "myBucket",
+                "url": "https://s3.eu-north-1.amazonaws.com",
+            }
+        }))
+        .send()
+        .await
+        .unwrap()
+        .id;
+
+    assert_eq!(
+        expected_recording_destination_id,
+        actual_recording_destination_id
+    );
+
+    client
+        .recording_group_1()
+        .create()
+        .data(json!({
+            "destinations": [{
+                "remoteObjectStorage":  {
+                    "id": expected_recording_destination_id
+                },
+            }],
+        }))
         .send()
         .await
         .unwrap();
