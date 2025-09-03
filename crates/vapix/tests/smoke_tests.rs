@@ -32,6 +32,20 @@ async fn basic_device_info_get_all_unrestricted_properties_returns_ok() {
 }
 
 #[tokio::test]
+async fn jpg_get_image_returns_ok() {
+    let Some(client) = test_client().await else {
+        return;
+    };
+    client
+        .jpg_3()
+        .get_image()
+        .compression(100)
+        .send()
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn system_ready_system_ready_returns_ok() {
     let Some(client) = test_client().await else {
         return;
