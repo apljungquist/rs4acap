@@ -32,6 +32,7 @@ impl ExportCommand {
             warn!("Multiple devices found, using the first one")
         }
 
+        // TODO: Consider `unset`ing variables that are not set.
         let envs = device_inventory::env::envs(&device);
         for (key, value) in envs {
             println!("export {key}={value}");
