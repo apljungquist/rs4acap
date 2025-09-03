@@ -25,7 +25,7 @@ where
 {
     let text = text.with_context(|| format!("Could not fetch text, status was {status}"))?;
     let Response { data, error } = serde_json::from_str(&text)
-        .with_context(|| format!("Could not parse response, status was {status}"))?;
+        .with_context(|| format!("Could not parse response; status: {status} text: {text}"))?;
     let data = match (data, error) {
         (Some(d), Some(e)) => {
             debug!("data: {d:?}, error: {e:?}");
