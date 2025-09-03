@@ -9,6 +9,7 @@ log = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }
 base64 = { workspace = true }
+quick-xml = { workspace = true, features = ["serialize"] }
 serde_json = { workspace = true, features = ["raw_value"] }
 url = { workspace = true }
 

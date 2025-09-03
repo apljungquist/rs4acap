@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope"
+                   xmlns:aa="http://www.axis.com/vapix/ws/action1">
+    <SOAP-ENV:Body>
+        <SOAP-ENV:Fault>
+            <SOAP-ENV:Code>
+                <SOAP-ENV:Value>SOAP-ENV:Sender</SOAP-ENV:Value>
+            </SOAP-ENV:Code>
+            <SOAP-ENV:Reason>
+                <SOAP-ENV:Text xml:lang="en">could not match any property events</SOAP-ENV:Text>
+            </SOAP-ENV:Reason>
+            <SOAP-ENV:Detail>
+                <aa:InvalidConditionFilterFault></aa:InvalidConditionFilterFault>
+            </SOAP-ENV:Detail>
+        </SOAP-ENV:Fault>
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
