@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://www.w3.org/2003/05/soap-envelope"
+                   xmlns:aa="http://www.axis.com/vapix/ws/action1">
+    <SOAP-ENV:Body>
+        <aa:GetActionRulesResponse>
+            <aa:ActionRules></aa:ActionRules>
+        </aa:GetActionRulesResponse>
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
