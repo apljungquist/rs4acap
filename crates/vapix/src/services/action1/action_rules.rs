@@ -53,14 +53,14 @@ mod tests {
     #[test]
     fn can_deserialize_add_action_rule_200_response() {
         let text = include_str!("examples/add_action_rule_200_response.xml");
-        let data: AddActionRuleResponse = parse_soap(text).unwrap();
+        let data = parse_soap::<AddActionRuleResponse>(text).unwrap();
         assert_eq!(1, data.id);
     }
 
     #[test]
     fn can_deserialize_get_action_rules_response() {
         let text = include_str!("examples/get_action_rules_response.xml");
-        let data: GetActionRulesResponse = parse_soap(text).unwrap();
+        let data = parse_soap::<GetActionRulesResponse>(text).unwrap();
         assert!(data.action_rules.action_rule.is_empty());
     }
 }

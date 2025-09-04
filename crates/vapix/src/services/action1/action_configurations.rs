@@ -54,7 +54,7 @@ mod tests {
     #[test]
     fn can_deserialize_add_action_configuration_response() {
         let text = include_str!("examples/add_action_configuration_response.xml");
-        let data: AddActionConfigurationResponse = parse_soap(text).unwrap();
+        let data = parse_soap::<AddActionConfigurationResponse>(text).unwrap();
         assert_eq!(1, data.configuration_id);
     }
 }
