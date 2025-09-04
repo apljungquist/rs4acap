@@ -4,15 +4,10 @@
 mod action_configurations;
 mod action_rules;
 
-pub use action_configurations::GetActionConfigurationsResponse;
-pub use action_rules::GetActionRulesResponse;
+pub use action_configurations::{AddActionConfigurationResponse, GetActionConfigurationsResponse};
+pub use action_rules::{AddActionRuleResponse, GetActionRulesResponse};
 
-use crate::{
-    services::action1::{
-        action_configurations::AddActionConfigurationResponse, action_rules::AddActionRuleResponse,
-    },
-    soap::SimpleRequest,
-};
+use crate::soap::SimpleRequest;
 
 pub fn add_action_configuration() -> SimpleRequest<AddActionConfigurationResponse> {
     SimpleRequest::new(
