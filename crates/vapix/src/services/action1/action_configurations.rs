@@ -1,19 +1,10 @@
 use serde::Deserialize;
 
-use crate::soap::RequestBuilder;
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct AddActionConfigurationResponse {
     #[serde(rename = "ConfigurationID")]
     pub configuration_id: u16,
-}
-
-impl RequestBuilder<AddActionConfigurationResponse> {
-    pub fn body(mut self, xml: String) -> Self {
-        self.body.params = Some(xml);
-        self
-    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -55,18 +46,15 @@ pub struct Parameter {
 
 #[cfg(test)]
 mod tests {
-    use reqwest::StatusCode;
 
     use crate::{
-        services::action1::action_configurations::AddActionConfigurationResponse,
-        soap::from_response,
+        services::action1::action_configurations::AddActionConfigurationResponse, soap::parse_soap,
     };
 
     #[test]
     fn can_deserialize_add_action_configuration_response() {
         let text = include_str!("examples/add_action_configuration_response.xml");
-        let data: AddActionConfigurationResponse =
-            from_response(StatusCode::OK, Ok(text.to_string())).unwrap();
+        let data = parse_soap::<AddActionConfigurationResponse>(text).unwrap();
         assert_eq!(1, data.configuration_id);
     }
 }

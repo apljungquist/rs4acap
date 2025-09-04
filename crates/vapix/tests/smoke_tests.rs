@@ -1,6 +1,8 @@
 use std::{env, ops::Rem, time::SystemTime};
 
-use rs4a_vapix::{apis, json_rpc_http::JsonRpcHttp, Client, ClientBuilder};
+use rs4a_vapix::{
+    apis, json_rpc_http::JsonRpcHttp, soap_http::SoapHttpRequest, Client, ClientBuilder,
+};
 use serde_json::json;
 
 async fn test_client() -> Option<Client> {
@@ -30,15 +32,24 @@ fn somewhat_unique_name(prefix: &str) -> String {
 }
 
 #[tokio::test]
+async fn action_1_get_action_configurations_returns_ok() {
+    let Some(client) = test_client().await else {
+        return;
+    };
+    apis::action_1::get_action_configurations()
+        .send(&client)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn action_1_add_and_get_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
 
-    let action_configuration_id = client
-        .action1()
-        .add_action_configuration()
-        .body(String::from(
+    let action_configuration_id = apis::action_1::add_action_configuration()
+        .params(String::from(
             r#"
                 <NewActionConfiguration>
                     <Name>Flash status LED</Name>
@@ -52,13 +63,13 @@ async fn action_1_add_and_get_returns_ok() {
                 </NewActionConfiguration>
                "#,
         ))
-        .send()
+        .send(&client)
         .await
         .unwrap()
         .configuration_id;
 
     let action_rule_name = "smoke test rule";
-    let action_rule_id = client.action1().add_action_rule().body(format!(
+    let action_rule_id = apis::action_1::add_action_rule().params(format!(
         r#"
         <NewActionRule>
             <Name>{action_rule_name}</Name>
@@ -76,12 +87,10 @@ async fn action_1_add_and_get_returns_ok() {
             <PrimaryAction>{action_configuration_id}</PrimaryAction>
         </NewActionRule>
         "#
-    )).send().await.unwrap().id;
+    )).send(&client).await.unwrap().id;
 
-    let actions_rules = client
-        .action1()
-        .get_action_rules()
-        .send()
+    let actions_rules = apis::action_1::get_action_rules()
+        .send(&client)
         .await
         .unwrap()
         .action_rules
@@ -111,7 +120,10 @@ async fn event_1_get_event_instances_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
-    client.event1().get_event_instances().send().await.unwrap();
+    apis::event_1::get_event_instances()
+        .send(&client)
+        .await
+        .unwrap();
 }
 
 #[tokio::test]

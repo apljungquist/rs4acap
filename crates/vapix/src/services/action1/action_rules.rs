@@ -1,19 +1,10 @@
 use serde::Deserialize;
 
-use crate::soap::RequestBuilder;
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct AddActionRuleResponse {
     #[serde(rename = "RuleID")]
     pub id: u16,
-}
-
-impl RequestBuilder<AddActionRuleResponse> {
-    pub fn body(mut self, xml: String) -> Self {
-        self.body.params = Some(xml);
-        self
-    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -54,26 +45,22 @@ pub struct GetActionRulesResponse {
 
 #[cfg(test)]
 mod tests {
-    use reqwest::StatusCode;
-
     use crate::{
         services::action1::{action_rules::AddActionRuleResponse, GetActionRulesResponse},
-        soap::from_response,
+        soap::parse_soap,
     };
 
     #[test]
     fn can_deserialize_add_action_rule_200_response() {
         let text = include_str!("examples/add_action_rule_200_response.xml");
-        let data: AddActionRuleResponse =
-            from_response(StatusCode::OK, Ok(text.to_string())).unwrap();
+        let data = parse_soap::<AddActionRuleResponse>(text).unwrap();
         assert_eq!(1, data.id);
     }
 
     #[test]
     fn can_deserialize_get_action_rules_response() {
         let text = include_str!("examples/get_action_rules_response.xml");
-        let data: GetActionRulesResponse =
-            from_response(StatusCode::OK, Ok(text.to_string())).unwrap();
+        let data = parse_soap::<GetActionRulesResponse>(text).unwrap();
         assert!(data.action_rules.action_rule.is_empty());
     }
 }
