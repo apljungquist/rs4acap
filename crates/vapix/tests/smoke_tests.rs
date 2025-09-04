@@ -1,6 +1,6 @@
 use std::{env, ops::Rem, time::SystemTime};
 
-use rs4a_vapix::{Client, ClientBuilder};
+use rs4a_vapix::{apis, json_rpc_http::JsonRpcHttp, Client, ClientBuilder};
 use serde_json::json;
 
 async fn test_client() -> Option<Client> {
@@ -100,10 +100,8 @@ async fn basic_device_info_get_all_unrestricted_properties_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
-    client
-        .basic_device_info_1()
-        .get_all_unrestricted_properties()
-        .send()
+    apis::basic_device_info_1::get_all_unrestricted_properties()
+        .send(&client)
         .await
         .unwrap();
 }
@@ -181,5 +179,8 @@ async fn system_ready_system_ready_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
-    client.system_ready_1().system_ready().send().await.unwrap();
+    apis::system_ready_1::system_ready()
+        .send(&client)
+        .await
+        .unwrap();
 }

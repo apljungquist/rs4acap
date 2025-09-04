@@ -1,0 +1,18 @@
+{
+  "apiVersion": "1.3",
+  "data": {
+    "propertyList": {
+      "ProdNbr": "M1075-L",
+      "HardwareID": "92A.1",
+      "ProdFullName": "AXIS M1075-L Box Camera",
+      "Version": "12.5.56",
+      "ProdType": "Box Camera",
+      "Brand": "AXIS",
+      "WebURL": "http://www.axis.com",
+      "ProdVariant": "",
+      "SerialNumber": "B8A44F000000",
+      "ProdShortName": "AXIS M1075-L",
+      "BuildDate": "Jun 11 2025 17:32"
+    }
+  }
+}

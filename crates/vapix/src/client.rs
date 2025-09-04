@@ -6,6 +6,8 @@ use log::debug;
 use reqwest::header::{HeaderMap, AUTHORIZATION};
 use url::{Host, Url};
 
+use crate::{apis, json_rpc_http::JsonRpcHttp};
+
 fn authorization_headers(username: &str, password: &str) -> HeaderMap {
     let credentials = format!("{username}:{password}");
     let auth_header = format!(
@@ -117,10 +119,9 @@ impl ClientBuilder {
         for (scheme, port) in [(Scheme::Secure, secure_port), (Scheme::Plain, plain_port)] {
             candidate.scheme = scheme;
             candidate.port = port;
-            if candidate
-                .system_ready_1()
-                .system_ready()
-                .send()
+            if apis::system_ready_1::system_ready()
+                .timeout(1)
+                .send(&candidate)
                 .await
                 .inspect_err(|e| debug!("Could not connect using {} because {e:?}", scheme.http()))
                 .is_ok()

@@ -5,9 +5,8 @@
 use std::fmt::{Display, Formatter};
 
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
-use crate::{client::Client, json_rpc};
+use crate::json_rpc_http::JsonRpcHttp;
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -29,31 +28,49 @@ impl Display for EnglishBoolean {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemreadyData {
+    // TODO: Deserialize as real booleans
     pub needsetup: EnglishBoolean,
     pub systemready: EnglishBoolean,
+    // TODO: Extract uptime and boot id
 }
 
-pub struct SystemReady1 {
-    client: Client,
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemReadyParams {
+    timeout: u16,
 }
 
-impl SystemReady1 {
-    pub fn system_ready(self) -> json_rpc::RequestBuilder<SystemreadyData> {
-        json_rpc::RequestBuilder {
-            client: self.client,
-            path: "axis-cgi/systemready.cgi",
-            json: json!({
-                "method": "systemready",
-                "apiVersion": "1",
-            }),
-            _phantom: Default::default(),
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemReadyRequest {
+    api_version: &'static str,
+    method: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    params: Option<SystemReadyParams>,
+}
+
+impl Default for SystemReadyRequest {
+    fn default() -> Self {
+        Self {
+            method: "systemready",
+            api_version: "1",
+            params: None,
         }
     }
 }
-impl Client {
-    pub fn system_ready_1(&self) -> SystemReady1 {
-        SystemReady1 {
-            client: self.clone(),
-        }
+
+impl SystemReadyRequest {
+    pub fn timeout(mut self, timeout: u16) -> Self {
+        self.params.get_or_insert(SystemReadyParams { timeout });
+        self
     }
+}
+
+impl JsonRpcHttp for SystemReadyRequest {
+    type Data = SystemreadyData;
+    const PATH: &'static str = "axis-cgi/systemready.cgi";
+}
+
+pub fn system_ready() -> SystemReadyRequest {
+    SystemReadyRequest::default()
 }

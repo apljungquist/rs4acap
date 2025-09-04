@@ -1,0 +1,10 @@
+{
+  "apiVersion": "1.4",
+  "method": "systemready",
+  "data": {
+    "systemready": "yes",
+    "needsetup": "no",
+    "uptime": "37509",
+    "bootid": "a64e48df-6002-4f0a-83a1-98f302b05cb1"
+  }
+}
