@@ -120,7 +120,10 @@ async fn event_1_get_event_instances_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
-    client.event1().get_event_instances().send().await.unwrap();
+    apis::event_1::get_event_instances()
+        .send(&client)
+        .await
+        .unwrap();
 }
 
 #[tokio::test]

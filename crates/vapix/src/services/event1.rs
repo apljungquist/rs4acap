@@ -1,14 +1,10 @@
 //! The [event service API].
 //!
 //! [event service API]: https://developer.axis.com/vapix/network-video/event-and-action-services
-use std::str::FromStr;
 
 use quick_xml::{events::Event, Reader};
 
-use crate::{
-    soap::{Body, RequestBuilder2},
-    Client,
-};
+use crate::{soap::SimpleRequest, soap_http::SoapResponse};
 
 #[derive(Debug)]
 pub struct MessageInstance {
@@ -19,10 +15,8 @@ pub struct EventInstances {
     pub message_instances: Vec<MessageInstance>,
 }
 
-impl FromStr for EventInstances {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl SoapResponse for EventInstances {
+    fn from_envelope(s: &str) -> anyhow::Result<Self> {
         let mut message_instances = Vec::new();
         let mut reader = Reader::from_str(s);
         let mut stack: Vec<String> = Vec::new();
@@ -57,25 +51,6 @@ impl FromStr for EventInstances {
     }
 }
 
-pub struct Event1 {
-    client: Client,
-}
-
-impl Event1 {
-    pub fn get_event_instances(self) -> RequestBuilder2<EventInstances> {
-        RequestBuilder2 {
-            client: self.client,
-            path: "vapix/services",
-            body: Body::new("http://www.axis.com/vapix/ws/event1", "GetEventInstances"),
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
-
-impl Client {
-    pub fn event1(&self) -> Event1 {
-        Event1 {
-            client: self.clone(),
-        }
-    }
+pub fn get_event_instances() -> SimpleRequest<EventInstances> {
+    SimpleRequest::new("http://www.axis.com/vapix/ws/event1", "GetEventInstances")
 }

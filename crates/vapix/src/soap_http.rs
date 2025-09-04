@@ -3,9 +3,10 @@ use std::future::Future;
 
 use anyhow::Context;
 use log::warn;
+use serde::Deserialize;
 
 use crate::{
-    soap::{SimpleRequest, SoapRequest, SoapResponse},
+    soap::{parse_soap, SimpleRequest},
     Client,
 };
 
@@ -37,6 +38,23 @@ pub trait SoapHttpRequest: SoapRequest + Send + Sized {
             }
             result
         }
+    }
+}
+
+pub trait SoapRequest {
+    fn to_envelope(self) -> anyhow::Result<String>;
+}
+
+pub trait SoapResponse: Sized {
+    fn from_envelope(s: &str) -> anyhow::Result<Self>;
+}
+
+impl<T> SoapResponse for T
+where
+    T: for<'a> Deserialize<'a>,
+{
+    fn from_envelope(s: &str) -> anyhow::Result<Self> {
+        parse_soap(s)
     }
 }
 
