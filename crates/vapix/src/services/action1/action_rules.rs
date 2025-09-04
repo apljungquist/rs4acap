@@ -1,12 +1,18 @@
 use serde::Deserialize;
 
-use crate::soap::RequestBuilder;
+use crate::soap::{parse_data, RequestBuilder, SoapResponse};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct AddActionRuleResponse {
     #[serde(rename = "RuleID")]
     pub id: u16,
+}
+
+impl SoapResponse for AddActionRuleResponse {
+    fn from_envelope(text: &str) -> anyhow::Result<Self> {
+        parse_data(text)
+    }
 }
 
 impl RequestBuilder<AddActionRuleResponse> {
@@ -50,6 +56,12 @@ pub struct ActionRules {
 #[serde(rename_all = "PascalCase")]
 pub struct GetActionRulesResponse {
     pub action_rules: ActionRules,
+}
+
+impl SoapResponse for GetActionRulesResponse {
+    fn from_envelope(text: &str) -> anyhow::Result<Self> {
+        parse_data(text)
+    }
 }
 
 #[cfg(test)]

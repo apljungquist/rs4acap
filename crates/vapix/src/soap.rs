@@ -58,6 +58,17 @@ struct ResponseBody<T> {
     inner: T,
 }
 
+pub fn parse_data<T>(text: &str) -> anyhow::Result<T>
+where
+    T: for<'de> Deserialize<'de>,
+{
+    let Response {
+        body: ResponseBody { inner },
+    } = quick_xml::de::from_str(&text)
+        .with_context(|| format!("Could not parse text; text: {text}"))?;
+    Ok(inner)
+}
+
 pub fn from_response<T>(status: StatusCode, text: reqwest::Result<String>) -> anyhow::Result<T>
 where
     T: for<'de> Deserialize<'de>,
@@ -139,5 +150,53 @@ where
         let status = response.status();
         let text = response.text().await;
         from_response2(status, text)
+    }
+}
+
+pub trait SoapRequest {
+    fn to_envelope(self) -> anyhow::Result<String>;
+}
+
+pub trait SoapResponse: Sized {
+    fn from_envelope(text: &str) -> anyhow::Result<Self>;
+}
+
+pub struct SimpleRequest<T> {
+    namespace: &'static str,
+    method: &'static str,
+    params: Option<String>,
+    _phantom: PhantomData<T>,
+}
+
+impl<T> SimpleRequest<T> {
+    pub fn new(namespace: &'static str, method: &'static str) -> Self {
+        Self {
+            namespace,
+            method,
+            params: None,
+            _phantom: PhantomData,
+        }
+    }
+
+    pub fn params(mut self, params: String) -> Self {
+        self.params = Some(params);
+        self
+    }
+}
+
+impl<T> SoapRequest for SimpleRequest<T> {
+    fn to_envelope(self) -> anyhow::Result<String> {
+        let Self {
+            namespace,
+            method,
+            params,
+            _phantom,
+        } = self;
+        Ok(Body {
+            namespace: namespace.to_string(),
+            method: method.to_string(),
+            params,
+        }
+        .build())
     }
 }
