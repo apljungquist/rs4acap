@@ -5,7 +5,10 @@ use futures_util::{pin_mut, stream::StreamExt};
 use itertools::Itertools;
 use log::{debug, error, info, warn};
 use mdns::{RecordKind, Response};
-use rs4a_vapix::{basic_device_info_1::UnrestrictedProperties, system_ready_1::SystemreadyData};
+use rs4a_vapix::{
+    apis, basic_device_info_1::UnrestrictedProperties, json_rpc_http::JsonRpcHttp,
+    system_ready_1::SystemreadyData,
+};
 use tokio::{
     task::JoinSet,
     time::{error::Elapsed, timeout},
@@ -145,7 +148,7 @@ async fn probe(host: String, addr: String) -> anyhow::Result<(String, HashMap<St
         needsetup,
         systemready,
         ..
-    } = client.system_ready_1().system_ready().send().await?;
+    } = apis::system_ready_1::system_ready().send(&client).await?;
     details
         .insert("Need Setup".to_string(), needsetup.to_string())
         .inspect(|_| panic!("Each key is created at most once"));
@@ -162,10 +165,8 @@ async fn probe(host: String, addr: String) -> anyhow::Result<(String, HashMap<St
         serial_number,
         version,
         ..
-    } = client
-        .basic_device_info_1()
-        .get_all_unrestricted_properties()
-        .send()
+    } = apis::basic_device_info_1::get_all_unrestricted_properties()
+        .send(&client)
         .await?
         .property_list;
     details

@@ -3,9 +3,8 @@
 //! [Basic device information]: https://developer.axis.com/vapix/network-video/basic-device-information/
 
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
-use crate::{client::Client, json_rpc};
+use crate::json_rpc_http::JsonRpcHttp;
 
 #[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
@@ -33,30 +32,27 @@ pub struct UnrestrictedProperties {
     pub web_url: String,
 }
 
-pub struct BasicDeviceInfo1 {
-    client: Client,
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetAllUnrestrictedPropertiesRequest {
+    api_version: &'static str,
+    method: &'static str,
 }
 
-impl BasicDeviceInfo1 {
-    pub fn get_all_unrestricted_properties(
-        self,
-    ) -> json_rpc::RequestBuilder<AllUnrestrictedPropertiesData> {
-        json_rpc::RequestBuilder {
-            client: self.client,
-            path: "axis-cgi/basicdeviceinfo.cgi",
-            json: json!({
-                "method": "getAllUnrestrictedProperties",
-                "apiVersion": "1.0",
-            }),
-            _phantom: Default::default(),
+impl Default for GetAllUnrestrictedPropertiesRequest {
+    fn default() -> Self {
+        Self {
+            api_version: "1.0",
+            method: "getAllUnrestrictedProperties",
         }
     }
 }
 
-impl Client {
-    pub fn basic_device_info_1(&self) -> BasicDeviceInfo1 {
-        BasicDeviceInfo1 {
-            client: self.clone(),
-        }
-    }
+impl JsonRpcHttp for GetAllUnrestrictedPropertiesRequest {
+    type Data = AllUnrestrictedPropertiesData;
+    const PATH: &'static str = "axis-cgi/basicdeviceinfo.cgi";
+}
+
+pub fn get_all_unrestricted_properties() -> GetAllUnrestrictedPropertiesRequest {
+    GetAllUnrestrictedPropertiesRequest::default()
 }
