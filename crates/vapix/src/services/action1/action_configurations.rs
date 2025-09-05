@@ -16,6 +16,7 @@ pub struct GetActionConfigurationsResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ActionConfigurations {
+    #[serde(default)]
     pub action_configuration: Vec<ActionConfiguration>,
 }
 
@@ -46,15 +47,20 @@ pub struct Parameter {
 
 #[cfg(test)]
 mod tests {
-
-    use crate::{
-        services::action1::action_configurations::AddActionConfigurationResponse, soap::parse_soap,
-    };
+    use super::*;
+    use crate::soap::parse_soap;
 
     #[test]
     fn can_deserialize_add_action_configuration_response() {
         let text = include_str!("examples/add_action_configuration_response.xml");
         let data = parse_soap::<AddActionConfigurationResponse>(text).unwrap();
         assert_eq!(1, data.configuration_id);
+    }
+
+    #[test]
+    fn can_deserialize_get_action_configurations_response() {
+        let text = include_str!("examples/get_action_configurations_200_response.xml");
+        let data = parse_soap::<GetActionConfigurationsResponse>(text).unwrap();
+        assert_eq!(0, data.action_configurations.action_configuration.len());
     }
 }
