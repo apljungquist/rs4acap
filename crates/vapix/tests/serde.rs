@@ -1,3 +1,4 @@
+use insta::assert_snapshot;
 use rs4a_vapix::{
     action1::AddActionConfigurationResponse,
     apis,
@@ -34,12 +35,19 @@ fn can_deserialize_system_ready_1_examples() {
 
 #[test]
 fn can_serialize_action_1_requests() {
-    apis::action_1::add_action_configuration()
+    assert_snapshot!(
+        apis::action_1::add_action_configuration("com.axis.action.fixed.ledcontrol")
+            .name("Flash status LED")
+            .param("led", "statusled")
+            .param("color", "green,none")
+            .param("duration", "1")
+            .param("interval", "250")
+            .to_envelope()
+            .unwrap()
+    );
+    assert_snapshot!(apis::action_1::add_action_rule().to_envelope().unwrap());
+    assert_snapshot!(apis::action_1::get_action_configurations()
         .to_envelope()
-        .unwrap();
-    apis::action_1::add_action_rule().to_envelope().unwrap();
-    apis::action_1::get_action_configurations()
-        .to_envelope()
-        .unwrap();
-    apis::action_1::get_action_rules().to_envelope().unwrap();
+        .unwrap());
+    assert_snapshot!(apis::action_1::get_action_rules().to_envelope().unwrap());
 }

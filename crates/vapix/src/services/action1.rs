@@ -7,13 +7,10 @@ mod action_rules;
 pub use action_configurations::{AddActionConfigurationResponse, GetActionConfigurationsResponse};
 pub use action_rules::{AddActionRuleResponse, GetActionRulesResponse};
 
-use crate::soap::SimpleRequest;
+use crate::{action1::action_configurations::AddActionConfigurationRequest, soap::SimpleRequest};
 
-pub fn add_action_configuration() -> SimpleRequest<AddActionConfigurationResponse> {
-    SimpleRequest::new(
-        "http://www.axis.com/vapix/ws/action1",
-        "AddActionConfiguration",
-    )
+pub fn add_action_configuration(template_token: &str) -> AddActionConfigurationRequest {
+    AddActionConfigurationRequest::new(template_token)
 }
 
 pub fn add_action_rule() -> SimpleRequest<AddActionRuleResponse> {
