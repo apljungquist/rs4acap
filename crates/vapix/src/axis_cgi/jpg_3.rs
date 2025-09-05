@@ -3,17 +3,12 @@ use anyhow::{bail, Context};
 
 use crate::Client;
 
-pub struct Jpg3 {
-    client: Client,
-}
-
-pub struct RequestBuilder {
-    client: Client,
+pub struct Request {
     resolution: Option<String>,
     compression: Option<u8>,
 }
 
-impl RequestBuilder {
+impl Request {
     /// The image resolution in the format `"{width}x{height}"`.
     ///
     /// Example: `"640x360"`.
@@ -34,10 +29,11 @@ impl RequestBuilder {
         self.compression = Some(compression);
         self
     }
+}
 
-    pub async fn send(self) -> anyhow::Result<Vec<u8>> {
+impl Request {
+    pub async fn send(self, client: &Client) -> anyhow::Result<Vec<u8>> {
         let Self {
-            client,
             resolution,
             compression,
         } = self;
@@ -73,21 +69,10 @@ impl RequestBuilder {
     }
 }
 
-impl Jpg3 {
-    /// Get a jpg encoded snapshot.
-    pub fn get_image(self) -> RequestBuilder {
-        RequestBuilder {
-            client: self.client,
-            resolution: None,
-            compression: None,
-        }
-    }
-}
-
-impl Client {
-    pub fn jpg_3(&self) -> Jpg3 {
-        Jpg3 {
-            client: self.clone(),
-        }
+/// Get a jpg encoded snapshot.
+pub fn get_image() -> Request {
+    Request {
+        resolution: None,
+        compression: None,
     }
 }

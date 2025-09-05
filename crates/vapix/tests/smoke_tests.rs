@@ -131,11 +131,9 @@ async fn jpg_get_image_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
-    client
-        .jpg_3()
-        .get_image()
+    apis::jpg_3::get_image()
         .compression(100)
-        .send()
+        .send(&client)
         .await
         .unwrap();
 }

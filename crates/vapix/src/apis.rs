@@ -11,6 +11,10 @@ pub mod event_1 {
     pub use crate::event1::get_event_instances;
 }
 
+pub mod jpg_3 {
+    pub use crate::axis_cgi::jpg_3::get_image;
+}
+
 pub mod system_ready_1 {
     pub use crate::system_ready_1::system_ready;
 }
