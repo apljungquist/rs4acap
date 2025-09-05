@@ -15,4 +15,5 @@ serde_json = { workspace = true, features = ["raw_value"] }
 url = { workspace = true }
 
 [dev-dependencies]
+insta = { workspace = true }
 tokio = { workspace = true, features = ["macros"] }

@@ -48,25 +48,16 @@ async fn action_1_add_and_get_returns_ok() {
         return;
     };
 
-    let action_configuration_id = apis::action_1::add_action_configuration()
-        .params(String::from(
-            r#"
-                <NewActionConfiguration>
-                    <Name>Flash status LED</Name>
-                    <TemplateToken>com.axis.action.fixed.ledcontrol</TemplateToken>
-                    <Parameters>
-                        <Parameter Name="led" Value="statusled"/>
-                        <Parameter Name="color" Value="green,none"/>
-                        <Parameter Name="duration" Value="1"/>
-                        <Parameter Name="interval" Value="250"/>
-                    </Parameters>
-                </NewActionConfiguration>
-               "#,
-        ))
-        .send(&client)
-        .await
-        .unwrap()
-        .configuration_id;
+    let action_configuration_id =
+        apis::action_1::add_action_configuration("com.axis.action.fixed.ledcontrol")
+            .param("led", "statusled")
+            .param("color", "green,none")
+            .param("duration", "1")
+            .param("interval", "250")
+            .send(&client)
+            .await
+            .unwrap()
+            .configuration_id;
 
     let action_rule_name = "smoke test rule";
     let action_rule_id = apis::action_1::add_action_rule().params(format!(
