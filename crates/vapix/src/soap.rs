@@ -61,7 +61,7 @@ impl<T> SoapRequest for SimpleRequest<T> {
         } = self;
         let mut s = String::new();
         s.push_str(r#"<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">"#);
-        s.push_str(r#"<soap:Body xmlns:tns1="http://www.onvif.org/ver10/topics" xmlns:tnsaxis="http://www.axis.com/2009/event/topics">"#);
+        s.push_str(r#"<soap:Body>"#);
 
         s.push('<');
         s.push_str(method);
