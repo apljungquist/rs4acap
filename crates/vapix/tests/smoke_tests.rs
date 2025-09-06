@@ -60,9 +60,11 @@ async fn action_1_add_and_get_returns_ok() {
             .configuration_id;
 
     let action_rule_name = "smoke test rule";
-    let action_rule_id = apis::action_1::add_action_rule().params(format!(
+    let action_rule_id = apis::action_1::add_action_rule()
+        .params(format!(
         r#"
-        <NewActionRule>
+        <NewActionRule xmlns:tns1="http://www.onvif.org/ver10/topics"
+                       xmlns:tnsaxis="http://www.axis.com/2009/event/topics">
             <Name>{action_rule_name}</Name>
             <Enabled>true</Enabled>
             <Conditions>
