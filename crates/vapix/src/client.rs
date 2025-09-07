@@ -1,6 +1,4 @@
-use std::env;
-
-use anyhow::bail;
+use anyhow::{bail, Context};
 use base64::Engine;
 use log::debug;
 use reqwest::header::{HeaderMap, AUTHORIZATION};
@@ -37,23 +35,19 @@ impl ClientBuilder {
     }
 
     pub fn from_env() -> anyhow::Result<Self> {
-        let username = env::var("AXIS_DEVICE_USER")?;
-        let password = env::var("AXIS_DEVICE_PASS")?;
-        let host = env::var("AXIS_DEVICE_IP")?;
-        let plain_port = env::var("AXIS_DEVICE_HTTP_PORT")
-            .ok()
-            .map(|p| p.parse())
-            .transpose()?;
-        let secure_port = env::var("AXIS_DEVICE_HTTPS_PORT")
-            .ok()
-            .map(|p| p.parse())
-            .transpose()?;
-        let host = Host::parse(&host)?;
+        let rs4a_dut::Device {
+            host,
+            username,
+            password,
+            http_port,
+            https_port,
+            ssh_port: _,
+        } = rs4a_dut::Device::from_env()?.context("No device configured in environment")?;
 
         debug!("Building client using username {username} from env");
         Ok(ClientBuilder::new(host)
-            .plain_port(plain_port)
-            .secure_port(secure_port)
+            .plain_port(http_port)
+            .secure_port(https_port)
             .basic_authentication(&username, &password))
     }
 

@@ -1,4 +1,4 @@
-use std::{env, ops::Rem, time::SystemTime};
+use std::{ops::Rem, time::SystemTime};
 
 use rs4a_vapix::{
     apis, json_rpc_http::JsonRpcHttp, soap_http::SoapHttpRequest, Client, ClientBuilder,
@@ -6,7 +6,7 @@ use rs4a_vapix::{
 use serde_json::json;
 
 async fn test_client() -> Option<Client> {
-    if env::var_os("AXIS_DEVICE_IP").is_some() {
+    if rs4a_dut::Device::from_env().unwrap().is_some() {
         Some(
             ClientBuilder::from_env()
                 .unwrap()

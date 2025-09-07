@@ -25,6 +25,7 @@ tokio = "1.0.0"
 url = "2.5.4"
 
 rs4a-bin-utils = {path = "crates/bin-utils" }
+rs4a-dut = { path = "crates/dut" }
 rs4a-vapix = { path = "crates/vapix" }
 
 [workspace.package]

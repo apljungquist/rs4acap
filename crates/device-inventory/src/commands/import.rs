@@ -4,7 +4,7 @@ use anyhow::Context;
 use device_inventory::{db::Database, db_vlt};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, clap::ValueEnum)]
-enum Source {
+pub(crate) enum Source {
     /// Parse devices from the provided JSON
     Json,
     /// Fetch reserved devices from a shared pool
@@ -15,7 +15,7 @@ enum Source {
 pub struct ImportCommand {
     /// How to import devices
     #[arg(long, default_value = "pool")]
-    source: Source,
+    pub(crate) source: Source,
 }
 
 fn input(prompt: &str) -> anyhow::Result<String> {
@@ -35,14 +35,14 @@ fn input(prompt: &str) -> anyhow::Result<String> {
 }
 
 impl ImportCommand {
-    pub async fn exec(self, db: Database, offline: bool) -> anyhow::Result<()> {
+    pub async fn exec(self, db: &Database, offline: bool) -> anyhow::Result<()> {
         match self.source {
             Source::Json => {
                 let loans = input("Enter the loans JSON:")?;
-                db_vlt::store(&db, &loans)?;
+                db_vlt::store(db, &loans)?;
             }
             Source::Pool => {
-                db_vlt::import(&db, offline).await?;
+                db_vlt::import(db, offline).await?;
             }
         };
         Ok(())

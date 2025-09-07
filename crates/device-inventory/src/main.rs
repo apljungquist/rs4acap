@@ -10,8 +10,8 @@ use device_inventory::db::Database;
 use rs4a_bin_utils::completions_command::CompletionsCommand;
 
 use crate::commands::{
-    add::AddCommand, for_each::ForEachCommand, list::ListCommand, login::LoginCommand,
-    remove::RemoveCommand,
+    add::AddCommand, adopt::AdoptCommand, for_each::ForEachCommand, list::ListCommand,
+    login::LoginCommand, remove::RemoveCommand,
 };
 
 #[derive(Parser)]
@@ -36,7 +36,8 @@ impl Cli {
         match command {
             Commands::Login(cmd) => cmd.exec(db, offline).await?,
             Commands::Add(cmd) => cmd.exec(db).await?,
-            Commands::Import(cmd) => cmd.exec(db, offline).await?,
+            Commands::Adopt(cmd) => cmd.exec(db, offline).await?,
+            Commands::Import(cmd) => cmd.exec(&db, offline).await?,
             Commands::ForEach(cmd) => cmd.exec(db, offline).await?,
             Commands::List(cmd) => cmd.exec(db, offline).await?,
             Commands::Export(cmd) => cmd.exec(db, offline).await?,
@@ -53,6 +54,11 @@ enum Commands {
     Login(LoginCommand),
     /// Add a device
     Add(AddCommand),
+    /// Adopt a device:
+    /// - add/import
+    /// - export
+    /// - re-init (TODO)
+    Adopt(AdoptCommand),
     /// Import devices
     Import(ImportCommand),
     /// Run a command with environment variables set for each device
