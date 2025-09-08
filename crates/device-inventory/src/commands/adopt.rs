@@ -21,13 +21,13 @@ fn infer_alias(before: HashSet<String>, after: impl Iterator<Item = String>) -> 
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct AdoptCommand {
-    /// The alias of the device to export
+    /// The alias of the device(s) to import and export
     #[arg(long)]
     alias: Option<String>,
     /// How to import devices
     #[arg(long, default_value = "pool")]
     source: Source,
-    // How to export the device
+    /// How to export the device
     #[arg(long, default_value = "filesystem")]
     destination: Destination,
 }

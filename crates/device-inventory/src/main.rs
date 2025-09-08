@@ -54,10 +54,7 @@ enum Commands {
     Login(LoginCommand),
     /// Add a device
     Add(AddCommand),
-    /// Adopt a device:
-    /// - add/import
-    /// - export
-    /// - re-init (TODO)
+    /// Import all matching devices and export at most one matching device.
     Adopt(AdoptCommand),
     /// Import devices
     Import(ImportCommand),
