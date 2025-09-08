@@ -16,6 +16,16 @@ pub struct Device {
 }
 
 impl Device {
+    pub fn from_anywhere() -> anyhow::Result<Option<Self>> {
+        if let Some(device) = Self::from_env()? {
+            return Ok(Some(device));
+        }
+        if let Some(device) = Self::from_fs()? {
+            return Ok(Some(device));
+        }
+        Ok(None)
+    }
+
     pub fn from_env() -> anyhow::Result<Option<Self>> {
         let Some(host) = env::var_os("AXIS_DEVICE_IP") else {
             return Ok(None);

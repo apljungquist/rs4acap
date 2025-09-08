@@ -6,19 +6,17 @@ use rs4a_vapix::{
 use serde_json::json;
 
 async fn test_client() -> Option<Client> {
-    if rs4a_dut::Device::from_env().unwrap().is_some() {
-        Some(
-            ClientBuilder::from_env()
-                .unwrap()
-                .with_inner(|b| b.danger_accept_invalid_certs(true))
-                .build_with_automatic_scheme()
-                .await
-                .unwrap(),
-        )
-    } else {
+    let Some(client) = ClientBuilder::from_dut().unwrap() else {
         eprintln!("No device configured, skipping test.");
-        None
-    }
+        return None;
+    };
+    Some(
+        client
+            .with_inner(|b| b.danger_accept_invalid_certs(true))
+            .build_with_automatic_scheme()
+            .await
+            .unwrap(),
+    )
 }
 
 fn somewhat_unique_name(prefix: &str) -> String {

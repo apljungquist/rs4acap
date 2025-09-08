@@ -1,5 +1,5 @@
 use anyhow::bail;
-use device_inventory::{db::Database, db_vlt, env::envs};
+use device_inventory::{db::Database, env::envs};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct ForEachCommand {
@@ -10,13 +10,9 @@ pub struct ForEachCommand {
 }
 
 impl ForEachCommand {
-    pub async fn exec(self, db: Database, offline: bool) -> anyhow::Result<()> {
+    pub async fn exec(self, db: Database) -> anyhow::Result<()> {
         let Self { program, arguments } = self;
-        let devices = if offline {
-            db.read_devices()?
-        } else {
-            db_vlt::import(&db, offline).await?
-        };
+        let devices = db.read_devices()?;
 
         let mut sorted_devices: Vec<_> = devices.into_iter().collect();
         sorted_devices.sort_by(|(left, _), (right, _)| left.cmp(right));

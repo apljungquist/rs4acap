@@ -1,4 +1,4 @@
-use anyhow::{bail, Context};
+use anyhow::bail;
 use base64::Engine;
 use log::debug;
 use reqwest::header::{HeaderMap, AUTHORIZATION};
@@ -34,7 +34,10 @@ impl ClientBuilder {
         }
     }
 
-    pub fn from_env() -> anyhow::Result<Self> {
+    pub fn from_dut() -> anyhow::Result<Option<Self>> {
+        let Some(device) = rs4a_dut::Device::from_anywhere()? else {
+            return Ok(None);
+        };
         let rs4a_dut::Device {
             host,
             username,
@@ -42,13 +45,15 @@ impl ClientBuilder {
             http_port,
             https_port,
             ssh_port: _,
-        } = rs4a_dut::Device::from_env()?.context("No device configured in environment")?;
+        } = device;
 
         debug!("Building client using username {username} from env");
-        Ok(ClientBuilder::new(host)
-            .plain_port(http_port)
-            .secure_port(https_port)
-            .basic_authentication(&username, &password))
+        Ok(Some(
+            ClientBuilder::new(host)
+                .plain_port(http_port)
+                .secure_port(https_port)
+                .basic_authentication(&username, &password),
+        ))
     }
 
     pub fn basic_authentication(mut self, username: &str, password: &str) -> Self {

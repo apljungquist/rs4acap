@@ -38,9 +38,9 @@ impl Cli {
             Commands::Add(cmd) => cmd.exec(db).await?,
             Commands::Adopt(cmd) => cmd.exec(db, offline).await?,
             Commands::Import(cmd) => cmd.exec(&db, offline).await?,
-            Commands::ForEach(cmd) => cmd.exec(db, offline).await?,
-            Commands::List(cmd) => cmd.exec(db, offline).await?,
-            Commands::Export(cmd) => cmd.exec(db, offline).await?,
+            Commands::ForEach(cmd) => cmd.exec(db).await?,
+            Commands::List(cmd) => cmd.exec(db).await?,
+            Commands::Export(cmd) => cmd.exec(db).await?,
             Commands::Remove(cmd) => cmd.exec(db).await?,
             Commands::Completions(cmd) => cmd.exec::<Self>()?,
         }

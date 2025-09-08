@@ -1,5 +1,5 @@
 use anyhow::Context;
-use device_inventory::{db::Database, db_vlt};
+use device_inventory::db::Database;
 use log::warn;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, clap::ValueEnum)]
@@ -21,13 +21,8 @@ pub struct ExportCommand {
 }
 
 impl ExportCommand {
-    pub async fn exec(self, db: Database, offline: bool) -> anyhow::Result<()> {
-        let mut devices = if offline {
-            db.read_devices()?
-        } else {
-            // TODO: Consider not importing automatically.
-            db_vlt::import(&db, offline).await?
-        };
+    pub async fn exec(self, db: Database) -> anyhow::Result<()> {
+        let mut devices = db.read_devices()?;
 
         if let Some(pattern) = &self.alias {
             let pattern = glob::Pattern::new(pattern)?;
