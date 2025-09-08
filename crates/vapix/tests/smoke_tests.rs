@@ -1,4 +1,4 @@
-use std::{env, ops::Rem, time::SystemTime};
+use std::{ops::Rem, time::SystemTime};
 
 use rs4a_vapix::{
     apis, json_rpc_http::JsonRpcHttp, soap_http::SoapHttpRequest, Client, ClientBuilder,
@@ -6,19 +6,17 @@ use rs4a_vapix::{
 use serde_json::json;
 
 async fn test_client() -> Option<Client> {
-    if env::var_os("AXIS_DEVICE_IP").is_some() {
-        Some(
-            ClientBuilder::from_env()
-                .unwrap()
-                .with_inner(|b| b.danger_accept_invalid_certs(true))
-                .build_with_automatic_scheme()
-                .await
-                .unwrap(),
-        )
-    } else {
+    let Some(client) = ClientBuilder::from_dut().unwrap() else {
         eprintln!("No device configured, skipping test.");
-        None
-    }
+        return None;
+    };
+    Some(
+        client
+            .with_inner(|b| b.danger_accept_invalid_certs(true))
+            .build_with_automatic_scheme()
+            .await
+            .unwrap(),
+    )
 }
 
 fn somewhat_unique_name(prefix: &str) -> String {

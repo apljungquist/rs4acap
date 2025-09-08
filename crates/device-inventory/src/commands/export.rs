@@ -1,22 +1,28 @@
 use anyhow::Context;
-use device_inventory::{db::Database, db_vlt};
+use device_inventory::db::Database;
 use log::warn;
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, clap::ValueEnum)]
+pub(crate) enum Destination {
+    /// Write information to the filesystem.
+    Filesystem,
+    /// Print information as a shell script that can be sourced.
+    Environment,
+}
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct ExportCommand {
     /// The alias of the device to export
     #[arg(long)]
-    alias: Option<String>,
+    pub(crate) alias: Option<String>,
+    // How to export the device
+    #[arg(long, default_value = "environment")]
+    pub(crate) destination: Destination,
 }
 
 impl ExportCommand {
-    pub async fn exec(self, db: Database, offline: bool) -> anyhow::Result<()> {
-        let mut devices = if offline {
-            db.read_devices()?
-        } else {
-            // TODO: Consider not importing automatically.
-            db_vlt::import(&db, offline).await?
-        };
+    pub async fn exec(self, db: Database) -> anyhow::Result<()> {
+        let mut devices = db.read_devices()?;
 
         if let Some(pattern) = &self.alias {
             let pattern = glob::Pattern::new(pattern)?;
@@ -32,10 +38,17 @@ impl ExportCommand {
             warn!("Multiple devices found, using the first one")
         }
 
-        // TODO: Consider `unset`ing variables that are not set.
-        let envs = device_inventory::env::envs(&device);
-        for (key, value) in envs {
-            println!("export {key}={value}");
+        match self.destination {
+            Destination::Filesystem => {
+                rs4a_dut::Device::from(device).to_fs()?;
+            }
+            Destination::Environment => {
+                // TODO: Consider `unset`ing variables that are not set.
+                let envs = device_inventory::env::envs(&device);
+                for (key, value) in envs {
+                    println!("export {key}={value}");
+                }
+            }
         }
 
         Ok(())

@@ -18,3 +18,4 @@ tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 url = { workspace = true, features = ["serde"] }
 
 rs4a-bin-utils = { workspace = true }
+rs4a-dut = { workspace = true }

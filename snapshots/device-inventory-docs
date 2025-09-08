@@ -5,6 +5,7 @@ Usage: device-inventory [OPTIONS] <COMMAND>
 Commands:
   login        Login to a pool of shared devices
   add          Add a device
+  adopt        Import all matching devices and export at most one matching device
   import       Import devices
   for-each     Run a command with environment variables set for each device
   list         List available devices
@@ -40,6 +41,35 @@ Options:
       --https-port <HTTPS_PORT>  HTTPS port to use, if different from default
       --ssh-port <SSH_PORT>      SSH port to use, if different from default
   -h, --help                     Print help
++ device-inventory help adopt
+Import all matching devices and export at most one matching device
+
+Usage: device-inventory adopt [OPTIONS]
+
+Options:
+      --alias <ALIAS>
+          The alias of the device(s) to import and export
+
+      --source <SOURCE>
+          How to import devices
+          
+          [default: pool]
+
+          Possible values:
+          - json: Parse devices from the provided JSON
+          - pool: Fetch reserved devices from a shared pool
+
+      --destination <DESTINATION>
+          How to export the device
+          
+          [default: filesystem]
+
+          Possible values:
+          - filesystem:  Write information to the filesystem
+          - environment: Print information as a shell script that can be sourced
+
+  -h, --help
+          Print help (see a summary with '-h')
 + device-inventory help import
 Import devices
 
@@ -75,6 +105,13 @@ Usage: device-inventory export [OPTIONS]
 Options:
       --alias <ALIAS>
           The alias of the device to export
+
+      --destination <DESTINATION>
+          [default: environment]
+
+          Possible values:
+          - filesystem:  Write information to the filesystem
+          - environment: Print information as a shell script that can be sourced
 
   -h, --help
           Print help (see a summary with '-h')

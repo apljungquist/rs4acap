@@ -7,6 +7,10 @@ use std::{convert::Infallible, fmt};
 pub struct Password(String);
 
 impl Password {
+    pub fn new(s: impl Into<String>) -> Self {
+        Self(s.into())
+    }
+
     pub fn parse(s: &str) -> Result<Self, Infallible> {
         Ok(Self(s.to_string()))
     }

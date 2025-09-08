@@ -1,5 +1,3 @@
-use std::env;
-
 use anyhow::bail;
 use base64::Engine;
 use log::debug;
@@ -36,25 +34,26 @@ impl ClientBuilder {
         }
     }
 
-    pub fn from_env() -> anyhow::Result<Self> {
-        let username = env::var("AXIS_DEVICE_USER")?;
-        let password = env::var("AXIS_DEVICE_PASS")?;
-        let host = env::var("AXIS_DEVICE_IP")?;
-        let plain_port = env::var("AXIS_DEVICE_HTTP_PORT")
-            .ok()
-            .map(|p| p.parse())
-            .transpose()?;
-        let secure_port = env::var("AXIS_DEVICE_HTTPS_PORT")
-            .ok()
-            .map(|p| p.parse())
-            .transpose()?;
-        let host = Host::parse(&host)?;
+    pub fn from_dut() -> anyhow::Result<Option<Self>> {
+        let Some(device) = rs4a_dut::Device::from_anywhere()? else {
+            return Ok(None);
+        };
+        let rs4a_dut::Device {
+            host,
+            username,
+            password,
+            http_port,
+            https_port,
+            ssh_port: _,
+        } = device;
 
         debug!("Building client using username {username} from env");
-        Ok(ClientBuilder::new(host)
-            .plain_port(plain_port)
-            .secure_port(secure_port)
-            .basic_authentication(&username, &password))
+        Ok(Some(
+            ClientBuilder::new(host)
+                .plain_port(http_port)
+                .secure_port(https_port)
+                .basic_authentication(&username, &password),
+        ))
     }
 
     pub fn basic_authentication(mut self, username: &str, password: &str) -> Self {

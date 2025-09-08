@@ -21,6 +21,50 @@ pub struct Device {
     pub model: Option<String>,
 }
 
+impl From<rs4a_dut::Device> for Device {
+    fn from(value: rs4a_dut::Device) -> Self {
+        let rs4a_dut::Device {
+            host,
+            username,
+            password,
+            http_port,
+            https_port,
+            ssh_port,
+        } = value;
+        Self {
+            host,
+            username,
+            password: Password::new(password),
+            http_port,
+            https_port,
+            ssh_port,
+            model: None,
+        }
+    }
+}
+
+impl From<Device> for rs4a_dut::Device {
+    fn from(value: Device) -> Self {
+        let Device {
+            host,
+            username,
+            password,
+            http_port,
+            https_port,
+            ssh_port,
+            model: _,
+        } = value;
+        rs4a_dut::Device {
+            host,
+            username,
+            password: password.dangerous_reveal().to_string(),
+            http_port,
+            https_port,
+            ssh_port,
+        }
+    }
+}
+
 pub struct Database(PathBuf);
 
 impl Database {

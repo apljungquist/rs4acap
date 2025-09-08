@@ -1,7 +1,4 @@
-use device_inventory::{
-    db::{Database, Device},
-    db_vlt,
-};
+use device_inventory::db::{Database, Device};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct ListCommand {
@@ -11,12 +8,8 @@ pub struct ListCommand {
 }
 
 impl ListCommand {
-    pub async fn exec(self, db: Database, offline: bool) -> anyhow::Result<()> {
-        let mut devices = if offline {
-            db.read_devices()?
-        } else {
-            db_vlt::import(&db, offline).await?
-        };
+    pub async fn exec(self, db: Database) -> anyhow::Result<()> {
+        let mut devices = db.read_devices()?;
 
         if let Some(pattern) = &self.alias {
             let pattern = glob::Pattern::new(pattern)?;
@@ -38,6 +31,7 @@ impl ListCommand {
         let aliases_width = 1 + aliases.iter().map(|s| s.len()).max().unwrap();
         let models_width = 1 + models.iter().map(|s| s.len()).max().unwrap();
 
+        // TODO: Consider showing which device is active and figuring out the testing.
         for ((alias, model), host) in aliases
             .into_iter()
             .zip(models.into_iter())
@@ -45,6 +39,7 @@ impl ListCommand {
         {
             println!("{alias:aliases_width$} {model:models_width$} {host}");
         }
+
         Ok(())
     }
 }
