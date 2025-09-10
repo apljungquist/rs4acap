@@ -4,7 +4,7 @@ mod client;
 mod config;
 pub mod json_rpc;
 pub mod json_rpc_http;
-mod rest;
+pub mod rest;
 mod services;
 pub mod soap;
 pub mod soap_http;
