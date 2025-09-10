@@ -15,6 +15,14 @@ pub mod jpg_3 {
     pub use crate::axis_cgi::jpg_3::get_image;
 }
 
+pub mod remote_object_storage_1 {
+    pub use crate::config::remote_object_storage_1::create_destinations;
+}
+
+pub mod recording_group_1 {
+    pub use crate::config::recording_group_1::create_recording_groups;
+}
+
 pub mod system_ready_1 {
     pub use crate::system_ready_1::system_ready;
 }
