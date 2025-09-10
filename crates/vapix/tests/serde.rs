@@ -1,6 +1,6 @@
 use insta::assert_snapshot;
 use rs4a_vapix::{
-    action1::AddActionConfigurationResponse,
+    action1::{AddActionConfigurationResponse, Condition},
     apis,
     basic_device_info_1::AllUnrestrictedPropertiesData,
     json_rpc::parse_data,
@@ -45,7 +45,16 @@ fn can_serialize_action_1_requests() {
             .to_envelope()
             .unwrap()
     );
-    assert_snapshot!(apis::action_1::add_action_rule().to_envelope().unwrap());
+    assert_snapshot!(
+        apis::action_1::add_action_rule("My Action Rule".to_string(), 123)
+            .condition(Condition {
+                topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
+                message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#
+                    .to_string()
+            })
+            .to_envelope()
+            .unwrap()
+    );
     assert_snapshot!(apis::action_1::get_action_configurations()
         .to_envelope()
         .unwrap());

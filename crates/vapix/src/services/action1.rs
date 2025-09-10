@@ -5,16 +5,21 @@ mod action_configurations;
 mod action_rules;
 
 pub use action_configurations::{AddActionConfigurationResponse, GetActionConfigurationsResponse};
-pub use action_rules::{AddActionRuleResponse, GetActionRulesResponse};
+pub use action_rules::{AddActionRuleResponse, Condition, GetActionRulesResponse};
 
-use crate::{action1::action_configurations::AddActionConfigurationRequest, soap::SimpleRequest};
+use crate::{
+    action1::{
+        action_configurations::AddActionConfigurationRequest, action_rules::AddActionRuleRequest,
+    },
+    soap::SimpleRequest,
+};
 
 pub fn add_action_configuration(template_token: &str) -> AddActionConfigurationRequest {
     AddActionConfigurationRequest::new(template_token)
 }
 
-pub fn add_action_rule() -> SimpleRequest<AddActionRuleResponse> {
-    SimpleRequest::new("http://www.axis.com/vapix/ws/action1", "AddActionRule")
+pub fn add_action_rule(name: String, primary_action: u16) -> AddActionRuleRequest {
+    AddActionRuleRequest::new(name, primary_action)
 }
 
 pub fn get_action_configurations() -> SimpleRequest<GetActionConfigurationsResponse> {

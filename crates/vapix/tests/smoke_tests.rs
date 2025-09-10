@@ -1,7 +1,8 @@
 use std::{ops::Rem, time::SystemTime};
 
 use rs4a_vapix::{
-    apis, json_rpc_http::JsonRpcHttp, soap_http::SoapHttpRequest, Client, ClientBuilder,
+    action1::Condition, apis, json_rpc_http::JsonRpcHttp, soap_http::SoapHttpRequest, Client,
+    ClientBuilder,
 };
 use serde_json::json;
 
@@ -58,27 +59,17 @@ async fn action_1_add_and_get_returns_ok() {
             .configuration_id;
 
     let action_rule_name = "smoke test rule";
-    let action_rule_id = apis::action_1::add_action_rule()
-        .params(format!(
-        r#"
-        <NewActionRule xmlns:tns1="http://www.onvif.org/ver10/topics"
-                       xmlns:tnsaxis="http://www.axis.com/2009/event/topics">
-            <Name>{action_rule_name}</Name>
-            <Enabled>true</Enabled>
-            <Conditions>
-                <Condition>
-                    <TopicExpression
-                            Dialect="http://docs.oasis-open.org/wsn/t-1/TopicExpression/Concrete"
-                            xmlns="http://docs.oasis-open.org/wsn/b-2">tns1:Device/tnsaxis:Status/SystemReady</TopicExpression>
-                    <MessageContent
-                            Dialect="http://www.onvif.org/ver10/tev/messageContentFilter/ItemFilter"
-                            xmlns="http://docs.oasis-open.org/wsn/b-2">boolean(//SimpleItem[@Name="ready" and @Value="1"])</MessageContent>
-                </Condition>
-            </Conditions>
-            <PrimaryAction>{action_configuration_id}</PrimaryAction>
-        </NewActionRule>
-        "#
-    )).send(&client).await.unwrap().id;
+    let action_rule_id =
+        apis::action_1::add_action_rule(action_rule_name.to_string(), action_configuration_id)
+            .condition(Condition {
+                topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
+                message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#
+                    .to_string(),
+            })
+            .send(&client)
+            .await
+            .unwrap()
+            .id;
 
     let actions_rules = apis::action_1::get_action_rules()
         .send(&client)
