@@ -129,9 +129,7 @@ async fn recording_group_1_create_returns_ok() {
     let expected_recording_destination_id =
         somewhat_unique_name("smoke_test_recording_destination_");
 
-    let actual_recording_destination_id = client
-        .remote_object_storage_1()
-        .create()
+    let actual_recording_destination_id = apis::remote_object_storage_1::create_destinations()
         .data(json!({
             "id":expected_recording_destination_id,
             "s3": {
@@ -141,7 +139,7 @@ async fn recording_group_1_create_returns_ok() {
                 "url": "https://s3.eu-north-1.amazonaws.com",
             }
         }))
-        .send()
+        .send(&client)
         .await
         .unwrap()
         .id;
@@ -151,9 +149,7 @@ async fn recording_group_1_create_returns_ok() {
         actual_recording_destination_id
     );
 
-    client
-        .recording_group_1()
-        .create()
+    apis::recording_group_1::create_recording_groups()
         .data(json!({
             "destinations": [{
                 "remoteObjectStorage":  {
@@ -161,7 +157,7 @@ async fn recording_group_1_create_returns_ok() {
                 },
             }],
         }))
-        .send()
+        .send(&client)
         .await
         .unwrap();
 }

@@ -67,7 +67,6 @@ where
 }
 
 pub struct RequestBuilder<T> {
-    client: Client,
     path: &'static str,
     data: Value,
     _phantom: PhantomData<T>,
@@ -77,9 +76,8 @@ impl<T> RequestBuilder<T>
 where
     T: for<'a> Deserialize<'a>,
 {
-    pub fn new(client: Client, path: &'static str) -> Self {
+    pub fn new(path: &'static str) -> Self {
         Self {
-            client,
             path,
             data: Value::Null,
             _phantom: PhantomData,
@@ -91,9 +89,8 @@ where
         self
     }
 
-    pub async fn send(self) -> anyhow::Result<T> {
+    pub async fn send(self, client: &Client) -> anyhow::Result<T> {
         let RequestBuilder {
-            client,
             path,
             data,
             _phantom,
