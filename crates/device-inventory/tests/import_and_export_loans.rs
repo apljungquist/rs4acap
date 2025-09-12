@@ -44,7 +44,8 @@ fn can_export_loans_from_get_response() {
     assert_eq!(output.stdout, b"");
 
     let output = device_inventory_command(now)
-        .arg("export")
+        .arg("activate")
+        .args(["--destination", "environment"])
         .stderr(Stdio::inherit())
         .output()
         .unwrap();

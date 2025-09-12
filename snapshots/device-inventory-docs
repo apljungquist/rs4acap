@@ -5,12 +5,12 @@ Usage: device-inventory [OPTIONS] <COMMAND>
 Commands:
   login        Login to a pool of shared devices
   add          Add a device
-  adopt        Import all matching devices and export at most one matching device
+  adopt        Import all matching devices and activate at most one matching device
   deactivate   Deactivate any active device
   import       Import devices
   for-each     Run a command with environment variables set for each device
   list         List available devices
-  export       Print export statements for a device
+  activate     Activate an existing device
   remove       Remove a device
   completions  Print a completion file for the given shell
   help         Print this message or the help of the given subcommand(s)
@@ -43,13 +43,13 @@ Options:
       --ssh-port <SSH_PORT>      SSH port to use, if different from default
   -h, --help                     Print help
 + device-inventory help adopt
-Import all matching devices and export at most one matching device
+Import all matching devices and activate at most one matching device
 
 Usage: device-inventory adopt [OPTIONS]
 
 Options:
       --alias <ALIAS>
-          The alias of the device(s) to import and export
+          The alias of the device(s) to import and activate
 
       --source <SOURCE>
           How to import devices
@@ -61,7 +61,7 @@ Options:
           - pool: Fetch reserved devices from a shared pool
 
       --destination <DESTINATION>
-          How to export the device
+          How to activate the device
           
           [default: filesystem]
 
@@ -109,19 +109,17 @@ Usage: device-inventory list [OPTIONS]
 Options:
       --alias <ALIAS>  The alias of the device to list
   -h, --help           Print help
-+ device-inventory help export
-Print export statements for a device
++ device-inventory help activate
+Activate an existing device
 
-Example: `device-inventory export | source /dev/stdin`
-
-Usage: device-inventory export [OPTIONS]
+Usage: device-inventory activate [OPTIONS]
 
 Options:
       --alias <ALIAS>
-          The alias of the device to export
+          The alias of the device to activate
 
       --destination <DESTINATION>
-          [default: environment]
+          [default: filesystem]
 
           Possible values:
           - filesystem:  Write information to the filesystem

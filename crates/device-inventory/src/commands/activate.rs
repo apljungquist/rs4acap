@@ -11,16 +11,16 @@ pub(crate) enum Destination {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct ExportCommand {
-    /// The alias of the device to export
+pub struct ActivateCommand {
+    /// The alias of the device to activate.
     #[arg(long)]
     pub(crate) alias: Option<String>,
-    // How to export the device
-    #[arg(long, default_value = "environment")]
+    // Where to store the information about which device is active.
+    #[arg(long, default_value = "filesystem")]
     pub(crate) destination: Destination,
 }
 
-impl ExportCommand {
+impl ActivateCommand {
     pub async fn exec(self, db: Database) -> anyhow::Result<()> {
         let mut devices = db.read_devices()?;
 

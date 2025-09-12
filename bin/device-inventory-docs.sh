@@ -9,6 +9,6 @@ device-inventory help adopt
 device-inventory help deactivate
 device-inventory help import
 device-inventory help list
-device-inventory help export
+device-inventory help activate
 device-inventory help remove
 device-inventory help completions
