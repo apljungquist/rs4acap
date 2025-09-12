@@ -1,8 +1,5 @@
 use clap_complete::{generate, Shell};
 
-/// Print a completion file for the given shell.
-///
-/// Example: `cargo-acap-sdk completions zsh | source /dev/stdin`.
 #[derive(Debug, clap::Parser)]
 pub struct CompletionsCommand {
     shell: Shell,

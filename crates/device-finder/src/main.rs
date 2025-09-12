@@ -27,6 +27,9 @@ impl Cli {
 enum Commands {
     /// Discover devices on the local network
     DiscoverDevices(DiscoverDevicesCommand),
+    /// Print a completion file for the given shell.
+    ///
+    /// Example: `device-finder completions zsh | source /dev/stdin`.
     Completions(CompletionsCommand),
 }
 

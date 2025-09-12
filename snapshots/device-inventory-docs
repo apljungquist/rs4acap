@@ -140,7 +140,7 @@ Options:
 + device-inventory help completions
 Print a completion file for the given shell.
 
-Example: `cargo-acap-sdk completions zsh | source /dev/stdin`.
+Example: `device-inventory completions zsh | source /dev/stdin`.
 
 Usage: device-inventory completions <SHELL>
 
