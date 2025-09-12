@@ -6,6 +6,7 @@ Commands:
   login        Login to a pool of shared devices
   add          Add a device
   adopt        Import all matching devices and export at most one matching device
+  deactivate   Deactivate any active device
   import       Import devices
   for-each     Run a command with environment variables set for each device
   list         List available devices
@@ -67,6 +68,19 @@ Options:
           Possible values:
           - filesystem:  Write information to the filesystem
           - environment: Print information as a shell script that can be sourced
+
+  -h, --help
+          Print help (see a summary with '-h')
++ device-inventory help deactivate
+Deactivate any active device.
+
+For devices activated using environment variables, the printed commands must be run.
+
+Usage: device-inventory deactivate [OPTIONS]
+
+Options:
+      --dry-run
+          
 
   -h, --help
           Print help (see a summary with '-h')

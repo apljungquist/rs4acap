@@ -111,4 +111,12 @@ impl Device {
             Err(e) => Err(anyhow!(e)),
         }
     }
+
+    pub fn clear_env() -> Vec<&'static str> {
+        vec!["AXIS_DEVICE_IP"]
+    }
+
+    pub fn clear_fs() -> anyhow::Result<()> {
+        fs::remove_file(Self::dir()?.join(FILENAME)).context("Failed to remove the data directory")
+    }
 }
