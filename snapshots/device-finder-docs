@@ -12,7 +12,7 @@ Options:
 + device-finder help completions
 Print a completion file for the given shell.
 
-Example: `cargo-acap-sdk completions zsh | source /dev/stdin`.
+Example: `device-finder completions zsh | source /dev/stdin`.
 
 Usage: device-finder completions <SHELL>
 

@@ -73,6 +73,9 @@ enum Commands {
     Export(ExportCommand),
     /// Remove a device
     Remove(RemoveCommand),
+    /// Print a completion file for the given shell.
+    ///
+    /// Example: `device-inventory completions zsh | source /dev/stdin`.
     Completions(CompletionsCommand),
 }
 
