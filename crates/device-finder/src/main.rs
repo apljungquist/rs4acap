@@ -41,6 +41,8 @@ impl Default for Commands {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    env_logger::init();
-    Cli::parse().exec().await
+    let mut guard = rs4a_bin_utils::logger::init();
+    Cli::parse().exec().await?;
+    guard.disarm();
+    Ok(())
 }
