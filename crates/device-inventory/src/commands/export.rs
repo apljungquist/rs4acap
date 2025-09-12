@@ -46,7 +46,11 @@ impl ExportCommand {
                 // TODO: Consider `unset`ing variables that are not set.
                 let envs = device_inventory::env::envs(&device);
                 for (key, value) in envs {
-                    println!("export {key}={value}");
+                    if let Some(value) = value {
+                        println!("export {key}={value}");
+                    } else {
+                        println!("unset {key}");
+                    }
                 }
             }
         }
