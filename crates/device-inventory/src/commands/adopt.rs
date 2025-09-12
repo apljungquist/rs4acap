@@ -4,7 +4,7 @@ use device_inventory::db::Database;
 use log::warn;
 
 use crate::commands::{
-    export::{Destination, ExportCommand},
+    activate::{ActivateCommand, Destination},
     import::{ImportCommand, Source},
 };
 
@@ -21,13 +21,13 @@ fn infer_alias(before: HashSet<String>, after: impl Iterator<Item = String>) -> 
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct AdoptCommand {
-    /// The alias of the device(s) to import and export
+    /// The alias of the device(s) to import and activate.
     #[arg(long)]
     alias: Option<String>,
-    /// How to import devices
+    /// How to import devices.
     #[arg(long, default_value = "pool")]
     source: Source,
-    /// How to export the device
+    /// How to activate the device.
     #[arg(long, default_value = "filesystem")]
     destination: Destination,
 }
@@ -42,7 +42,7 @@ impl AdoptCommand {
         let before = db.read_devices()?.into_keys();
         ImportCommand { source }.exec(&db, offline).await?;
         let after = db.read_devices()?.into_keys();
-        ExportCommand {
+        ActivateCommand {
             alias: alias.or_else(|| infer_alias(before.into_iter().collect(), after.into_iter())),
             destination,
         }
