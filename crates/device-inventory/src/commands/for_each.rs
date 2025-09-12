@@ -18,7 +18,11 @@ impl ForEachCommand {
         sorted_devices.sort_by(|(left, _), (right, _)| left.cmp(right));
         for (alias, device) in sorted_devices {
             let mut cmd = std::process::Command::new(&program);
-            cmd.args(&arguments).envs(envs(&device));
+            cmd.args(&arguments).envs(
+                envs(&device)
+                    .into_iter()
+                    .flat_map(|(k, v)| v.map(|v| (k, v))),
+            );
             let status = cmd.status()?;
             if !status.success() {
                 bail!("Command exited with status {status} for device {alias}");
