@@ -184,6 +184,7 @@ impl Client {
             scheme, host, port, ..
         } = self;
         let scheme = scheme.http();
+        let host = "127.0.0.1";
         if let Some(port) = port {
             Url::parse(&format!("{scheme}://{host}:{port}"))
         } else {
