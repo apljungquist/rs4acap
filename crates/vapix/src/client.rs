@@ -1,7 +1,10 @@
 use anyhow::bail;
 use base64::Engine;
 use log::debug;
-use reqwest::header::{HeaderMap, AUTHORIZATION};
+use reqwest::{
+    header::{HeaderMap, AUTHORIZATION},
+    Method,
+};
 use url::{Host, Url};
 
 use crate::{apis, json_rpc_http::JsonRpcHttp};
@@ -164,12 +167,16 @@ impl Client {
         ClientBuilder::new(host)
     }
 
-    pub(crate) fn get(&self, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
-        Ok(self.client.get(self.url().join(path)?))
+    pub fn get(&self, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
+        self.request(Method::GET, path)
     }
 
-    pub(crate) fn post(&self, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
-        Ok(self.client.post(self.url().join(path)?))
+    pub fn post(&self, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
+        self.request(Method::POST, path)
+    }
+
+    pub fn request(&self, method: Method, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
+        Ok(self.client.request(method, self.url().join(path)?))
     }
 
     fn url(&self) -> Url {
