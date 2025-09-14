@@ -176,7 +176,7 @@ impl Client {
     }
 
     pub fn request(&self, method: Method, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
-        Ok(self.client.request(method, self.url().join(path)?))
+        Ok(self.client.request(method, dbg!(self.url().join(path)?)))
     }
 
     fn url(&self) -> Url {
