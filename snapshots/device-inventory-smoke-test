@@ -4,7 +4,7 @@
 ALIAS  MODEL              HOST
 local                     192.168.0.90
 vlt-8  AXIS Q1615 Mk III  195.60.68.14
-+ device-inventory export --alias local
++ device-inventory activate --alias local --destination environment
 export AXIS_DEVICE_IP=192.168.0.90
 export AXIS_DEVICE_USER=root
 export AXIS_DEVICE_PASS=pass

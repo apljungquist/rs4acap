@@ -5,7 +5,7 @@ mod commands;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use commands::{export::ExportCommand, import::ImportCommand};
+use commands::{activate::ActivateCommand, import::ImportCommand};
 use device_inventory::db::Database;
 use rs4a_bin_utils::completions_command::CompletionsCommand;
 
@@ -41,7 +41,7 @@ impl Cli {
             Commands::Import(cmd) => cmd.exec(&db, offline).await?,
             Commands::ForEach(cmd) => cmd.exec(db).await?,
             Commands::List(cmd) => cmd.exec(db).await?,
-            Commands::Export(cmd) => cmd.exec(db).await?,
+            Commands::Activate(cmd) => cmd.exec(db).await?,
             Commands::Remove(cmd) => cmd.exec(db).await?,
             Commands::Completions(cmd) => cmd.exec::<Self>()?,
         }
@@ -55,7 +55,7 @@ enum Commands {
     Login(LoginCommand),
     /// Add a device
     Add(AddCommand),
-    /// Import all matching devices and export at most one matching device.
+    /// Import all matching devices and activate at most one matching device.
     Adopt(AdoptCommand),
     /// Deactivate any active device.
     ///
@@ -67,10 +67,8 @@ enum Commands {
     ForEach(ForEachCommand),
     /// List available devices
     List(ListCommand),
-    /// Print export statements for a device
-    ///
-    /// Example: `device-inventory export | source /dev/stdin`
-    Export(ExportCommand),
+    /// Activate an existing device.
+    Activate(ActivateCommand),
     /// Remove a device
     Remove(RemoveCommand),
     /// Print a completion file for the given shell.
