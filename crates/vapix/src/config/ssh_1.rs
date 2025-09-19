@@ -92,7 +92,7 @@ impl RestHttp for SetUserRequest {
 #[derive(Debug, Deserialize)]
 pub struct SetUserResponse(());
 
-/// Adds a new user.
+/// Creates a new user.
 ///
 /// # Arguments
 ///
