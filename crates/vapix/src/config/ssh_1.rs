@@ -76,8 +76,7 @@ impl SetUserRequest {
 impl RestHttp for SetUserRequest {
     type RequestData = SetUserProperties;
     type ResponseData = SetUserResponse;
-    // TODO: Figure out how to handle the change of method on >11.10
-    const METHOD: Method = Method::PUT;
+    const METHOD: Method = Method::PATCH;
 
     fn to_path_and_data(self) -> anyhow::Result<(String, Self::RequestData)> {
         let Self {
