@@ -1,7 +1,7 @@
 //! The remote object storage API (beta)
 use serde::Deserialize;
 
-use crate::rest::RequestBuilder;
+use crate::rest_http::RequestBuilder;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateDestinationResponse {

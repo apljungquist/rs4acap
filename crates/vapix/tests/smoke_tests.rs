@@ -1,7 +1,7 @@
 use std::{ops::Rem, time::SystemTime};
 
 use rs4a_vapix::{
-    action1::Condition, apis, json_rpc_http::JsonRpcHttp, rest::RestHttp,
+    action1::Condition, apis, json_rpc_http::JsonRpcHttp, rest_http::RestHttp,
     soap_http::SoapHttpRequest, Client, ClientBuilder,
 };
 use serde_json::json;

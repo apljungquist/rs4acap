@@ -5,7 +5,7 @@ use rs4a_vapix::{
     basic_device_info_1::AllUnrestrictedPropertiesData,
     json_rpc::parse_data,
     rest,
-    rest::RestHttp,
+    rest_http::RestHttp,
     soap::parse_soap,
     soap_http::SoapRequest,
     ssh_1::{AddUserResponse, SetUserResponse},

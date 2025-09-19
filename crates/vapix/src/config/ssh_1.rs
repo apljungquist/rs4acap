@@ -7,7 +7,7 @@
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
 
-use crate::rest::RestHttp;
+use crate::rest_http::RestHttp;
 
 #[derive(Serialize)]
 pub struct AddUserRequest {
