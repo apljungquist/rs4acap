@@ -83,13 +83,14 @@ impl RestHttp for SetUserRequest {
             username,
             properties: data,
         } = self;
-        // FIXME: Try non-URL safe characters
         Ok((format!("config/rest/ssh/v1/users/{username}"), data))
     }
 }
 
 #[derive(Debug, Deserialize)]
 pub struct SetUserResponse(());
+
+// TODO: Consider creating new types for comment, username, and password.
 
 /// Creates a new user.
 ///
