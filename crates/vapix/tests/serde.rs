@@ -4,8 +4,11 @@ use rs4a_vapix::{
     apis,
     basic_device_info_1::AllUnrestrictedPropertiesData,
     json_rpc::parse_data,
+    rest,
+    rest::RestHttp,
     soap::parse_soap,
     soap_http::SoapRequest,
+    ssh_1::{AddUserResponse, SetUserResponse},
     system_ready_1::{EnglishBoolean, SystemreadyData},
 };
 
@@ -24,6 +27,25 @@ fn can_deserialize_basic_device_info_1_examples() {
     );
     let data = parse_data::<AllUnrestrictedPropertiesData>(text).unwrap();
     assert_eq!(data.property_list.version, "12.5.56");
+}
+
+#[test]
+fn can_deserialize_ssh_1_post_user_201_response() {
+    let text = include_str!("../src/config/ssh_1_examples/post_user_201_response.json");
+    rest::parse_data::<AddUserResponse>(text).unwrap();
+}
+#[test]
+fn can_deserialize_ssh_1_success_response() {
+    let text = include_str!("../src/config/ssh_1_examples/put_users_response.json");
+    rest::parse_data::<SetUserResponse>(text).unwrap();
+}
+
+#[test]
+fn can_deserialize_ssh_1_error_response() {
+    let text = include_str!("../src/config/ssh_1_examples/put_user_404_response.json");
+    let error = rest::parse_data::<SetUserResponse>(text).unwrap_err();
+    let error = error.downcast::<rest::Error>().unwrap();
+    assert_eq!(error.code, 2);
 }
 
 #[test]
@@ -59,4 +81,23 @@ fn can_serialize_action_1_requests() {
         .to_envelope()
         .unwrap());
     assert_snapshot!(apis::action_1::get_action_rules().to_envelope().unwrap());
+}
+
+#[test]
+fn can_serialize_ssh_1_add_user_requests() {
+    let (path, data) = apis::ssh_1::add_user("Dalliard", "Good morning")
+        .to_path_and_data()
+        .unwrap();
+    assert_snapshot!(path);
+    assert_snapshot!(serde_json::to_string(&data).unwrap());
+}
+
+#[test]
+fn can_serialize_ssh_1_set_user_requests() {
+    let (path, data) = apis::ssh_1::set_user("Dalliard")
+        .comment("When's the day?")
+        .to_path_and_data()
+        .unwrap();
+    assert_snapshot!(path);
+    assert_snapshot!(serde_json::to_string(&data).unwrap());
 }

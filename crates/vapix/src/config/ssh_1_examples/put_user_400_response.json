@@ -1,0 +1,7 @@
+{
+  "status": "error",
+  "error": {
+    "code": 5,
+    "message": "Validation error: Trying to set 'users' with invalid data: \"\" is shorter than 1 character (path: /password)"
+  }
+}
