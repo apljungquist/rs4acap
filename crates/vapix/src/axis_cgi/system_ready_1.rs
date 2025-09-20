@@ -2,7 +2,6 @@
 //!
 //! [Systemready API]: https://developer.axis.com/vapix/network-video/systemready-api/
 
-
 use serde::{Deserialize, Serialize};
 
 use crate::json_rpc_http::JsonRpcHttp;
