@@ -2,25 +2,30 @@
 //!
 //! [Systemready API]: https://developer.axis.com/vapix/network-video/systemready-api/
 
-use std::fmt::{Display, Formatter};
 
 use serde::{Deserialize, Serialize};
 
 use crate::json_rpc_http::JsonRpcHttp;
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum EnglishBoolean {
-    Yes,
-    No,
+fn deserialize_english_boolean<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    let s: &str = serde::de::Deserialize::deserialize(deserializer)?;
+    match s {
+        "yes" => Ok(true),
+        "no" => Ok(false),
+        _ => Err(serde::de::Error::custom("invalid boolean value")),
+    }
 }
 
-impl Display for EnglishBoolean {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            EnglishBoolean::Yes => write!(f, "yes"),
-            EnglishBoolean::No => write!(f, "no"),
-        }
+fn serialize_english_boolean<S>(b: &bool, s: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    match b {
+        true => s.serialize_str("yes"),
+        false => s.serialize_str("no"),
     }
 }
 
@@ -28,9 +33,16 @@ impl Display for EnglishBoolean {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemreadyData {
-    // TODO: Deserialize as real booleans
-    pub needsetup: EnglishBoolean,
-    pub systemready: EnglishBoolean,
+    #[serde(
+        deserialize_with = "deserialize_english_boolean",
+        serialize_with = "serialize_english_boolean"
+    )]
+    pub needsetup: bool,
+    #[serde(
+        deserialize_with = "deserialize_english_boolean",
+        serialize_with = "serialize_english_boolean"
+    )]
+    pub systemready: bool,
     // TODO: Extract uptime and boot id
 }
 

@@ -9,7 +9,7 @@ use rs4a_vapix::{
     soap::parse_soap,
     soap_http::SoapRequest,
     ssh_1::{AddUserResponse, SetUserResponse},
-    system_ready_1::{EnglishBoolean, SystemreadyData},
+    system_ready_1::SystemreadyData,
 };
 
 #[test]
@@ -52,7 +52,7 @@ fn can_deserialize_ssh_1_error_response() {
 fn can_deserialize_system_ready_1_examples() {
     let text = include_str!("../src/axis_cgi/system_ready_1/system_ready_200.json");
     let data = parse_data::<SystemreadyData>(text).unwrap();
-    assert!(matches!(data.needsetup, EnglishBoolean::No));
+    assert!(!data.needsetup);
 }
 
 #[test]
