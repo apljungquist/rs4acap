@@ -31,18 +31,18 @@ fn can_deserialize_basic_device_info_1_examples() {
 
 #[test]
 fn can_deserialize_ssh_1_post_user_201_response() {
-    let text = include_str!("../src/config/ssh_1_examples/post_user_201_response.json");
+    let text = include_str!("../src/config/ssh_1_examples/add_user_201_response.json");
     rest::parse_data::<AddUserResponse>(text).unwrap();
 }
 #[test]
 fn can_deserialize_ssh_1_success_response() {
-    let text = include_str!("../src/config/ssh_1_examples/put_users_response.json");
+    let text = include_str!("../src/config/ssh_1_examples/set_user_200_response.json");
     rest::parse_data::<SetUserResponse>(text).unwrap();
 }
 
 #[test]
 fn can_deserialize_ssh_1_error_response() {
-    let text = include_str!("../src/config/ssh_1_examples/put_user_404_response.json");
+    let text = include_str!("../src/config/ssh_1_examples/set_user_404_response.json");
     let error = rest::parse_data::<SetUserResponse>(text).unwrap_err();
     let error = error.downcast::<rest::Error>().unwrap();
     assert_eq!(error.code, 2);
