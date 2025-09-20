@@ -3,7 +3,7 @@
 //! [Recording group API]: https://developer.axis.com/vapix/device-configuration/recording-group/
 use serde::Deserialize;
 
-use crate::rest::RequestBuilder;
+use crate::rest_http::RequestBuilder;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateRecordingGroupResponse {

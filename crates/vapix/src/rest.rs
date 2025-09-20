@@ -1,17 +1,10 @@
 //! Utilities for working with REST-style configuration APIs.
 
-use std::{
-    fmt::{Display, Formatter},
-    marker::PhantomData,
-};
+use std::fmt::{Display, Formatter};
 
-use anyhow::{anyhow, bail, Context};
-use log::debug;
-use reqwest::StatusCode;
+use anyhow::Context;
 use serde::Deserialize;
-use serde_json::{json, value::RawValue, Value};
-
-use crate::Client;
+use serde_json::value::RawValue;
 
 #[derive(Debug, Deserialize)]
 struct Response<'a> {
@@ -38,70 +31,32 @@ impl Display for Error {
 
 impl std::error::Error for Error {}
 
-fn from_response<T>(http_status: StatusCode, text: reqwest::Result<String>) -> anyhow::Result<T>
+pub fn parse_data<T>(text: &str) -> anyhow::Result<T>
 where
     T: for<'a> Deserialize<'a>,
 {
-    let text = text.with_context(|| format!("Could not fetch text, status was {http_status}"))?;
     let Response {
         data,
         status,
         error,
-    } = serde_json::from_str(&text)
-        .with_context(|| format!("Could not parse response; status: {http_status} text: {text}"))?;
-    debug!("Status is {status:?}");
+    } = serde_json::from_str(text)
+        .with_context(|| format!("Could not parse response; text: {text}"))?;
     if let Some(error) = error {
         let error: Error = serde_json::from_str(error.get()).with_context(|| {
             format!(
-                "Could not parse error; http-status: {http_status}; config-status: {status:?}; error-text: {}",
+                "Could not parse error; config-status: {status:?}; error-text: {}",
                 error.get()
             )
         })?;
-        return Err(error)
-            .with_context(|| format!("http-status: {http_status}; config-status: {status:?};"));
+        return Err(error).with_context(|| format!("Received error; config-status: {status:?}"));
     }
     let Some(data) = data else {
-        bail!("Response did not include data, status was {status:?}");
+        return serde_json::from_str("null").context("Could not parse data from null");
     };
-    serde_json::from_str(data.get()).map_err(|e| anyhow!(e))
-}
-
-pub struct RequestBuilder<T> {
-    path: &'static str,
-    data: Value,
-    _phantom: PhantomData<T>,
-}
-
-impl<T> RequestBuilder<T>
-where
-    T: for<'a> Deserialize<'a>,
-{
-    pub fn new(path: &'static str) -> Self {
-        Self {
-            path,
-            data: Value::Null,
-            _phantom: PhantomData,
-        }
-    }
-
-    pub fn data(mut self, data: Value) -> Self {
-        self.data = data;
-        self
-    }
-
-    pub async fn send(self, client: &Client) -> anyhow::Result<T> {
-        let RequestBuilder {
-            path,
-            data,
-            _phantom,
-        } = self;
-        let response = client
-            .post(path)?
-            .json(&json!({"data":data}))
-            .send()
-            .await?;
-        let status = response.status();
-        let text = response.text().await;
-        from_response(status, text)
-    }
+    serde_json::from_str(data.get()).with_context(|| {
+        format!(
+            "Could not parse data; config-status: {status:?}; data-text: {}",
+            data.get()
+        )
+    })
 }

@@ -1,0 +1,5 @@
+---
+source: crates/vapix/tests/serde.rs
+expression: "serde_json::to_string(&data).unwrap()"
+---
+{"comment":null,"password":"Good morning","username":"Dalliard"}

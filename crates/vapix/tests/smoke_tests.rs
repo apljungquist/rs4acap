@@ -1,8 +1,8 @@
 use std::{ops::Rem, time::SystemTime};
 
 use rs4a_vapix::{
-    action1::Condition, apis, json_rpc_http::JsonRpcHttp, soap_http::SoapHttpRequest, Client,
-    ClientBuilder,
+    action1::Condition, apis, json_rpc_http::JsonRpcHttp, rest_http::RestHttp,
+    soap_http::SoapHttpRequest, Client, ClientBuilder,
 };
 use serde_json::json;
 
@@ -157,6 +157,26 @@ async fn recording_group_1_create_returns_ok() {
                 },
             }],
         }))
+        .send(&client)
+        .await
+        .unwrap();
+}
+
+// TODO: Move tests that are not nullipotent out of smoke tests
+#[tokio::test]
+async fn ssh_1_crud_user_returns_ok() {
+    let Some(client) = test_client().await else {
+        return;
+    };
+
+    let username = somewhat_unique_name("smoke_test_ssh_user_");
+    apis::ssh_1::add_user(&username, " ")
+        .comment("First comment")
+        .send(&client)
+        .await
+        .unwrap();
+    apis::ssh_1::set_user(username)
+        .comment("")
         .send(&client)
         .await
         .unwrap();

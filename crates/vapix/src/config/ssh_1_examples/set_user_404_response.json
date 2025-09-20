@@ -1,0 +1,7 @@
+{
+  "status": "error",
+  "error": {
+    "code": 2,
+    "message": "Item does not exist: Expected user does not exist."
+  }
+}
