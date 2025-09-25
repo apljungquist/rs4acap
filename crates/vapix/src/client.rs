@@ -9,7 +9,7 @@ use url::{Host, Url};
 
 use crate::{apis, json_rpc_http::JsonRpcHttp};
 
-fn authorization_headers(username: &str, password: &str) -> HeaderMap {
+pub fn authorization_headers(username: &str, password: &str) -> HeaderMap {
     let credentials = format!("{username}:{password}");
     let auth_header = format!(
         "Basic {}",
@@ -144,7 +144,7 @@ pub enum Scheme {
 }
 
 impl Scheme {
-    const fn http(self) -> &'static str {
+    pub(crate) const fn http(self) -> &'static str {
         match self {
             Scheme::Secure => "https",
             Scheme::Plain => "http",

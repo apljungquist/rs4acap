@@ -8,7 +8,7 @@ description = "Utilities for working with VAPIX"
 [dependencies]
 anyhow = { workspace = true }
 log = { workspace = true }
-reqwest = { workspace = true, features = ["json"] }
+reqwest = { workspace = true, features = ["json", "blocking"] }
 serde = { workspace = true, features = ["derive"] }
 base64 = { workspace = true }
 quick-xml = { workspace = true, features = ["serialize"] }
