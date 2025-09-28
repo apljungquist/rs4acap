@@ -7,6 +7,7 @@ description = "Utilities for working with VAPIX"
 
 [dependencies]
 anyhow = { workspace = true }
+base32 = { workspace = true }
 log = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }

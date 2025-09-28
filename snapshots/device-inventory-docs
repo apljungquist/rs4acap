@@ -22,10 +22,11 @@ Options:
 + device-inventory help login
 Login to a pool of shared devices
 
-Usage: device-inventory login
+Usage: device-inventory login [OPTIONS]
 
 Options:
-  -h, --help  Print help
+  -u, --username <USERNAME>  The username to authenticate as, if not using a session id
+  -h, --help                 Print help
 + device-inventory help add
 Add a device
 

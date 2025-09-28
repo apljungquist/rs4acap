@@ -1,9 +1,9 @@
 //! Utilities for working with the VLT
 
-use std::net::Ipv4Addr;
+use std::{future::Future, net::Ipv4Addr};
 
 use anyhow::{bail, Context};
-use reqwest::header::COOKIE;
+use reqwest::{header::COOKIE, Client};
 use serde::Deserialize;
 use serde_json::value::RawValue;
 use url::Host;
@@ -126,4 +126,35 @@ pub async fn fetch(cookie: &str) -> anyhow::Result<String> {
         .await
         .with_context(|| format!("Failed to fetch loans, status was {status}"))?;
     Ok(text)
+}
+
+pub trait Request: Send + Sized {
+    type ResponseData: for<'de> Deserialize<'de>;
+
+    fn tail(&self) -> &'static str;
+    fn send(
+        self,
+        client: &Client,
+    ) -> impl Future<Output = anyhow::Result<Self::ResponseData>> + Send {
+        async move {
+            let url = format!(
+                "https://www.axis.com/partner_pages/adp_virtual_loan_tool/api/user/{}",
+                self.tail()
+            );
+            let response = client
+                .get(&url)
+                .send()
+                .await
+                .with_context(|| format!("Send to {url}"))?;
+            let status = response.status();
+            let text = response
+                .text()
+                .await
+                .with_context(|| format!("Get text from {status} response"))?;
+            let Response { success, data } = serde_json::from_str(&text)?;
+            let data = serde_json::from_str::<Self::ResponseData>(data.get())
+                .with_context(|| format!("Deserialize data from success={success} payload"))?;
+            Ok(data)
+        }
+    }
 }
