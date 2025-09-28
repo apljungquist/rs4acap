@@ -6,12 +6,13 @@ license = "MIT"
 
 [dependencies]
 anyhow = { workspace = true }
+base32 = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 dirs = { workspace = true }
-env_logger = { workspace = true }
 glob = { workspace = true }
 log = { workspace = true }
-reqwest = { workspace = true }
+regex = {workspace = true}
+reqwest = { workspace = true, features = ["cookies"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["raw_value"] }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }

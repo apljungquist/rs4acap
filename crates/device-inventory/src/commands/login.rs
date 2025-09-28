@@ -1,18 +1,16 @@
 use std::io::{self, IsTerminal};
 
 use anyhow::Context;
-use device_inventory::{db::Database, db_vlt};
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, clap::ValueEnum)]
-enum Source {
-    /// Parse devices from the provided JSON
-    Json,
-    /// Use the provided cookie to fetch devices from an API
-    Cookie,
-}
+use device_inventory::{
+    authentication, authentication::AxisConnectSessionSID, db::Database, db_vlt,
+};
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct LoginCommand;
+pub struct LoginCommand {
+    /// The username to authenticate as, if not using a session id.
+    #[arg(long, short)]
+    pub username: Option<String>,
+}
 
 fn input(prompt: &str) -> anyhow::Result<String> {
     if io::stdin().is_terminal() {
@@ -25,11 +23,28 @@ fn input(prompt: &str) -> anyhow::Result<String> {
     Ok(buf)
 }
 
+async fn username_password_flow(username: String) -> anyhow::Result<AxisConnectSessionSID> {
+    let auth_flow = authentication::AuthenticationFlow::start().await?;
+    let password = input("Enter password:")?.trim().to_string();
+    let auth_flow = auth_flow.submit(&username, &password).await?;
+    let otp = input("Enter OTP code:")?.trim().to_string();
+    auth_flow.submit(&otp).await
+}
+
+fn direct_input_flow() -> anyhow::Result<String> {
+    input("Enter the cookie:")
+}
+
 impl LoginCommand {
     pub async fn exec(self, db: Database, offline: bool) -> anyhow::Result<()> {
-        // TODO: My terminal won't let me enter values longer than 1023,
-        //  but the token seems superfluous anyway.
-        let cookie = input("Enter the cookie:")?;
+        let Self { username } = self;
+        let cookie = match username {
+            None => direct_input_flow()?,
+            Some(username) => {
+                assert!(!offline);
+                username_password_flow(username).await?.to_string()
+            }
+        };
         db.write_cookie(&cookie)?;
         if !offline {
             db_vlt::import(&db, offline).await?;
