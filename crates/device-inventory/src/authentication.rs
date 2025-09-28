@@ -24,25 +24,18 @@ fn match_axis_auth_cookie(html: &str) -> anyhow::Result<String> {
 }
 
 // TODO: Consider parsing the html as intermediate step to make this more robust
+fn match_state_input(html: &str) -> anyhow::Result<String> {
+    let re = Regex::new(r#"<input type="hidden" name="state" value="([^"]*)"/>"#).unwrap();
+    re.captures(html)
+        .context("Failed to find state")
+        .map(|m| m.get(1).unwrap().as_str().to_string())
+}
+
 fn match_token_input(html: &str) -> anyhow::Result<String> {
     let re = Regex::new(r#"<input type="hidden" name="token" value="([^"]*)"/>"#).unwrap();
     re.captures(html)
         .context("Failed to find token")
         .map(|m| m.get(1).unwrap().as_str().to_string())
-}
-
-fn match_state_input(html: &str) -> anyhow::Result<String> {
-    let re = Regex::new(r#"<input type="hidden" name="state" value="([^"]*)"/>"#).unwrap();
-    re.captures(html)
-        .context("Failed to find token")
-        .map(|m| m.get(1).unwrap().as_str().to_string())
-}
-
-fn debug_write_text<T>(s: &str) {
-    if cfg!(debug_assertions) {
-        let stem = std::any::type_name::<T>().split("::").last().unwrap();
-        std::fs::write(format!("{stem}.html"), s).unwrap();
-    }
 }
 
 /// Adapter for the username and password form.
@@ -63,9 +56,7 @@ impl UsernamePasswordForm {
         Self::try_from_str(&text)
     }
 
-    fn try_from_str(s: &str) -> anyhow::Result<Self> {
-        debug_write_text::<Self>(s);
-
+    fn try_from_str(_: &str) -> anyhow::Result<Self> {
         Ok(Self)
     }
 
@@ -99,9 +90,7 @@ impl UsernamePasswordForm {
 struct MethodSelectionForm;
 
 impl MethodSelectionForm {
-    fn try_from_str(s: &str) -> anyhow::Result<Self> {
-        debug_write_text::<Self>(s);
-
+    fn try_from_str(_: &str) -> anyhow::Result<Self> {
         Ok(Self)
     }
     async fn submit(self, client: &Client) -> anyhow::Result<OneTimePasswordForm> {
@@ -131,9 +120,7 @@ impl MethodSelectionForm {
 pub struct OneTimePasswordForm;
 
 impl OneTimePasswordForm {
-    fn try_from_str(s: &str) -> anyhow::Result<Self> {
-        debug_write_text::<Self>(s);
-
+    fn try_from_str(_: &str) -> anyhow::Result<Self> {
         Ok(Self)
     }
     async fn submit(self, client: &Client, otp: &str) -> anyhow::Result<EmptyForm> {
@@ -162,8 +149,6 @@ struct EmptyForm {
 
 impl EmptyForm {
     fn try_from_str(s: &str) -> anyhow::Result<Self> {
-        debug_write_text::<Self>(s);
-
         let axis_auth = match_axis_auth_cookie(s)?;
 
         Ok(Self { axis_auth })
@@ -192,8 +177,6 @@ struct StateTokenForm {
 
 impl StateTokenForm {
     fn try_from_str(s: &str) -> anyhow::Result<Self> {
-        debug_write_text::<Self>(s);
-
         let state = match_state_input(s)?;
         let token = match_token_input(s)?;
 
@@ -207,7 +190,8 @@ impl StateTokenForm {
         form_data.insert("state", self.state);
         form_data.insert("token", self.token);
 
-        let text = client
+        // This redirects to an HTML page with no information of interest.
+        client
             .post("https://auth.axis.com/oauth2/oauth-authorize")
             .form(&form_data)
             .send()
@@ -216,8 +200,6 @@ impl StateTokenForm {
             .error_for_status()?
             .text()
             .await?;
-
-        debug_write_text::<AxisConnectSessionSID>(&text);
 
         let url = Url::parse("https://axis.com").expect("Literal is valid URL");
         let cookies = jar.cookies(&url).context("No cookies found for url")?;
