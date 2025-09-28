@@ -1,7 +1,8 @@
 //! Implementation of the VLT authentication flow for CLI programs
+
 // The flow has been inferred from what the web app does and is not based on a public API.
 // As such it may be prone to breaking in more or less obvious ways.
-// TODO: Consider embedding more self checks (HTTP status, form actions, etc)
+// TODO: Consider embedding more self checks (form actions, etc)
 
 use std::{collections::HashMap, fmt::Formatter, sync::Arc};
 
@@ -10,32 +11,47 @@ use base32::Alphabet;
 use log::info;
 use regex::Regex;
 use reqwest::{
-    cookie,
     cookie::{CookieStore, Jar},
     Client,
 };
 use url::Url;
 
 fn match_axis_auth_cookie(html: &str) -> anyhow::Result<String> {
-    let re = Regex::new(r#"cookieHandler\.setSessionCookie\(\s*["']axis_auth["']\s*,\s*["'](?<value>[^"']+)["'],\s*(?<needsEncoding>false|true)\)"#).unwrap();
+    let re = Regex::new(r#"cookieHandler\.setSessionCookie\(\s*["']axis_auth["']\s*,\s*["'](?<value>[^"']+)["'],\s*(?<needsEncoding>false|true)\)"#).expect("Literal is valid regex");
     let m = re.captures(html).context("Failed to find cookie")?;
-    debug_assert_eq!(m.name("needsEncoding").unwrap().as_str(), "false");
-    Ok(m.name("value").unwrap().as_str().to_string())
+    debug_assert_eq!(
+        m.name("needsEncoding")
+            .expect("Pattern captures this name")
+            .as_str(),
+        "false"
+    );
+    Ok(m.name("value")
+        .expect("Pattern captures this name")
+        .as_str()
+        .to_string())
 }
 
 // TODO: Consider parsing the html as intermediate step to make this more robust
 fn match_state_input(html: &str) -> anyhow::Result<String> {
-    let re = Regex::new(r#"<input type="hidden" name="state" value="([^"]*)"/>"#).unwrap();
-    re.captures(html)
-        .context("Failed to find state")
-        .map(|m| m.get(1).unwrap().as_str().to_string())
+    let re = Regex::new(r#"<input type="hidden" name="state" value="([^"]*)"/>"#)
+        .expect("Literal is valid regex");
+    re.captures(html).context("Failed to find state").map(|m| {
+        m.get(1)
+            .expect("Pattern captures at least one group")
+            .as_str()
+            .to_string()
+    })
 }
 
 fn match_token_input(html: &str) -> anyhow::Result<String> {
-    let re = Regex::new(r#"<input type="hidden" name="token" value="([^"]*)"/>"#).unwrap();
-    re.captures(html)
-        .context("Failed to find token")
-        .map(|m| m.get(1).unwrap().as_str().to_string())
+    let re = Regex::new(r#"<input type="hidden" name="token" value="([^"]*)"/>"#)
+        .expect("Literal is valid regex");
+    re.captures(html).context("Failed to find token").map(|m| {
+        m.get(1)
+            .expect("Pattern captures at least one group")
+            .as_str()
+            .to_string()
+    })
 }
 
 /// Adapter for the username and password form.
@@ -46,6 +62,7 @@ pub struct UsernamePasswordForm;
 impl UsernamePasswordForm {
     async fn get(client: &Client) -> anyhow::Result<Self> {
         info!("Getting {} ...", std::any::type_name::<Self>());
+
         let text = client
             .get("https://www.axis.com/my-axis/login")
             .send()
@@ -53,6 +70,7 @@ impl UsernamePasswordForm {
             .error_for_status()?
             .text()
             .await?;
+
         Self::try_from_str(&text)
     }
 
@@ -69,6 +87,7 @@ impl UsernamePasswordForm {
         info!("Submitting {} ...", std::any::type_name::<Self>());
 
         let encoded = base32::encode(Alphabet::Rfc4648 { padding: true }, password.as_bytes());
+
         let mut form_data = HashMap::new();
         form_data.insert("userName", username);
         form_data.insert("passwordfield", password);
@@ -83,6 +102,7 @@ impl UsernamePasswordForm {
             .error_for_status()?
             .text()
             .await?;
+
         MethodSelectionForm::try_from_str(&text)
     }
 }
@@ -156,8 +176,11 @@ impl EmptyForm {
     async fn submit(self, client: &Client, jar: &Jar) -> anyhow::Result<StateTokenForm> {
         info!("Submitting {} ...", std::any::type_name::<Self>());
 
-        let cookie = format!("axis_auth={}; domain=.axis.com", self.axis_auth);
-        jar.add_cookie_str(&cookie, &Url::parse("https://axis.com").unwrap());
+        let cookie = format!("axis_auth={}", self.axis_auth);
+        jar.add_cookie_str(
+            &cookie,
+            &Url::parse("https://axis.com").expect("Literal is valid URL"),
+        );
 
         let text = client
             .post("https://auth.axis.com/authn/authentication/_action/axis-cookie")
@@ -254,8 +277,8 @@ pub struct AuthenticationFlow<T> {
 impl AuthenticationFlow<UsernamePasswordForm> {
     /// Start a new authentication flow using username, password and an OTP sent over email.
     pub async fn start() -> anyhow::Result<Self> {
-        let jar = Arc::new(cookie::Jar::default());
-        let client = reqwest::Client::builder()
+        let jar = Arc::new(Jar::default());
+        let client = Client::builder()
             .cookie_provider(Arc::clone(&jar))
             .redirect(reqwest::redirect::Policy::default())
             .build()?;
