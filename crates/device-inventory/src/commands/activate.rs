@@ -21,7 +21,7 @@ pub struct ActivateCommand {
 }
 
 impl ActivateCommand {
-    pub async fn exec(self, db: Database) -> anyhow::Result<()> {
+    pub async fn exec(self, db: &Database) -> anyhow::Result<()> {
         let mut devices = db.read_devices()?;
 
         if let Some(pattern) = &self.alias {

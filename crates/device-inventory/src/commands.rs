@@ -1,9 +1,12 @@
+pub mod abandon;
 pub mod activate;
 pub mod add;
 pub mod adopt;
 pub mod deactivate;
+pub mod ensure;
 pub mod for_each;
 pub mod import;
 pub mod list;
 pub mod login;
 pub mod remove;
+pub mod search;

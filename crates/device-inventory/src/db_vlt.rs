@@ -75,18 +75,19 @@ pub fn try_device_from_loan(loan: Loan) -> anyhow::Result<(String, Device)> {
     let Loan {
         username,
         password,
+        id: loan_id,
         loanable:
             Loanable {
                 external_ip: _,
                 internal_ip: _,
-                id,
+                id: loanable_id,
                 model,
                 ..
             },
         ..
     } = loan;
     Ok((
-        format!("vlt-{id}"),
+        format!("vlt-{}", loanable_id),
         Device {
             model: Some(model),
             host: Host::Ipv4(Ipv4Addr::from([195, 60, 68, 14])),
@@ -95,6 +96,7 @@ pub fn try_device_from_loan(loan: Loan) -> anyhow::Result<(String, Device)> {
             http_port: Some(http_port),
             https_port: Some(https_port),
             ssh_port: Some(ssh_port),
+            loan_id: Some(loan_id),
         },
     ))
 }

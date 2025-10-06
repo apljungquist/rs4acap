@@ -46,7 +46,7 @@ impl AdoptCommand {
             alias: alias.or_else(|| infer_alias(before.into_iter().collect(), after.into_iter())),
             destination,
         }
-        .exec(db)
+        .exec(&db)
         .await?;
         Ok(())
     }

@@ -4,6 +4,8 @@ Usage: device-inventory [OPTIONS] <COMMAND>
 
 Commands:
   login        Login to a pool of shared devices
+  search       Search for devices in the VLT
+  ensure       Ensure that a matching device is active
   add          Add a device
   adopt        Import all matching devices and activate at most one matching device
   deactivate   Deactivate any active device
@@ -11,6 +13,7 @@ Commands:
   for-each     Run a command with environment variables set for each device
   list         List available devices
   activate     Activate an existing device
+  abandon      Remove devices and cancel any loans
   remove       Remove a device
   completions  Print a completion file for the given shell
   help         Print this message or the help of the given subcommand(s)
