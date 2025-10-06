@@ -1,0 +1,20 @@
+[package]
+name = "rs4a-vlt"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+base32 = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+clap = { workspace = true, features = ["derive"] }
+log = { workspace = true }
+regex = { workspace = true }
+reqwest = { workspace = true, features = ["cookies", "json"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }

@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "data": [
+    {
+      "architecture": "armv7hf",
+      "external_ip": "192.168.2.64",
+      "id": 469,
+      "model": "AXIS Q6225-LE",
+      "firmware_version": "12.6.97",
+      "available_fw_versions": "10.12.300;11.11.169;12.6.97",
+      "release_year": 2022,
+      "platform": "ARTPEC-7",
+      "image_url": "images/devices/AXIS_Q6225-LE.png",
+      "sdcard": true,
+      "status": 1,
+      "portcast": true,
+      "type": "PTZ Camera",
+      "resolution": "1920x1080",
+      "portcast_device": {
+        "id": 20,
+        "device_id": 469,
+        "raw_name": "TU8003",
+        "model": "AXIS TU8003",
+        "type": "Audio Accessory",
+        "created_at": "2025-09-19T21:57:56.737Z"
+      },
+      "booked": []
+    }
+  ]
+}

@@ -1,4 +1,6 @@
-//! Implementation of the VLT authentication flow for CLI programs
+//! Facilities for getting the [`AxisConnectSessionSID`] used to authenticate with the VLT.
+//!
+//! The authentication flow starts with [`AuthenticationFlow::start`].
 
 // The flow has been inferred from what the web app does and is not based on a public API.
 // As such it may be prone to breaking in more or less obvious ways.
@@ -249,9 +251,17 @@ impl StateTokenForm {
 const SID_COOKIE_PREFIX: &str = "axis_connect_session_sid=";
 
 /// The cookie that grants access to most VLT APIs
-pub struct AxisConnectSessionSID(String);
+pub struct AxisConnectSessionSID(pub(crate) String);
 
 impl AxisConnectSessionSID {
+    pub fn try_from_string(s: String) -> anyhow::Result<Self> {
+        if s.starts_with(SID_COOKIE_PREFIX) {
+            Ok(Self(s))
+        } else {
+            bail!("Invalid cookie: {}", s);
+        }
+    }
+
     fn from_str(s: &str) -> Option<Self> {
         if s.starts_with(SID_COOKIE_PREFIX) {
             Some(Self(s.to_string()))

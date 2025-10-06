@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "data": [
+    {
+      "architecture": "armv7hf",
+      "external_ip": "192.168.1.75",
+      "id": 5,
+      "model": "AXIS P1377-LE",
+      "firmware_version": "11.11.169",
+      "available_fw_versions": "9.80.105;10.12.300;11.11.169",
+      "release_year": 2020,
+      "platform": "ARTPEC-7",
+      "image_url": "images/devices/AXIS_P1377-LE.png",
+      "sdcard": false,
+      "status": 1,
+      "portcast": false,
+      "type": "Network Camera",
+      "resolution": "2592x1944",
+      "portcast_device": null,
+      "booked": []
+    }
+  ]
+}
