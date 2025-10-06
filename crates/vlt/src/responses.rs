@@ -199,6 +199,7 @@ pub struct Device {
     #[serde(serialize_with = "serialize_datetime_array")]
     pub booked: Vec<DateTime<Utc>>,
     /// Despite it's name, the device is not accessible from the internet at this IP.
+    /// Consider using [`Loan::host`] instead.
     pub external_ip: Ipv4Addr,
     pub firmware_version: FirmwareVersion,
     pub id: LoanableId,
@@ -325,6 +326,7 @@ impl Display for LoanId {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Loanable {
     /// Despite it's name, the device is not accessible from the internet at this IP.
+    /// Consider using [`Loan::host`] instead.
     pub external_ip: String,
     pub internal_ip: String,
     pub id: LoanableId,
