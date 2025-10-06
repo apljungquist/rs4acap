@@ -260,8 +260,7 @@ pub struct Loan {
 }
 
 impl Loan {
-    /// Returns an IP accessible from the internet that is forwarded to the device.
-    pub fn external_ip(&self) -> anyhow::Result<Ipv4Addr> {
+    fn external_ip(&self) -> anyhow::Result<Ipv4Addr> {
         let addr = &self.loanable.external_ip;
         let addr = Host::parse(addr).context("External IP is not a valid host")?;
         let Host::Ipv4(addr) = addr else {
