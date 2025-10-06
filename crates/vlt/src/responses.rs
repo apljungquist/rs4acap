@@ -198,6 +198,7 @@ pub struct Device {
     pub available_fw_versions: Vec<FirmwareVersion>,
     #[serde(serialize_with = "serialize_datetime_array")]
     pub booked: Vec<DateTime<Utc>>,
+    /// Despite it's name, the device is not accessible from the internet at this IP.
     pub external_ip: Ipv4Addr,
     pub firmware_version: FirmwareVersion,
     pub id: LoanableId,
@@ -260,6 +261,11 @@ pub struct Loan {
 }
 
 impl Loan {
+    /// Returns a host accessible from the internet with ports forwarded to the device.
+    pub fn host(&self) -> Host {
+        Host::Ipv4(Ipv4Addr::from([195, 60, 68, 14]))
+    }
+
     fn external_ip(&self) -> anyhow::Result<Ipv4Addr> {
         let addr = &self.loanable.external_ip;
         let addr = Host::parse(addr).context("External IP is not a valid host")?;
@@ -318,6 +324,7 @@ impl Display for LoanId {
 #[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Loanable {
+    /// Despite it's name, the device is not accessible from the internet at this IP.
     pub external_ip: String,
     pub internal_ip: String,
     pub id: LoanableId,

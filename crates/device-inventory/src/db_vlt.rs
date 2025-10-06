@@ -1,6 +1,6 @@
 //! Utilities for connecting the local database to the VLT
 
-use std::{collections::HashMap, net::Ipv4Addr};
+use std::collections::HashMap;
 
 use anyhow::Context;
 use log::warn;
@@ -9,7 +9,6 @@ use rs4a_vlt::{
     client::Client,
     responses::{Loan, Loanable},
 };
-use url::Host;
 
 use crate::{
     db::{Database, Device},
@@ -69,6 +68,7 @@ fn store_parsed(db: &Database, loans: Vec<Loan>) -> anyhow::Result<HashMap<Strin
 }
 
 pub fn try_device_from_loan(loan: Loan) -> anyhow::Result<(String, Device)> {
+    let host = loan.host();
     let http_port = loan.http_port()?;
     let https_port = loan.https_port()?;
     let ssh_port = loan.ssh_port()?;
@@ -89,7 +89,7 @@ pub fn try_device_from_loan(loan: Loan) -> anyhow::Result<(String, Device)> {
         format!("vlt-{id}"),
         Device {
             model: Some(model),
-            host: Host::Ipv4(Ipv4Addr::from([195, 60, 68, 14])),
+            host,
             username,
             password: Password::new(password),
             http_port: Some(http_port),
