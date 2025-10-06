@@ -24,11 +24,11 @@ impl ListCommand {
         let mut models = vec!["MODEL".to_string()];
         let mut hosts = vec!["HOST".to_string()];
 
-        let active = rs4a_dut::Device::from_anywhere()?; //.map(|d|(d.host, d.http_port.unwrap_or(80)));
+        let active = rs4a_dut::Device::from_anywhere()?;
         if let Some(active) = active.as_ref() {
-            let device = sorted_devices
-                .iter()
-                .find(|(_, d)| d.host == active.host && d.http_port == active.http_port);
+            let device = sorted_devices.iter().find(|(_, d)| {
+                d.host == active.host && d.http_port.unwrap_or(80) == active.http_port.unwrap_or(80)
+            });
 
             statuses.push("ACTIVE".to_string());
             aliases.push(device.map(|(a, _)| a.clone()).unwrap_or_default());
@@ -66,7 +66,6 @@ impl ListCommand {
         let aliases_width = 1 + aliases.iter().map(|s| s.len()).max().unwrap();
         let models_width = 1 + models.iter().map(|s| s.len()).max().unwrap();
 
-        // TODO: Consider showing which device is active and figuring out the testing.
         for (((status, alias), model), host) in statuses
             .into_iter()
             .zip(aliases.into_iter())
