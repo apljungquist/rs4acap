@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "data": {
+    "loan_start": "2025-10-02T00:00:00.000Z",
+    "loan_end": "2025-10-02T23:59:59.000Z",
+    "id": 12345,
+    "selected_firmware": "11.11.169",
+    "password": "XxXxx0xx",
+    "started_at": "2025-10-02T20:48:13.000Z",
+    "status": 1,
+    "username": "VLTuser",
+    "loanable": {
+      "id": 184,
+      "internal_ip": "10.20.41.10:11060",
+      "model": "AXIS P8815-2"
+    },
+    "meta": []
+  },
+  "meta": []
+}

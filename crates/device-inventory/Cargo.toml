@@ -6,13 +6,10 @@ license = "MIT"
 
 [dependencies]
 anyhow = { workspace = true }
-base32 = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 dirs = { workspace = true }
 glob = { workspace = true }
 log = { workspace = true }
-regex = {workspace = true}
-reqwest = { workspace = true, features = ["cookies"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["raw_value"] }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
@@ -20,3 +17,4 @@ url = { workspace = true, features = ["serde"] }
 
 rs4a-bin-utils = { workspace = true }
 rs4a-dut = { workspace = true }
+rs4a-vlt = { workspace = true }

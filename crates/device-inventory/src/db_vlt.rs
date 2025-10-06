@@ -2,13 +2,38 @@
 
 use std::collections::HashMap;
 
-use anyhow::bail;
+use anyhow::Context;
 use log::warn;
+use rs4a_vlt::{
+    authentication::AxisConnectSessionSID,
+    client::Client,
+    responses::{Loan, Loanable},
+};
+use url::Host;
 
 use crate::{
     db::{Database, Device},
-    vlt,
+    psst::Password,
 };
+
+/// Prepare a client builder
+///
+/// # Panics
+///
+/// This function will panic if offline is true.
+pub async fn client(db: &Database, offline: bool) -> anyhow::Result<Option<Client>> {
+    if offline {
+        panic!("Cannot fetch devices from a pool when offline");
+    }
+    let Some(cookie) = db.read_cookie()? else {
+        return Ok(None);
+    };
+
+    Some(Client::try_new(AxisConnectSessionSID::try_from_string(
+        cookie,
+    )?))
+    .transpose()
+}
 
 /// Add any new devices from the VLT to the local inventory
 ///
@@ -16,21 +41,22 @@ use crate::{
 ///
 /// This function will panic if offline is true.
 pub async fn import(db: &Database, offline: bool) -> anyhow::Result<HashMap<String, Device>> {
-    if offline {
-        panic!("Cannot fetch devices from a pool when offline");
-    }
-    let Some(cookie) = db.read_cookie()? else {
-        bail!("No login session, please run the login command")
-    };
-    let loans = vlt::fetch(&cookie).await?;
-    store(db, &loans)
+    let client = client(db, offline)
+        .await?
+        .context("No login session, please run the login command")?;
+    let loans = rs4a_vlt::requests::loans().send(&client).await?;
+    store_parsed(db, loans)
 }
 
 pub fn store(db: &Database, loans: &str) -> anyhow::Result<HashMap<String, Device>> {
-    let loans = vlt::parse(loans)?;
+    let loans = rs4a_vlt::responses::parse_data::<Vec<Loan>>(loans)?;
+    store_parsed(db, loans)
+}
+
+fn store_parsed(db: &Database, loans: Vec<Loan>) -> anyhow::Result<HashMap<String, Device>> {
     let mut devices = db.read_devices()?;
     for loan in loans.into_iter() {
-        match loan.try_into_device() {
+        match try_device_from_loan(loan) {
             Ok((alias, device)) => {
                 devices.insert(alias, device);
             }
@@ -40,4 +66,36 @@ pub fn store(db: &Database, loans: &str) -> anyhow::Result<HashMap<String, Devic
     // TODO: Remove expired devices
     db.write_devices(&devices)?;
     Ok(devices)
+}
+
+pub fn try_device_from_loan(loan: Loan) -> anyhow::Result<(String, Device)> {
+    let external_ip = loan.external_ip()?;
+    let http_port = loan.http_port()?;
+    let https_port = loan.https_port()?;
+    let ssh_port = loan.ssh_port()?;
+    let Loan {
+        username,
+        password,
+        loanable:
+            Loanable {
+                external_ip: _,
+                internal_ip: _,
+                id,
+                model,
+                ..
+            },
+        ..
+    } = loan;
+    Ok((
+        format!("vlt-{id}"),
+        Device {
+            model: Some(model),
+            host: Host::Ipv4(external_ip),
+            username,
+            password: Password::new(password),
+            http_port: Some(http_port),
+            https_port: Some(https_port),
+            ssh_port: Some(ssh_port),
+        },
+    ))
 }

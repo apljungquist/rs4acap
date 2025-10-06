@@ -1,17 +1,16 @@
 #![forbid(unsafe_code)]
 
 mod commands;
-
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use commands::{activate::ActivateCommand, import::ImportCommand};
 use device_inventory::db::Database;
 use rs4a_bin_utils::completions_command::CompletionsCommand;
 
 use crate::commands::{
-    add::AddCommand, adopt::AdoptCommand, deactivate::DeactivateCommand, for_each::ForEachCommand,
-    list::ListCommand, login::LoginCommand, remove::RemoveCommand,
+    activate::ActivateCommand, add::AddCommand, adopt::AdoptCommand, deactivate::DeactivateCommand,
+    for_each::ForEachCommand, import::ImportCommand, list::ListCommand, login::LoginCommand,
+    remove::RemoveCommand,
 };
 
 #[derive(Parser)]
