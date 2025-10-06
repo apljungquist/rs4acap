@@ -1,9 +1,9 @@
 + device-inventory import --source=json
 + device-inventory add local 192.168.0.90 root pass
 + device-inventory list
-ALIAS  MODEL              HOST
-local                     192.168.0.90
-vlt-8  AXIS Q1615 Mk III  195.60.68.14
+ALIAS    MODEL         HOST
+local                  192.168.0.90
+vlt-184  AXIS P8815-2  195.60.68.14
 + device-inventory activate --alias local --destination environment
 export AXIS_DEVICE_IP=192.168.0.90
 export AXIS_DEVICE_USER=root
