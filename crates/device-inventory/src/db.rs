@@ -3,6 +3,7 @@ use std::{collections::HashMap, fs, path::PathBuf};
 
 use anyhow::{anyhow, Context};
 use log::debug;
+use rs4a_vlt::responses::LoanId;
 use url::Host;
 
 use crate::psst::Password;
@@ -19,6 +20,14 @@ pub struct Device {
     pub https_port: Option<u16>,
     pub ssh_port: Option<u16>,
     pub model: Option<String>,
+    pub loan_id: Option<LoanId>,
+}
+
+impl Device {
+    /// No two distinct devices have the same fingerprint at the same time.
+    pub fn fingerprint(&self) -> (Host, u16) {
+        (self.host.clone(), self.http_port.unwrap_or(80))
+    }
 }
 
 impl From<rs4a_dut::Device> for Device {
@@ -39,6 +48,7 @@ impl From<rs4a_dut::Device> for Device {
             https_port,
             ssh_port,
             model: None,
+            loan_id: None,
         }
     }
 }
@@ -53,6 +63,7 @@ impl From<Device> for rs4a_dut::Device {
             https_port,
             ssh_port,
             model: _,
+            loan_id: _,
         } = value;
         rs4a_dut::Device {
             host,

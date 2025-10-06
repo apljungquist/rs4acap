@@ -52,6 +52,7 @@ impl AddCommand {
                 ssh_port,
                 // TODO: Fetch from device
                 model: None,
+                loan_id: None,
             },
         );
         db.write_devices(&devices)?;

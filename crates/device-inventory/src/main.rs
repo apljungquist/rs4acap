@@ -8,9 +8,10 @@ use device_inventory::db::Database;
 use rs4a_bin_utils::completions_command::CompletionsCommand;
 
 use crate::commands::{
-    activate::ActivateCommand, add::AddCommand, adopt::AdoptCommand, deactivate::DeactivateCommand,
-    for_each::ForEachCommand, import::ImportCommand, list::ListCommand, login::LoginCommand,
-    remove::RemoveCommand,
+    abandon::AbandonCommand, activate::ActivateCommand, add::AddCommand, adopt::AdoptCommand,
+    deactivate::DeactivateCommand, ensure::EnsureCommand, for_each::ForEachCommand,
+    import::ImportCommand, list::ListCommand, login::LoginCommand, remove::RemoveCommand,
+    search::SearchCommand,
 };
 
 #[derive(Parser)]
@@ -34,13 +35,16 @@ impl Cli {
         let db = Database::open_or_create(db)?;
         match command {
             Commands::Login(cmd) => cmd.exec(db, offline).await?,
+            Commands::Search(cmd) => cmd.exec(&db, offline).await?,
+            Commands::Ensure(cmd) => cmd.exec(&db, offline).await?,
             Commands::Add(cmd) => cmd.exec(db).await?,
             Commands::Adopt(cmd) => cmd.exec(db, offline).await?,
             Commands::Deactivate(cmd) => cmd.exec().await?,
             Commands::Import(cmd) => cmd.exec(&db, offline).await?,
             Commands::ForEach(cmd) => cmd.exec(db).await?,
             Commands::List(cmd) => cmd.exec(db).await?,
-            Commands::Activate(cmd) => cmd.exec(db).await?,
+            Commands::Activate(cmd) => cmd.exec(&db).await?,
+            Commands::Abandon(cmd) => cmd.exec(&db, offline).await?,
             Commands::Remove(cmd) => cmd.exec(db).await?,
             Commands::Completions(cmd) => cmd.exec::<Self>()?,
         }
@@ -52,6 +56,19 @@ impl Cli {
 enum Commands {
     /// Login to a pool of shared devices
     Login(LoginCommand),
+    /// Search for devices in the VLT.
+    ///
+    /// Note that the results exclude any devices loaned by the user themselves.
+    Search(SearchCommand),
+    /// Ensure that a matching device is active.
+    ///
+    /// This will consider all available devices and ensure that the first matching device is:
+    /// - added,
+    /// - activated, and
+    /// - initialized.
+    ///
+    /// Devices are ordered by source (active, added, borrowed, other).
+    Ensure(EnsureCommand),
     /// Add a device
     Add(AddCommand),
     /// Import all matching devices and activate at most one matching device.
@@ -68,6 +85,8 @@ enum Commands {
     List(ListCommand),
     /// Activate an existing device.
     Activate(ActivateCommand),
+    /// Remove devices and cancel any loans.
+    Abandon(AbandonCommand),
     /// Remove a device
     Remove(RemoveCommand),
     /// Print a completion file for the given shell.
