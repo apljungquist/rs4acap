@@ -3,7 +3,6 @@
 use std::collections::HashMap;
 
 use anyhow::Context;
-use log::warn;
 use rs4a_vlt::{
     authentication::AxisConnectSessionSID,
     client::Client,
@@ -55,23 +54,19 @@ pub fn store(db: &Database, loans: &str) -> anyhow::Result<HashMap<String, Devic
 fn store_parsed(db: &Database, loans: Vec<Loan>) -> anyhow::Result<HashMap<String, Device>> {
     let mut devices = db.read_devices()?;
     for loan in loans.into_iter() {
-        match try_device_from_loan(loan) {
-            Ok((alias, device)) => {
-                devices.insert(alias, device);
-            }
-            Err(e) => warn!("Failed to infer IP because {e:?}, skipping this device"),
-        }
+        let (alias, device) = device_from_loan(loan);
+        devices.insert(alias, device);
     }
     // TODO: Remove expired devices
     db.write_devices(&devices)?;
     Ok(devices)
 }
 
-pub fn try_device_from_loan(loan: Loan) -> anyhow::Result<(String, Device)> {
+pub fn device_from_loan(loan: Loan) -> (String, Device) {
     let host = loan.host();
-    let http_port = loan.http_port()?;
-    let https_port = loan.https_port()?;
-    let ssh_port = loan.ssh_port()?;
+    let http_port = loan.http_port();
+    let https_port = loan.https_port();
+    let ssh_port = loan.ssh_port();
     let Loan {
         username,
         password,
@@ -85,7 +80,7 @@ pub fn try_device_from_loan(loan: Loan) -> anyhow::Result<(String, Device)> {
             },
         ..
     } = loan;
-    Ok((
+    (
         format!("vlt-{id}"),
         Device {
             model: Some(model),
@@ -96,5 +91,5 @@ pub fn try_device_from_loan(loan: Loan) -> anyhow::Result<(String, Device)> {
             https_port: Some(https_port),
             ssh_port: Some(ssh_port),
         },
-    ))
+    )
 }

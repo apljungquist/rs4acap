@@ -1,7 +1,7 @@
 //! Facilities for parsing responses.
 use std::{fmt::Display, net::Ipv4Addr, path::PathBuf};
 
-use anyhow::{bail, Context};
+use anyhow::Context;
 use chrono::{DateTime, SecondsFormat, Utc};
 use serde::{ser::SerializeSeq, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
@@ -177,6 +177,33 @@ where
         .collect())
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(transparent)]
+pub struct ExternalIp(Ipv4Addr);
+
+impl ExternalIp {
+    fn port_suffix(&self) -> u16 {
+        let external = self.0;
+        let [_, _, o2, o3] = external.octets();
+        1_000 * o2 as u16 + o3 as u16
+    }
+
+    /// Returns the port forwarded to port 80.
+    fn http_port(&self) -> u16 {
+        10_000 + self.port_suffix()
+    }
+
+    /// Returns the port forwarded to port 443.
+    pub fn https_port(&self) -> u16 {
+        40_000 + self.port_suffix()
+    }
+
+    /// Returns the port forwarded to port 22.
+    pub fn ssh_port(&self) -> u16 {
+        20_000 + self.port_suffix()
+    }
+}
+
 #[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PortcastDevice {
@@ -200,7 +227,7 @@ pub struct Device {
     pub booked: Vec<DateTime<Utc>>,
     /// Despite it's name, the device is not accessible from the internet at this IP.
     /// Consider using [`Loan::host`] instead.
-    pub external_ip: Ipv4Addr,
+    pub external_ip: ExternalIp,
     pub firmware_version: FirmwareVersion,
     pub id: LoanableId,
     pub image_url: PathBuf,
@@ -267,15 +294,6 @@ impl Loan {
         Host::Ipv4(Ipv4Addr::from([195, 60, 68, 14]))
     }
 
-    fn external_ip(&self) -> anyhow::Result<Ipv4Addr> {
-        let addr = &self.loanable.external_ip;
-        let addr = Host::parse(addr).context("External IP is not a valid host")?;
-        let Host::Ipv4(addr) = addr else {
-            bail!("External IP is not an IPv4 address");
-        };
-        Ok(addr)
-    }
-
     fn base_port(&self) -> anyhow::Result<u16> {
         let (_, port) = self
             .loanable
@@ -288,28 +306,24 @@ impl Loan {
         Ok(port)
     }
 
-    fn port_suffix(&self) -> anyhow::Result<u16> {
-        let external = self.external_ip()?;
-        let [_, _, o2, o3] = external.octets();
-        Ok(1_000 * o2 as u16 + o3 as u16)
-    }
-
     /// Returns the port forwarded to port 80.
-    pub fn http_port(&self) -> anyhow::Result<u16> {
-        let from_base_port = self.base_port()?;
-        let from_suffix = 10_000 + self.port_suffix()?;
-        assert_eq!(from_base_port, from_suffix);
-        Ok(from_base_port)
+    pub fn http_port(&self) -> u16 {
+        let from_suffix = self.loanable.external_ip.http_port();
+        if cfg!(debug_assertions) {
+            let from_base_port = self.base_port().unwrap();
+            debug_assert_eq!(from_base_port, from_suffix);
+        }
+        from_suffix
     }
 
     /// Returns the port forwarded to port 443.
-    pub fn https_port(&self) -> anyhow::Result<u16> {
-        Ok(40_000 + self.port_suffix()?)
+    pub fn https_port(&self) -> u16 {
+        self.loanable.external_ip.https_port()
     }
 
     /// Returns the port forwarded to port 22.
-    pub fn ssh_port(&self) -> anyhow::Result<u16> {
-        Ok(20_000 + self.port_suffix()?)
+    pub fn ssh_port(&self) -> u16 {
+        self.loanable.external_ip.ssh_port()
     }
 }
 
@@ -327,7 +341,7 @@ impl Display for LoanId {
 pub struct Loanable {
     /// Despite it's name, the device is not accessible from the internet at this IP.
     /// Consider using [`Loan::host`] instead.
-    pub external_ip: String,
+    pub external_ip: ExternalIp,
     pub internal_ip: String,
     pub id: LoanableId,
     pub model: String,
