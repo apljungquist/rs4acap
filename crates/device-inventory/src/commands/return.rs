@@ -32,11 +32,6 @@ impl ReturnCommand {
             .map(|loan| (loan_fingerprint(&loan), Device::from_vlt_loan(loan)))
             .collect::<HashMap<_, _>>();
 
-        if candidates.is_empty() {
-            warn!("No devices were returned");
-            return Ok(());
-        }
-
         if let Some(d) = rs4a_dut::Device::from_anywhere()? {
             if let Some(c) = candidates.get_mut(&active_fingerprint(&d)) {
                 c.replace_dut_device(d);
@@ -54,43 +49,45 @@ impl ReturnCommand {
             .filter(|d| d.is_matched_by(&device_filter))
             .collect::<Vec<_>>();
         candidates.sort_by(Device::cmp);
+
         let mut candidates = candidates.into_iter();
-
-        if let Some(candidate) = candidates.next() {
-            if candidates.next().is_some() {
-                warn!("Found more than one matching loan, only the first will be cancelled");
-            }
-            let loan_id = candidate
-                .loan()
-                .as_ref()
-                .expect("All candidates are created from a loan")
-                .id;
-            rs4a_vlt::requests::cancel_loan(loan_id)
-                .send(&client)
-                .await?;
-
-            let fingerprint = candidate.fingerprint();
-
-            if let Some(d) = rs4a_dut::Device::from_env()? {
-                if active_fingerprint(&d) == fingerprint {
-                    for key in rs4a_dut::Device::clear_env() {
-                        println!("unset {key}")
-                    }
-                }
-            }
-
-            if let Some(d) = rs4a_dut::Device::from_fs()? {
-                if active_fingerprint(&d) == fingerprint {
-                    rs4a_dut::Device::clear_fs()?;
-                }
-            }
-
-            let mut from_inventory = db.read_devices()?;
-            from_inventory.retain(|_, d| inventory_fingerprint(d) != fingerprint);
-            db.write_devices(&from_inventory)?;
-        } else {
+        let Some(candidate) = candidates.next() else {
             warn!("Found no matching loan");
+            return Ok(());
+        };
+        if candidates.next().is_some() {
+            warn!("Found more than one matching loan, only the first will be cancelled");
         }
+
+        let loan_id = candidate
+            .loan()
+            .as_ref()
+            .expect("All candidates are created from a loan")
+            .id;
+
+        rs4a_vlt::requests::cancel_loan(loan_id)
+            .send(&client)
+            .await?;
+
+        let fingerprint = candidate.fingerprint();
+
+        if let Some(d) = rs4a_dut::Device::from_env()? {
+            if active_fingerprint(&d) == fingerprint {
+                for key in rs4a_dut::Device::clear_env() {
+                    println!("unset {key}")
+                }
+            }
+        }
+
+        if let Some(d) = rs4a_dut::Device::from_fs()? {
+            if active_fingerprint(&d) == fingerprint {
+                rs4a_dut::Device::clear_fs()?;
+            }
+        }
+
+        let mut from_inventory = db.read_devices()?;
+        from_inventory.retain(|_, d| inventory_fingerprint(d) != fingerprint);
+        db.write_devices(&from_inventory)?;
 
         Ok(())
     }

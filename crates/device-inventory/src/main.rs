@@ -79,6 +79,8 @@ enum Commands {
     /// Return any matching borrowed device.
     ///
     /// This will also deactivate and remove the devices.
+    ///
+    /// Note: If the device was activated in the environment, you must `eval` the output.
     Return(ReturnCommand),
     /// Remove a device
     Remove(RemoveCommand),
