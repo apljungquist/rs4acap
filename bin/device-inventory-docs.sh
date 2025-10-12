@@ -14,3 +14,4 @@ device-inventory help import
 device-inventory help list
 device-inventory help login
 device-inventory help remove
+device-inventory help return

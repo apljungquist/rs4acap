@@ -18,7 +18,7 @@ use crate::{
     commands::{
         activate::ActivateCommand, add::AddCommand, deactivate::DeactivateCommand,
         for_each::ForEachCommand, import::ImportCommand, list::ListCommand, login::LoginCommand,
-        remove::RemoveCommand,
+        r#return::ReturnCommand, remove::RemoveCommand,
     },
     db::Database,
 };
@@ -50,6 +50,7 @@ impl Cli {
             Commands::ForEach(cmd) => cmd.exec(db).await?,
             Commands::List(cmd) => cmd.exec(&db, offline).await?,
             Commands::Activate(cmd) => cmd.exec(db).await?,
+            Commands::Return(cmd) => cmd.exec(&db, offline).await?,
             Commands::Remove(cmd) => cmd.exec(db).await?,
             Commands::Completions(cmd) => cmd.exec::<Self>()?,
         }
@@ -75,6 +76,12 @@ enum Commands {
     List(ListCommand),
     /// Activate an existing device.
     Activate(ActivateCommand),
+    /// Return any matching borrowed device.
+    ///
+    /// This will also deactivate and remove the devices.
+    ///
+    /// Note: If the device was activated in the environment, you must `eval` the output.
+    Return(ReturnCommand),
     /// Remove a device
     Remove(RemoveCommand),
     /// Print a completion file for the given shell.

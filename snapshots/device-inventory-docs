@@ -10,6 +10,7 @@ Commands:
   for-each     Run a command with environment variables set for each device
   list         List available devices
   activate     Activate an existing device
+  return       Return any matching borrowed device
   remove       Remove a device
   completions  Print a completion file for the given shell
   help         Print this message or the help of the given subcommand(s)
@@ -165,3 +166,35 @@ Usage: device-inventory remove --alias <ALIAS>
 Options:
       --alias <ALIAS>  The alias of the device to remove
   -h, --help           Print help
++ device-inventory help return
+Return any matching borrowed device.
+
+This will also deactivate and remove the devices.
+
+Note: If the device was activated in the environment, you must `eval` the output.
+
+Usage: device-inventory return [OPTIONS]
+
+Options:
+      --alias <ALIAS>
+          Consider only devices with a matching alias.
+          
+          Accepts a glob pattern.
+
+  -a, --architecture <ARCHITECTURE>
+          Consider only devices with a matching architecture
+          
+          [possible values: aarch64, armv7hf, armv7l, mips]
+
+  -m, --model <MODEL>
+          Consider only devices with a matching model.
+          
+          Accepts a glob pattern.
+
+  -s, --status <STATUS>
+          Consider only devices with a matching status
+          
+          [possible values: connected, on-loan]
+
+  -h, --help
+          Print help (see a summary with '-h')
