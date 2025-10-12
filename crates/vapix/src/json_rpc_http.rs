@@ -3,6 +3,7 @@
 use std::future::Future;
 
 use anyhow::Context;
+use log::trace;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +27,13 @@ pub trait JsonRpcHttp: Serialize + Send + Sized {
             let response = client.post(Self::PATH)?.json(&self).send().await?;
             let status = response.status();
             let text = response.text().await;
+
+            if cfg!(debug_assertions) {
+                if let Ok(text) = text.as_deref() {
+                    trace!("Received {status}: {text}");
+                }
+            }
+
             from_response(status, text)
         }
     }

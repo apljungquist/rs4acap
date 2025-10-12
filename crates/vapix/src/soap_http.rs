@@ -2,7 +2,7 @@
 use std::future::Future;
 
 use anyhow::Context;
-use log::warn;
+use log::{trace, warn};
 use serde::Deserialize;
 
 use crate::{
@@ -30,7 +30,7 @@ pub trait SoapHttpRequest: SoapRequest + Send + Sized {
             let status = response.status();
             let text = response.text().await.context(status)?;
             if cfg!(debug_assertions) {
-                println!("Received {status}: {text}");
+                trace!("Received {status}: {text}");
             }
             let result = Self::Data::from_envelope(&text).context(status);
             if status.is_success() != result.is_ok() {

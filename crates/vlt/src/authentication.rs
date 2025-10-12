@@ -10,7 +10,7 @@ use std::{collections::HashMap, fmt::Formatter, sync::Arc};
 
 use anyhow::{bail, Context};
 use base32::Alphabet;
-use log::info;
+use log::{info, trace};
 use regex::Regex;
 use reqwest::{
     cookie::{CookieStore, Jar},
@@ -73,6 +73,10 @@ impl UsernamePasswordForm {
             .text()
             .await?;
 
+        if cfg!(debug_assertions) {
+            trace!("Received {text}");
+        }
+
         Self::try_from_str(&text)
     }
 
@@ -105,6 +109,10 @@ impl UsernamePasswordForm {
             .text()
             .await?;
 
+        if cfg!(debug_assertions) {
+            trace!("Received {text}");
+        }
+
         MethodSelectionForm::try_from_str(&text)
     }
 }
@@ -131,6 +139,10 @@ impl MethodSelectionForm {
             .error_for_status()?
             .text()
             .await?;
+
+        if cfg!(debug_assertions) {
+            trace!("Received {text}");
+        }
 
         OneTimePasswordForm::try_from_str(&text)
     }
@@ -161,6 +173,10 @@ impl OneTimePasswordForm {
             .text()
             .await?;
 
+        if cfg!(debug_assertions) {
+            trace!("Received {text}");
+        }
+
         EmptyForm::try_from_str(&text)
     }
 }
@@ -190,6 +206,10 @@ impl EmptyForm {
             .await?
             .text()
             .await?;
+
+        if cfg!(debug_assertions) {
+            trace!("Received {text}");
+        }
 
         StateTokenForm::try_from_str(&text)
     }
