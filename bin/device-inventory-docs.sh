@@ -2,8 +2,10 @@
 set -eux
 unset RUST_LOG
 
+# Special commands in alphabetical order
 device-inventory help
 device-inventory help completions
+# Normal commands in alphabetical order
 device-inventory help activate
 device-inventory help add
 device-inventory help deactivate
