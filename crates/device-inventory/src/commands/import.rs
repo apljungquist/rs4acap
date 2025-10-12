@@ -1,7 +1,8 @@
 use std::io::{self, IsTerminal, Read};
 
 use anyhow::Context;
-use device_inventory::{db::Database, db_vlt};
+
+use crate::{db::Database, db_vlt};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, clap::ValueEnum)]
 pub(crate) enum Source {
