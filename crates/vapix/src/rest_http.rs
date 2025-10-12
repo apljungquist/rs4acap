@@ -3,6 +3,7 @@
 use std::{future::Future, marker::PhantomData};
 
 use anyhow::Context;
+use log::trace;
 use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -88,6 +89,13 @@ pub trait RestHttp: Send + Sized {
                 .await?;
             let status = response.status();
             let text = response.text().await;
+
+            if cfg!(debug_assertions) {
+                if let Ok(text) = text.as_deref() {
+                    trace!("Received {status}: {text}");
+                }
+            }
+
             from_response(status, text)
         }
     }

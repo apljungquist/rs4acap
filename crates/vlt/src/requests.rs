@@ -7,6 +7,7 @@ use std::{
 
 use anyhow::Context;
 use chrono::{DateTime, Utc};
+use log::trace;
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -45,6 +46,11 @@ where
             .text()
             .await
             .with_context(|| format!("Get text from {status} response"))?;
+
+        if cfg!(debug_assertions) {
+            trace!("Received {status}: {text}");
+        }
+
         parse_data(&text).with_context(|| format!("{status}"))
     }
 }
