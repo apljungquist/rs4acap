@@ -15,40 +15,51 @@ use tokio::{
 };
 use url::Host;
 
+async fn discover_service(name: &str) -> anyhow::Result<HashMap<String, Response>> {
+    let service_name = format!("_{name}._tcp.local");
+    info!("Discovering services with name {service_name}");
+    let stream = mdns::discover::all(&service_name, Duration::from_secs(1))?.listen();
+    pin_mut!(stream);
+
+    let mut result = HashMap::new();
+    loop {
+        let response = match timeout(Duration::from_secs(2), stream.next()).await {
+            Err(Elapsed { .. }) => {
+                debug!("Discovery timeout elapsed");
+                break;
+            }
+            Ok(None) => unreachable!("The underlying stream selects on an infinite interval"),
+            Ok(Some(r)) => r,
+        };
+        let response = response?;
+        let Some(hostname) = response.hostname().map(String::from) else {
+            warn!("Got a response without a hostname: {response:?}");
+            continue;
+        };
+        // I think this should happen only once we have sent the second request.
+        // By then, all responses from the first request have hopefully been received.
+        if result.insert(hostname, response).is_some() {
+            break;
+        }
+    }
+    Ok(result)
+}
+
 // TODO: Consider gathering information from more services
 // The ones axis use are documented on https://help.axis.com/en-us/axis-os-knowledge-base#bonjour
 // and I have a vague memory of reading that avahi supports browsing services with any name.
 async fn discover_services() -> anyhow::Result<Vec<Response>> {
-    let mut result = HashMap::new();
-
+    let mut join_set = JoinSet::new();
     for name in ["axis-video", "axis-bwsc", "axis-nvr"] {
-        let service_name = format!("_{name}._tcp.local");
-        info!("Discovering services with name {service_name}");
-        let stream = mdns::discover::all(&service_name, Duration::from_secs(1))?.listen();
-        pin_mut!(stream);
-
-        loop {
-            let response = match timeout(Duration::from_secs(2), stream.next()).await {
-                Err(Elapsed { .. }) => {
-                    debug!("Discovery timeout elapsed");
-                    break;
-                }
-                Ok(None) => unreachable!("The underlying stream selects on an infinite interval"),
-                Ok(Some(r)) => r,
-            };
-            let response = response?;
-            let Some(hostname) = response.hostname().map(String::from) else {
-                warn!("Got a response without a hostname: {response:?}");
-                continue;
-            };
-            // I think this should happen only once we have sent the second request.
-            // By then all responses from the first request have hopefully been received.
-            if result.insert(hostname, response).is_some() {
-                break;
-            }
+        join_set.spawn(discover_service(name));
+    }
+    let mut responses = HashMap::new();
+    for result in join_set.join_all().await {
+        for (k, v) in result? {
+            responses.insert(k, v);
         }
     }
-    Ok(result.into_values().collect())
+    Ok(responses.into_values().collect())
 }
 
 fn flat(service: &Response) -> anyhow::Result<HashMap<String, String>> {
