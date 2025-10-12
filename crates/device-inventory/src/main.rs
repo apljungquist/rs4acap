@@ -4,8 +4,11 @@ mod commands;
 mod db;
 mod db_vlt;
 mod env;
+mod fusion;
+mod mdns_source;
 mod psst;
 mod vlt;
+
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
@@ -45,7 +48,7 @@ impl Cli {
             Commands::Deactivate(cmd) => cmd.exec().await?,
             Commands::Import(cmd) => cmd.exec(&db, offline).await?,
             Commands::ForEach(cmd) => cmd.exec(db).await?,
-            Commands::List(cmd) => cmd.exec(db).await?,
+            Commands::List(cmd) => cmd.exec(&db, offline).await?,
             Commands::Activate(cmd) => cmd.exec(db).await?,
             Commands::Remove(cmd) => cmd.exec(db).await?,
             Commands::Completions(cmd) => cmd.exec::<Self>()?,

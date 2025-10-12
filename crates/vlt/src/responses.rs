@@ -96,6 +96,17 @@ pub enum DeviceArchitecture {
     Mips,
 }
 
+impl DeviceArchitecture {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            DeviceArchitecture::Aarch64 => "aarch64",
+            DeviceArchitecture::Armv7hf => "armv7hf",
+            DeviceArchitecture::Armv7l => "armv7l",
+            DeviceArchitecture::Mips => "mips",
+        }
+    }
+}
+
 #[non_exhaustive]
 #[derive(
     Clone, Copy, Debug, Eq, PartialEq, clap::ValueEnum, serde::Deserialize, serde::Serialize,
@@ -240,6 +251,19 @@ pub struct Device {
     pub sdcard: bool,
     pub status: DeviceStatus,
     pub r#type: String,
+}
+
+impl Device {
+    pub fn host(&self) -> Host {
+        Host::Ipv4(Ipv4Addr::from([195, 60, 68, 14]))
+    }
+
+    pub fn http_port(&self) -> u16 {
+        self.external_ip.http_port()
+    }
+    pub fn https_port(&self) -> u16 {
+        self.external_ip.https_port()
+    }
 }
 
 #[non_exhaustive]
