@@ -5,7 +5,6 @@ Usage: device-inventory [OPTIONS] <COMMAND>
 Commands:
   login        Login to a pool of shared devices
   add          Add a device
-  adopt        Import all matching devices and activate at most one matching device
   deactivate   Deactivate any active device
   import       Import devices
   for-each     Run a command with environment variables set for each device
@@ -19,14 +18,38 @@ Options:
       --inventory <INVENTORY>  Location of the application data [env: DEVICE_INVENTORY_LOCATION=]
       --offline                [env: DEVICE_INVENTORY_OFFLINE=]
   -h, --help                   Print help
-+ device-inventory help login
-Login to a pool of shared devices
++ device-inventory help completions
+Print a completion file for the given shell.
 
-Usage: device-inventory login [OPTIONS]
+Example: `device-inventory completions zsh | source /dev/stdin`.
+
+Usage: device-inventory completions <SHELL>
+
+Arguments:
+  <SHELL>
+          [possible values: bash, elvish, fish, powershell, zsh]
 
 Options:
-  -u, --username <USERNAME>  The username to authenticate as, if not using a session id
-  -h, --help                 Print help
+  -h, --help
+          Print help (see a summary with '-h')
++ device-inventory help activate
+Activate an existing device
+
+Usage: device-inventory activate [OPTIONS]
+
+Options:
+      --alias <ALIAS>
+          The alias of the device to activate
+
+      --destination <DESTINATION>
+          [default: filesystem]
+
+          Possible values:
+          - filesystem:  Write information to the filesystem
+          - environment: Print information as a shell script that can be sourced
+
+  -h, --help
+          Print help (see a summary with '-h')
 + device-inventory help add
 Add a device
 
@@ -43,35 +66,6 @@ Options:
       --https-port <HTTPS_PORT>  HTTPS port to use, if different from default
       --ssh-port <SSH_PORT>      SSH port to use, if different from default
   -h, --help                     Print help
-+ device-inventory help adopt
-Import all matching devices and activate at most one matching device
-
-Usage: device-inventory adopt [OPTIONS]
-
-Options:
-      --alias <ALIAS>
-          The alias of the device(s) to import and activate
-
-      --source <SOURCE>
-          How to import devices
-          
-          [default: pool]
-
-          Possible values:
-          - json: Parse devices from the provided JSON
-          - pool: Fetch reserved devices from a shared pool
-
-      --destination <DESTINATION>
-          How to activate the device
-          
-          [default: filesystem]
-
-          Possible values:
-          - filesystem:  Write information to the filesystem
-          - environment: Print information as a shell script that can be sourced
-
-  -h, --help
-          Print help (see a summary with '-h')
 + device-inventory help deactivate
 Deactivate any active device.
 
@@ -85,6 +79,17 @@ Options:
 
   -h, --help
           Print help (see a summary with '-h')
++ device-inventory help for-each
+Run a command with environment variables set for each device
+
+Usage: device-inventory for-each <PROGRAM> [ARGUMENTS]...
+
+Arguments:
+  <PROGRAM>       Program to run
+  [ARGUMENTS]...  Arguments to pass to the program
+
+Options:
+  -h, --help  Print help
 + device-inventory help import
 Import devices
 
@@ -110,24 +115,14 @@ Usage: device-inventory list [OPTIONS]
 Options:
       --alias <ALIAS>  The alias of the device to list
   -h, --help           Print help
-+ device-inventory help activate
-Activate an existing device
++ device-inventory help login
+Login to a pool of shared devices
 
-Usage: device-inventory activate [OPTIONS]
+Usage: device-inventory login [OPTIONS]
 
 Options:
-      --alias <ALIAS>
-          The alias of the device to activate
-
-      --destination <DESTINATION>
-          [default: filesystem]
-
-          Possible values:
-          - filesystem:  Write information to the filesystem
-          - environment: Print information as a shell script that can be sourced
-
-  -h, --help
-          Print help (see a summary with '-h')
+  -u, --username <USERNAME>  The username to authenticate as, if not using a session id
+  -h, --help                 Print help
 + device-inventory help remove
 Remove a device
 
@@ -136,17 +131,3 @@ Usage: device-inventory remove --alias <ALIAS>
 Options:
       --alias <ALIAS>  The alias of the device to remove
   -h, --help           Print help
-+ device-inventory help completions
-Print a completion file for the given shell.
-
-Example: `device-inventory completions zsh | source /dev/stdin`.
-
-Usage: device-inventory completions <SHELL>
-
-Arguments:
-  <SHELL>
-          [possible values: bash, elvish, fish, powershell, zsh]
-
-Options:
-  -h, --help
-          Print help (see a summary with '-h')

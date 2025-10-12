@@ -3,12 +3,12 @@ set -eux
 unset RUST_LOG
 
 device-inventory help
-device-inventory help login
+device-inventory help completions
+device-inventory help activate
 device-inventory help add
-device-inventory help adopt
 device-inventory help deactivate
+device-inventory help for-each
 device-inventory help import
 device-inventory help list
-device-inventory help activate
+device-inventory help login
 device-inventory help remove
-device-inventory help completions
