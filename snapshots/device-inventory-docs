@@ -113,8 +113,42 @@ List available devices
 Usage: device-inventory list [OPTIONS]
 
 Options:
-      --alias <ALIAS>  The alias of the device to list
-  -h, --help           Print help
+      --probe
+          Probe devices for properties not indexed by the source.
+          
+          Note that devices found only in the VLT source are not probed.
+
+      --source <SOURCES>
+          Sources to gather devices from
+
+          Possible values:
+          - di:   Devices stored in the device-inventory database
+          - dut:  Device activated using the DUT protocol
+          - mdns: Devices discoverable using mDNS
+          - vlt:  Devices from VLT loans and device listings
+
+      --alias <ALIAS>
+          Consider only devices with a matching alias.
+          
+          Accepts a glob pattern.
+
+  -a, --architecture <ARCHITECTURE>
+          Consider only devices with a matching architecture
+          
+          [possible values: aarch64, armv7hf, armv7l, mips]
+
+  -m, --model <MODEL>
+          Consider only devices with a matching model.
+          
+          Accepts a glob pattern.
+
+  -s, --status <STATUS>
+          Consider only devices with a matching status
+          
+          [possible values: connected, on-loan]
+
+  -h, --help
+          Print help (see a summary with '-h')
 + device-inventory help login
 Login to a pool of shared devices
 

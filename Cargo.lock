@@ -542,10 +542,14 @@ dependencies = [
  "anyhow",
  "clap",
  "dirs",
+ "futures-util",
  "glob",
  "log",
+ "macaddr",
+ "mdns",
  "rs4a-bin-utils",
  "rs4a-dut",
+ "rs4a-vapix",
  "rs4a-vlt",
  "serde",
  "serde_json",
@@ -1279,6 +1283,12 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 dependencies = [
  "value-bag",
 ]
+
+[[package]]
+name = "macaddr"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "baee0bbc17ce759db233beb01648088061bf678383130602a298e6998eedb2d8"
 
 [[package]]
 name = "mdns"

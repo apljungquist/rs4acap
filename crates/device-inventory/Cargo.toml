@@ -8,8 +8,11 @@ license = "MIT"
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 dirs = { workspace = true }
+futures-util = { workspace = true }
 glob = { workspace = true }
 log = { workspace = true }
+macaddr = { workspace = true }
+mdns = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["raw_value"] }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
@@ -18,3 +21,4 @@ url = { workspace = true, features = ["serde"] }
 rs4a-bin-utils = { workspace = true }
 rs4a-dut = { workspace = true }
 rs4a-vlt = { workspace = true }
+rs4a-vapix = { workspace = true }
