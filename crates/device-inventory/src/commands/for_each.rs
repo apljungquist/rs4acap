@@ -1,5 +1,6 @@
 use anyhow::bail;
-use device_inventory::{db::Database, env::envs};
+
+use crate::{db::Database, env::envs};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct ForEachCommand {

@@ -1,8 +1,9 @@
 use std::io::{self, IsTerminal};
 
 use anyhow::Context;
-use device_inventory::{db::Database, db_vlt};
 use rs4a_vlt::{authentication, authentication::AxisConnectSessionSID};
+
+use crate::{db::Database, db_vlt};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct LoginCommand {

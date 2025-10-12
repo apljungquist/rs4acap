@@ -1,4 +1,4 @@
-use device_inventory::db::{Database, Device};
+use crate::db::{Database, Device};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct ListCommand {

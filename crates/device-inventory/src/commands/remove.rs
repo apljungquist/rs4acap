@@ -1,5 +1,6 @@
-use device_inventory::db::Database;
 use log::{info, warn};
+
+use crate::db::Database;
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct RemoveCommand {

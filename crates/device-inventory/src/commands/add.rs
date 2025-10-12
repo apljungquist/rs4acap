@@ -1,8 +1,9 @@
-use device_inventory::{
+use url::Host;
+
+use crate::{
     db::{Database, Device},
     psst::Password,
 };
-use url::Host;
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct AddCommand {
