@@ -3,7 +3,7 @@
 use anyhow::{bail, Context};
 use log::debug;
 use serde::{Deserialize, Serialize};
-use serde_json::value::RawValue;
+use serde_json::{value::RawValue, Value};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -43,4 +43,21 @@ where
     };
     serde_json::from_str::<T>(data.get())
         .with_context(|| format!("Could not parse data: {}", data.get()))
+}
+
+pub fn parse_data_lossless<T>(text: &str) -> anyhow::Result<T>
+where
+    T: for<'de> Deserialize<'de> + Serialize,
+{
+    let data = parse_data(text)?;
+    if cfg!(debug_assertions) {
+        let envelope: Value = serde_json::from_str::<Value>(&text)
+            .expect("If it deserializes to Response<T>, then it deserializes to Value");
+        let expected = envelope
+            .get("data")
+            .expect("If it deserializes to Response, then it has a data field");
+        let actual: Value = serde_json::from_str(&serde_json::to_string(&data)?)?;
+        debug_assert_eq!(&actual, expected);
+    }
+    Ok(data)
 }

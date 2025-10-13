@@ -1,0 +1,21 @@
+{
+  "apiVersion": "1.3",
+  "data": {
+    "propertyList": {
+      "Architecture": "armv7hf",
+      "ProdNbr": "P8815-2",
+      "HardwareID": "7C5",
+      "ProdFullName": "AXIS P8815-2 3D People Counter",
+      "Version": "11.11.73",
+      "ProdType": "3D People Counter",
+      "SocSerialNumber": "00000000-00000000-032CDEEE-01349999",
+      "Soc": "Axis Artpec-6",
+      "Brand": "AXIS",
+      "WebURL": "http://www.axis.com",
+      "ProdVariant": "",
+      "SerialNumber": "B8A44F000000",
+      "ProdShortName": "AXIS P8815-2",
+      "BuildDate": "Jun 28 2024 18:36"
+    }
+  }
+}

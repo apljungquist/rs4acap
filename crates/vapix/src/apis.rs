@@ -4,7 +4,7 @@ pub mod action_1 {
     };
 }
 pub mod basic_device_info_1 {
-    pub use crate::basic_device_info_1::get_all_unrestricted_properties;
+    pub use crate::basic_device_info_1::{get_all_properties, get_all_unrestricted_properties};
 }
 
 pub mod event_1 {
