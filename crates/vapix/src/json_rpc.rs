@@ -51,7 +51,7 @@ where
 {
     let data = parse_data(text)?;
     if cfg!(debug_assertions) {
-        let envelope: Value = serde_json::from_str::<Value>(&text)
+        let envelope: Value = serde_json::from_str::<Value>(text)
             .expect("If it deserializes to Response<T>, then it deserializes to Value");
         let expected = envelope
             .get("data")
