@@ -15,6 +15,10 @@ pub mod jpg_3 {
     pub use crate::axis_cgi::jpg_3::get_image;
 }
 
+pub mod prod_brand_1 {
+    pub use crate::axis_cgi::prod_brand_info_1::get_brand;
+}
+
 pub mod remote_object_storage_1 {
     pub use crate::config::remote_object_storage_1::create_destinations;
 }
