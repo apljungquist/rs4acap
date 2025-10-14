@@ -14,6 +14,9 @@ pub mod event_1 {
 pub mod jpg_3 {
     pub use crate::axis_cgi::jpg_3::get_image;
 }
+pub mod param {
+    pub use crate::axis_cgi::param::list_params;
+}
 
 pub mod remote_object_storage_1 {
     pub use crate::config::remote_object_storage_1::create_destinations;
