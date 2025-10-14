@@ -7,6 +7,7 @@ use std::{
     str::FromStr,
 };
 
+use anyhow::bail;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless};
@@ -120,23 +121,23 @@ impl Display for SocSerialNumber {
 }
 
 impl FromStr for SocSerialNumber {
-    type Err = String;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts: Vec<&str> = s.split('-').collect();
         if parts.len() != 4 {
-            return Err(format!("Expected 4 segments, got {}", parts.len()));
+            bail!("Expected 4 segments, got {}", parts.len());
         }
         let mut bits: u128 = 0;
         for (i, part) in parts.iter().enumerate() {
             if part.len() != 8 {
-                return Err(format!(
-                    "Expected each segment to be 8 characters long, but segment {i} is {}",
+                bail!(
+                    "Expected each segment to be 8 characters long, but segment {} is {}",
+                    i + 1,
                     part.len()
-                ));
+                );
             }
-            let segment = u32::from_str_radix(part, 16)
-                .map_err(|e| format!("Invalid hex in segment {}: {}", i, e))?;
+            let segment = u32::from_str_radix(part, 16)?;
             bits |= (segment as u128) << (96 - i * 32);
         }
         Ok(Self(bits))
@@ -241,7 +242,7 @@ mod tests {
 
     #[test]
     fn invalid_soc_serial_number_strings_fail_to_parse() {
-        expect!("Expected each segment to be 8 characters long, but segment 3 is 7").assert_eq(
+        expect!("Expected each segment to be 8 characters long, but segment 4 is 7").assert_eq(
             &SocSerialNumber::from_str("00000000-00000000-00000000-0000000")
                 .unwrap_err()
                 .to_string(),
@@ -251,7 +252,7 @@ mod tests {
                 .unwrap_err()
                 .to_string(),
         );
-        expect!("Expected each segment to be 8 characters long, but segment 2 is 9").assert_eq(
+        expect!("invalid digit found in string").assert_eq(
             &SocSerialNumber::from_str("00000000-00000000-00000000-0000000G")
                 .unwrap_err()
                 .to_string(),
