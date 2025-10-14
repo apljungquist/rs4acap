@@ -18,5 +18,7 @@ serde_json = { workspace = true, features = ["raw_value"] }
 url = { workspace = true }
 
 [dev-dependencies]
+env_logger = { workspace = true }
+expect-test = { workspace = true }
 insta = { workspace = true }
 tokio = { workspace = true, features = ["macros"] }

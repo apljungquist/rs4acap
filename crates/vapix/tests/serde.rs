@@ -2,8 +2,8 @@ use insta::assert_snapshot;
 use rs4a_vapix::{
     action1::{AddActionConfigurationResponse, Condition},
     apis,
-    basic_device_info_1::AllUnrestrictedPropertiesData,
-    json_rpc::parse_data,
+    basic_device_info_1::{AllPropertiesData, AllUnrestrictedPropertiesData, Architecture},
+    json_rpc::{parse_data, parse_data_lossless},
     rest,
     rest_http::RestHttp,
     soap::parse_soap,
@@ -25,8 +25,28 @@ fn can_deserialize_basic_device_info_1_examples() {
     let text = include_str!(
         "../src/axis_cgi/basic_device_info_1/get_all_unrestricted_properties_200.json"
     );
-    let data = parse_data::<AllUnrestrictedPropertiesData>(text).unwrap();
+    let data = parse_data_lossless::<AllUnrestrictedPropertiesData>(text).unwrap();
     assert_eq!(data.property_list.version, "12.5.56");
+
+    let text = include_str!("../src/axis_cgi/basic_device_info_1/get_all_properties_1_3.json");
+    let property_list = parse_data_lossless::<AllPropertiesData>(text)
+        .unwrap()
+        .property_list;
+    assert_eq!(property_list.restricted.architecture, Architecture::Armv7hf);
+    assert_eq!(property_list.unrestricted.prod_variant, None);
+
+    let text = include_str!("../src/axis_cgi/basic_device_info_1/get_all_properties_1_0.json");
+    let property_list = parse_data_lossless::<AllPropertiesData>(text)
+        .unwrap()
+        .property_list;
+    assert_eq!(property_list.restricted.architecture, Architecture::Mips);
+    assert_eq!(property_list.unrestricted.prod_variant, None);
+
+    let text = include_str!(
+        "../src/axis_cgi/basic_device_info_1/get_all_unrestricted_properties_2004_error_1_0.json"
+    );
+    parse_data_lossless::<AllUnrestrictedPropertiesData>(text).unwrap_err();
+    // TODO: Expose error code
 }
 
 #[test]

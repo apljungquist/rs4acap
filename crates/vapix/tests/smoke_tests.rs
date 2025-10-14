@@ -1,12 +1,23 @@
 use std::{ops::Rem, time::SystemTime};
 
+use log::LevelFilter;
 use rs4a_vapix::{
-    action1::Condition, apis, json_rpc_http::JsonRpcHttp, rest_http::RestHttp,
-    soap_http::SoapHttpRequest, Client, ClientBuilder,
+    action1::Condition,
+    apis,
+    json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless},
+    rest_http::RestHttp,
+    soap_http::SoapHttpRequest,
+    Client, ClientBuilder,
 };
 use serde_json::json;
 
 async fn test_client() -> Option<Client> {
+    let _ = env_logger::Builder::new()
+        .filter_level(LevelFilter::Trace)
+        .parse_default_env()
+        .is_test(true)
+        .try_init();
+
     let Some(client) = ClientBuilder::from_dut().unwrap() else {
         eprintln!("No device configured, skipping test.");
         return None;
@@ -87,12 +98,23 @@ async fn action_1_add_and_get_returns_ok() {
 }
 
 #[tokio::test]
+async fn basic_device_info_get_all_properties_returns_ok() {
+    let Some(client) = test_client().await else {
+        return;
+    };
+    apis::basic_device_info_1::get_all_properties()
+        .send_lossless(&client)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn basic_device_info_get_all_unrestricted_properties_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
     apis::basic_device_info_1::get_all_unrestricted_properties()
-        .send(&client)
+        .send_lossless(&client)
         .await
         .unwrap();
 }

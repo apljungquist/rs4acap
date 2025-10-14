@@ -1,0 +1,7 @@
+{
+  "apiVersion": "1.0",
+  "error": {
+    "code": 2004,
+    "message": "JSON semantic error: Unknown method 'getAllUnrestrictedProperties'"
+  }
+}
