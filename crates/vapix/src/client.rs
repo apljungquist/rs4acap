@@ -125,7 +125,30 @@ impl ClientBuilder {
                 .timeout(1)
                 .send(&candidate)
                 .await
-                .inspect_err(|e| debug!("Could not connect using {} because {e:?}", scheme.http()))
+                .inspect_err(|e| {
+                    debug!(
+                        "Could not connect to system ready using {} because {e:?}",
+                        scheme.http()
+                    )
+                })
+                .is_ok()
+            {
+                return Ok(candidate);
+            }
+
+            // On 8.45.4.5 this is the first request made by ACA on page load.
+            // Once the root user is created, it returns 401 unless authentication is set to basic.
+            // One option may be `/axis-cgi/param.cgi?action=list&group=Brand.Brand`, which ACA
+            // checks repeatedly after a factory reset.
+            if apis::prod_brand_1::get_brand()
+                .send(&candidate)
+                .await
+                .inspect_err(|e| {
+                    debug!(
+                        "Could not connect to prod brand using {} because {e:?}",
+                        scheme.http()
+                    )
+                })
                 .is_ok()
             {
                 return Ok(candidate);

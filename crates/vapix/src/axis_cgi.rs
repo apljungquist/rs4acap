@@ -2,4 +2,5 @@
 pub mod basic_device_info_1;
 
 pub mod jpg_3;
+pub mod prod_brand_info_1;
 pub mod system_ready_1;
