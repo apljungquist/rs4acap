@@ -182,7 +182,7 @@ impl Device {
     ///
     /// - `None`: Not known, because the device is not accessible or should not be accessed.
     /// - `Some(None)`: No port remapping.
-    /// - `Some(p)`: The port has been remapped to `p`
+    /// - `Some(Some(p))`: The port has been remapped to `p`
     pub fn http_port(&self) -> Option<Option<u16>> {
         let mut values = Vec::new();
         values.extend(self.dut_device.as_ref().map(|d| d.http_port));
@@ -202,7 +202,7 @@ impl Device {
     ///
     /// - `None`: Not known, because the device is not accessible or should not be accessed.
     /// - `Some(None)`: No port remapping.
-    /// - `Some(p)`: The port has been remapped to `p`
+    /// - `Some(Some(p))`: The port has been remapped to `p`
     pub fn https_port(&self) -> Option<Option<u16>> {
         let mut values = Vec::new();
         values.extend(self.dut_device.as_ref().map(|d| d.https_port));
