@@ -9,10 +9,11 @@ device-inventory help completions
 device-inventory help activate
 device-inventory help add
 device-inventory help deactivate
-device-inventory help export
+device-inventory help dump
 device-inventory help for-each
 device-inventory help import
 device-inventory help list
+device-inventory help load
 device-inventory help login
 device-inventory help remove
 device-inventory help return
