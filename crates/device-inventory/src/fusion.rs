@@ -439,7 +439,7 @@ impl DeviceFilter {
         }
         if let Some(req) = self.firmware.as_ref() {
             if let Some(v) = firmware {
-                if !req.matches(&v) {
+                if !req.matches(v) {
                     return false;
                 }
             } else {
