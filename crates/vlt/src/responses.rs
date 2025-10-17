@@ -200,7 +200,7 @@ impl ExternalIp {
     }
 
     /// Returns the port forwarded to port 80.
-    fn http_port(&self) -> u16 {
+    pub fn http_port(&self) -> u16 {
         10_000 + self.port_suffix()
     }
 
@@ -237,7 +237,8 @@ pub struct Device {
     #[serde(serialize_with = "serialize_datetime_array")]
     pub booked: Vec<DateTime<Utc>>,
     /// Despite it's name, the device is not accessible from the internet at this IP.
-    /// Consider using [`Loan::host`] instead.
+    /// But it can be used to infer connect options such as ports.
+    /// However, it is best to refrain from connecting to these devices since they may be in use.
     pub external_ip: ExternalIp,
     pub firmware_version: FirmwareVersion,
     pub id: LoanableId,
@@ -256,13 +257,6 @@ pub struct Device {
 impl Device {
     pub fn host(&self) -> Host {
         Host::Ipv4(Ipv4Addr::from([195, 60, 68, 14]))
-    }
-
-    pub fn http_port(&self) -> u16 {
-        self.external_ip.http_port()
-    }
-    pub fn https_port(&self) -> u16 {
-        self.external_ip.https_port()
     }
 }
 
