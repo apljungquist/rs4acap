@@ -22,7 +22,7 @@ fn device_inventory_command(now: SystemTime) -> Command {
 
 // TODO: Consider replacing with a generated files pattern
 #[test]
-fn can_export_loans_from_get_response() {
+fn can_export_loans() {
     let now = SystemTime::now();
 
     let json_str = fs::read_to_string("test-data/devices.json").unwrap();
