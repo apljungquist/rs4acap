@@ -1,7 +1,7 @@
 use std::{borrow::Cow, cmp::Ordering, str::FromStr};
 
 use anyhow::bail;
-use rs4a_vapix::basic_device_info_1::UnrestrictedProperties;
+use rs4a_vapix::basic_device_info_1::{Architecture, RestrictedProperties, UnrestrictedProperties};
 use rs4a_vlt::responses::{DeviceArchitecture, DeviceStatus, Loan};
 use semver::{BuildMetadata, Version, VersionReq};
 use url::Host;
@@ -16,6 +16,18 @@ pub struct Device {
     vlt_loan: Option<Loan>,
     vlt_device: Option<rs4a_vlt::responses::Device>,
     firmware: Option<Version>,
+    architecture: Option<DeviceArchitecture>,
+}
+
+fn convert_architecture(a: Architecture) -> DeviceArchitecture {
+    match a {
+        Architecture::Aarch64 => DeviceArchitecture::Aarch64,
+        Architecture::Armv7hf => DeviceArchitecture::Armv7hf,
+        Architecture::Armv7l => DeviceArchitecture::Armv7l,
+        Architecture::Mips => DeviceArchitecture::Mips,
+        // TODO: Consider making this conversion fallible or finding another way to avoid panicking.
+        _ => unimplemented!(),
+    }
 }
 
 fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
@@ -54,6 +66,7 @@ impl Device {
             vlt_loan: None,
             vlt_device: None,
             firmware: None,
+            architecture: None,
         }
     }
     pub fn from_inventory_device(alias: String, device: crate::db::Device) -> Self {
@@ -65,6 +78,7 @@ impl Device {
             vlt_loan: None,
             vlt_device: None,
             firmware: None,
+            architecture: None,
         }
     }
     pub fn from_mdns_device(device: crate::mdns_source::Device) -> Self {
@@ -76,6 +90,7 @@ impl Device {
             vlt_loan: None,
             vlt_device: None,
             firmware: None,
+            architecture: None,
         }
     }
 
@@ -88,6 +103,7 @@ impl Device {
             vlt_device: None,
             mdns_device: None,
             firmware: None,
+            architecture: None,
         }
     }
 
@@ -95,6 +111,7 @@ impl Device {
         let firmware = Some(coerce_firmware_version(
             &device.firmware_version.to_string(),
         )?);
+        let architecture = Some(device.architecture);
         Ok(Self {
             basic_device_info: None,
             dut_device: None,
@@ -103,6 +120,7 @@ impl Device {
             vlt_device: Some(device),
             mdns_device: None,
             firmware,
+            architecture,
         })
     }
 
@@ -115,6 +133,7 @@ impl Device {
             vlt_device: from_other,
             mdns_device,
             firmware: _,
+            architecture: _,
         } = self;
         let from_active = from_active.as_ref().map(active_fingerprint);
         let from_inventory = from_inventory
@@ -132,8 +151,12 @@ impl Device {
             .expect("At least one field is some")
     }
 
-    pub fn add_properties(&mut self, properties: UnrestrictedProperties) -> anyhow::Result<()> {
+    pub fn add_unrestricted_properties(
+        &mut self,
+        properties: UnrestrictedProperties,
+    ) -> anyhow::Result<()> {
         let UnrestrictedProperties { version, .. } = properties;
+
         let new = coerce_firmware_version(&version.to_string())?;
         if let Some(old) = self.firmware.as_ref() {
             if old != &new {
@@ -142,6 +165,25 @@ impl Device {
         } else {
             self.firmware = Some(new);
         }
+
+        Ok(())
+    }
+
+    pub fn add_restricted_properties(
+        &mut self,
+        properties: RestrictedProperties,
+    ) -> anyhow::Result<()> {
+        let RestrictedProperties { architecture, .. } = properties;
+
+        let new = convert_architecture(architecture);
+        if let Some(old) = self.architecture.as_ref() {
+            if old != &new {
+                bail!("Attempted to add conflicting architecture")
+            }
+        } else {
+            self.architecture = Some(new);
+        }
+
         Ok(())
     }
 
@@ -172,11 +214,16 @@ impl Device {
         &self.vlt_loan
     }
 
-    pub fn replace_vlt_device(
-        &mut self,
-        device: rs4a_vlt::responses::Device,
-    ) -> Option<rs4a_vlt::responses::Device> {
-        self.vlt_device.replace(device)
+    pub fn add_vlt_device(&mut self, device: rs4a_vlt::responses::Device) -> anyhow::Result<()> {
+        if let Some(old) = self.architecture.as_ref() {
+            if old != &device.architecture {
+                bail!("Attempted to add conflicting architecture")
+            }
+        } else {
+            self.architecture = Some(device.architecture);
+        }
+        self.vlt_device.replace(device);
+        Ok(())
     }
 
     pub(crate) fn alias(&self) -> Option<Cow<str>> {
@@ -187,10 +234,7 @@ impl Device {
     }
 
     pub(crate) fn architecture(&self) -> Option<DeviceArchitecture> {
-        if let Some(d) = self.vlt_device.as_ref() {
-            return Some(d.architecture);
-        }
-        None
+        self.architecture
     }
 
     pub(crate) fn firmware(&self) -> Option<&Version> {
@@ -255,6 +299,30 @@ impl Device {
         values.extend(self.mdns_device.as_ref().map(|_| None));
         values.dedup();
         debug_assert!(values.len() < 2);
+        values.pop()
+    }
+
+    pub fn username(&self) -> Option<String> {
+        let mut values = Vec::new();
+        values.extend(self.dut_device.as_ref().map(|d| d.username.to_string()));
+        values.extend(
+            self.inventory_device
+                .as_ref()
+                .map(|(_, d)| d.username.clone()),
+        );
+        values.extend(self.vlt_loan.as_ref().map(|d| d.username.clone()));
+        values.pop()
+    }
+
+    pub fn password(&self) -> Option<String> {
+        let mut values = Vec::new();
+        values.extend(self.dut_device.as_ref().map(|d| d.password.clone()));
+        values.extend(
+            self.inventory_device
+                .as_ref()
+                .map(|(_, d)| d.password.dangerous_reveal().to_string()),
+        );
+        values.extend(self.vlt_loan.as_ref().map(|d| d.password.clone()));
         values.pop()
     }
 
