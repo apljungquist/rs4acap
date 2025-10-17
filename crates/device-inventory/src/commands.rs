@@ -1,9 +1,11 @@
 pub mod activate;
 pub mod add;
 pub mod deactivate;
+pub mod dump;
 pub mod for_each;
 pub mod import;
 pub mod list;
+pub mod load;
 pub mod login;
 pub mod remove;
 pub mod r#return;

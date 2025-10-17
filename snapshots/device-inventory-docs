@@ -12,6 +12,8 @@ Commands:
   activate     Activate an existing device
   return       Return any matching borrowed device
   remove       Remove a device
+  dump         Print the device-inventory database to stdout
+  load         Load the device-inventory database from stdin
   completions  Print a completion file for the given shell
   help         Print this message or the help of the given subcommand(s)
 
@@ -80,6 +82,13 @@ Options:
 
   -h, --help
           Print help (see a summary with '-h')
++ device-inventory help dump
+Print the device-inventory database to stdout
+
+Usage: device-inventory dump
+
+Options:
+  -h, --help  Print help
 + device-inventory help for-each
 Run a command with environment variables set for each device
 
@@ -94,20 +103,10 @@ Options:
 + device-inventory help import
 Import devices
 
-Usage: device-inventory import [OPTIONS]
+Usage: device-inventory import
 
 Options:
-      --source <SOURCE>
-          How to import devices
-          
-          [default: pool]
-
-          Possible values:
-          - json: Parse devices from the provided JSON
-          - pool: Fetch reserved devices from a shared pool
-
-  -h, --help
-          Print help (see a summary with '-h')
+  -h, --help  Print help
 + device-inventory help list
 List available devices
 
@@ -151,6 +150,13 @@ Options:
 
   -h, --help
           Print help (see a summary with '-h')
++ device-inventory help load
+Load the device-inventory database from stdin
+
+Usage: device-inventory load
+
+Options:
+  -h, --help  Print help
 + device-inventory help login
 Login to a pool of shared devices
 

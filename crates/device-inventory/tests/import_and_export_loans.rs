@@ -22,13 +22,12 @@ fn device_inventory_command(now: SystemTime) -> Command {
 
 // TODO: Consider replacing with a generated files pattern
 #[test]
-fn can_export_loans_from_get_response() {
+fn can_export_loans() {
     let now = SystemTime::now();
 
-    let json_str = fs::read_to_string("test-data/get-loans-response.json").unwrap();
+    let json_str = fs::read_to_string("test-data/devices.json").unwrap();
     let mut child = device_inventory_command(now)
-        .arg("import")
-        .arg("--source=json")
+        .arg("load")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
