@@ -20,6 +20,7 @@ use crate::{
 struct Table {
     aliases: Vec<String>,
     architectures: Vec<String>,
+    firmware: Vec<String>,
     hosts: Vec<String>,
     models: Vec<String>,
     serials: Vec<String>,
@@ -32,6 +33,7 @@ impl Table {
         Self {
             aliases: vec!["ALIAS".to_string()],
             architectures: vec!["ARCHITECTURE".to_string()],
+            firmware: vec!["FIRMWARE".to_string()],
             hosts: vec!["HOST".to_string()],
             models: vec!["MODEL".to_string()],
             serials: vec!["SERIAL".to_string()],
@@ -48,6 +50,8 @@ impl Table {
                 .map(|a| a.as_str().to_string())
                 .unwrap_or_default(),
         );
+        self.firmware
+            .push(row.firmware().map(|v| v.to_string()).unwrap_or_default());
         self.hosts.push(row.host().to_string());
         self.models
             .push(row.model().unwrap_or_default().to_string());
@@ -71,6 +75,7 @@ impl Table {
         let Self {
             aliases,
             architectures,
+            firmware,
             hosts,
             models,
             serials,
@@ -79,23 +84,26 @@ impl Table {
         } = self;
 
         let alias_width = 1 + aliases.iter().map(|s| s.len()).max().unwrap();
+        let firmware_width = 1 + firmware.iter().map(|s| s.len()).max().unwrap();
         let architecture_width = 1 + architectures.iter().map(|s| s.len()).max().unwrap();
         let model_width = 1 + models.iter().map(|s| s.len()).max().unwrap();
         let serial_width = 1 + serials.iter().map(|s| s.len()).max().unwrap();
         let status_width = 1 + statuses.iter().map(|s| s.len()).max().unwrap();
         let priority_width = 1 + priorities.iter().map(|s| s.len()).max().unwrap();
 
-        for ((((((priority, alias), model), host), architecture), serial), status) in priorities
-            .into_iter()
-            .zip(aliases.into_iter())
-            .zip(models.into_iter())
-            .zip(hosts.into_iter())
-            .zip(architectures.into_iter())
-            .zip(serials.into_iter())
-            .zip(statuses.into_iter())
+        for (((((((priority, alias), model), host), architecture), serial), status), firmware) in
+            priorities
+                .into_iter()
+                .zip(aliases.into_iter())
+                .zip(models.into_iter())
+                .zip(hosts.into_iter())
+                .zip(architectures.into_iter())
+                .zip(serials.into_iter())
+                .zip(statuses.into_iter())
+                .zip(firmware.into_iter())
         {
             println!(
-                "{priority:priority_width$} {status:status_width$} {alias:alias_width$} {serial:serial_width$} {model:model_width$} {architecture:architecture_width$} {host}"
+                "{priority:priority_width$} {status:status_width$} {alias:alias_width$} {serial:serial_width$} {model:model_width$} {architecture:architecture_width$} {firmware:firmware_width$} {host}"
             );
         }
     }

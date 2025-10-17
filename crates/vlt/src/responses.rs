@@ -8,7 +8,13 @@ use serde_json::Value;
 use url::Host;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct FirmwareVersion(pub(crate) String);
+pub struct FirmwareVersion(String);
+
+impl FirmwareVersion {
+    pub fn to_string(&self) -> String {
+        self.0.clone()
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 struct DataEnvelope<T> {

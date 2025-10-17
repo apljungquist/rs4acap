@@ -1,7 +1,9 @@
-use std::{borrow::Cow, cmp::Ordering};
+use std::{borrow::Cow, cmp::Ordering, str::FromStr};
 
+use log::warn;
 use rs4a_vapix::basic_device_info_1::UnrestrictedProperties;
 use rs4a_vlt::responses::{DeviceArchitecture, DeviceStatus, Loan};
+use semver::{BuildMetadata, Version, VersionReq};
 use url::Host;
 
 use crate::mdns_source;
@@ -13,6 +15,43 @@ pub struct Device {
     mdns_device: Option<mdns_source::Device>,
     vlt_loan: Option<Loan>,
     vlt_device: Option<rs4a_vlt::responses::Device>,
+}
+
+fn coerce_firmware_version(s: &str) -> Version {
+    let mut parts = s.splitn(4, '.');
+    let major = parts
+        .next()
+        .unwrap_or_default()
+        .parse()
+        .inspect_err(|e| warn!("Could not coerce major from {s}: {e}"))
+        .unwrap_or_default();
+    let minor = parts
+        .next()
+        .unwrap_or_default()
+        .parse()
+        .inspect_err(|e| warn!("Could not coerce minor from {s}: {e}"))
+        .unwrap_or_default();
+    let patch = parts
+        .next()
+        .unwrap_or_default()
+        .parse()
+        .inspect_err(|e| warn!("Could not coerce patch from {s}: {e}"))
+        .unwrap_or_default();
+    let build = parts
+        .next()
+        .and_then(|s| {
+            BuildMetadata::from_str(s)
+                .inspect_err(|e| warn!("Could not coerce {s:?} to build metadata: {e}"))
+                .ok()
+        })
+        .unwrap_or_default();
+    Version {
+        major,
+        minor,
+        patch,
+        pre: Default::default(),
+        build,
+    }
 }
 
 impl Device {
@@ -157,6 +196,19 @@ impl Device {
         None
     }
 
+    pub(crate) fn firmware(&self) -> Option<Version> {
+        let mut values = Vec::new();
+        if let Some(p) = self.basic_device_info.as_ref() {
+            values.push(coerce_firmware_version(p.version.as_str()));
+        }
+        if let Some(d) = self.vlt_device.as_ref() {
+            values.push(coerce_firmware_version(&d.firmware_version.to_string()));
+        }
+        values.dedup();
+        debug_assert!(values.len() < 2);
+        values.pop()
+    }
+
     pub(crate) fn host(&self) -> Host {
         if let Some(d) = self.dut_device.as_ref() {
             return d.host.clone();
@@ -192,6 +244,7 @@ impl Device {
             p => Some(p),
         }));
         values.extend(self.mdns_device.as_ref().map(|_| None));
+        values.dedup();
         debug_assert!(values.len() < 2);
         values.pop()
     }
@@ -212,6 +265,7 @@ impl Device {
             p => Some(p),
         }));
         values.extend(self.mdns_device.as_ref().map(|_| None));
+        values.dedup();
         debug_assert!(values.len() < 2);
         values.pop()
     }
@@ -284,6 +338,7 @@ impl Device {
         device_filter.matches(BorrowedDevice {
             alias: self.alias(),
             architecture: self.architecture(),
+            firmware: self.firmware(),
             model: self.model(),
             status: self.status(),
         })
@@ -296,6 +351,7 @@ impl Device {}
 pub struct BorrowedDevice<'a> {
     pub(crate) alias: Option<Cow<'a, str>>,
     pub(crate) architecture: Option<DeviceArchitecture>,
+    pub(crate) firmware: Option<Version>,
     pub(crate) model: Option<Cow<'a, str>>,
     pub(crate) status: Option<DeviceStatus>,
 }
@@ -305,6 +361,7 @@ impl<'a> From<&'a (String, crate::db::Device)> for BorrowedDevice<'a> {
         Self {
             alias: Some(Cow::Borrowed(value.0.as_str())),
             architecture: None,
+            firmware: None,
             model: None,
             status: None,
         }
@@ -316,6 +373,7 @@ impl<'a> From<&'a rs4a_dut::Device> for BorrowedDevice<'a> {
         Self {
             alias: None,
             architecture: None,
+            firmware: None,
             model: None,
             status: None,
         }
@@ -328,11 +386,13 @@ impl<'a> From<&'a rs4a_vlt::responses::Device> for BorrowedDevice<'a> {
             architecture,
             model,
             status,
+            firmware_version,
             ..
         } = value;
         Self {
             alias: None,
             architecture: Some(*architecture),
+            firmware: Some(coerce_firmware_version(&firmware_version.to_string())),
             model: Some(model.into()),
             status: Some(*status),
         }
@@ -340,11 +400,12 @@ impl<'a> From<&'a rs4a_vlt::responses::Device> for BorrowedDevice<'a> {
 }
 
 impl<'a> From<&'a Loan> for BorrowedDevice<'a> {
-    fn from(_value: &'a Loan) -> Self {
+    fn from(value: &'a Loan) -> Self {
         Self {
             alias: None,
             architecture: None,
-            model: None,
+            firmware: None,
+            model: Some(value.loanable.model.as_str().into()),
             status: None,
         }
     }
@@ -355,6 +416,7 @@ impl<'a> From<&'a mdns_source::Device> for BorrowedDevice<'a> {
         Self {
             alias: None,
             architecture: None,
+            firmware: None,
             model: None,
             status: None,
         }
@@ -371,6 +433,14 @@ pub struct DeviceFilterParser {
     /// Consider only devices with a matching architecture.
     #[arg(long, short)]
     architecture: Option<DeviceArchitecture>,
+    /// Consider only devices with a matching firmware version.
+    ///
+    /// Accepts the same version requirement syntax as Cargo, see
+    /// <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#version-requirement-syntax>
+    ///
+    /// Older firmware versions, which don't follow SemVer, are coerced into SemVer.
+    #[arg(long)]
+    firmware: Option<VersionReq>,
     /// Consider only devices with a matching model.
     ///
     /// Accepts a glob pattern.
@@ -386,6 +456,7 @@ impl DeviceFilterParser {
         let Self {
             alias,
             architecture,
+            firmware,
             model,
             status,
         } = self;
@@ -399,6 +470,7 @@ impl DeviceFilterParser {
             alias,
             model,
             architecture,
+            firmware,
             status,
         })
     }
@@ -408,6 +480,7 @@ pub struct DeviceFilter {
     alias: Option<glob::Pattern>,
     model: Option<glob::Pattern>,
     architecture: Option<DeviceArchitecture>,
+    firmware: Option<VersionReq>,
     status: Option<DeviceStatus>,
 }
 
@@ -416,6 +489,7 @@ impl DeviceFilter {
         let BorrowedDevice {
             alias,
             architecture,
+            firmware,
             model,
             status,
         } = d;
@@ -443,6 +517,15 @@ impl DeviceFilter {
         if let Some(a) = self.architecture {
             if let Some(architecture) = architecture {
                 if a != architecture {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        if let Some(req) = self.firmware.as_ref() {
+            if let Some(v) = firmware {
+                if !req.matches(&v) {
                     return false;
                 }
             } else {
