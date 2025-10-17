@@ -17,8 +17,8 @@ use rs4a_bin_utils::completions_command::CompletionsCommand;
 use crate::{
     commands::{
         activate::ActivateCommand, add::AddCommand, deactivate::DeactivateCommand,
-        for_each::ForEachCommand, import::ImportCommand, list::ListCommand, login::LoginCommand,
-        r#return::ReturnCommand, remove::RemoveCommand,
+        export::ExportCommand, for_each::ForEachCommand, import::ImportCommand, list::ListCommand,
+        login::LoginCommand, r#return::ReturnCommand, remove::RemoveCommand,
     },
     db::Database,
 };
@@ -52,6 +52,7 @@ impl Cli {
             Commands::Activate(cmd) => cmd.exec(db).await?,
             Commands::Return(cmd) => cmd.exec(&db, offline).await?,
             Commands::Remove(cmd) => cmd.exec(db).await?,
+            Commands::Export(cmd) => cmd.exec(&db).await?,
             Commands::Completions(cmd) => cmd.exec::<Self>()?,
         }
         Ok(())
@@ -84,6 +85,8 @@ enum Commands {
     Return(ReturnCommand),
     /// Remove a device
     Remove(RemoveCommand),
+    /// Print the device-inventory database to stdout.
+    Export(ExportCommand),
     /// Print a completion file for the given shell.
     ///
     /// Example: `device-inventory completions zsh | source /dev/stdin`.

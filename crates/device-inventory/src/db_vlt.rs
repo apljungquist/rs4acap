@@ -46,11 +46,6 @@ pub async fn import(db: &Database, offline: bool) -> anyhow::Result<HashMap<Stri
     store_parsed(db, loans)
 }
 
-pub fn store(db: &Database, loans: &str) -> anyhow::Result<HashMap<String, Device>> {
-    let loans = rs4a_vlt::responses::parse_data::<Vec<Loan>>(loans)?;
-    store_parsed(db, loans)
-}
-
 fn store_parsed(db: &Database, loans: Vec<Loan>) -> anyhow::Result<HashMap<String, Device>> {
     let mut devices = db.read_devices()?;
     for loan in loans.into_iter() {

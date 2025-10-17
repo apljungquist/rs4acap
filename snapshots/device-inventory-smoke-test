@@ -1,4 +1,4 @@
-+ device-inventory import --source=json
++ device-inventory export
 + device-inventory add local 192.168.0.90 root pass
 + device-inventory for-each sh -- -c 'echo $AXIS_DEVICE_IP'
 192.168.0.90

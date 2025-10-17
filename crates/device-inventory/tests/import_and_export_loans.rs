@@ -1,22 +1,28 @@
 use std::{
     collections::HashMap,
     fs,
-    io::{BufRead, Write},
+    io::BufRead,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
     time::SystemTime,
 };
 
-fn device_inventory_command(now: SystemTime) -> Command {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_device-inventory"));
-    cmd.arg(format!(
-        "--inventory={}/{}",
+fn data_dir(now: SystemTime) -> PathBuf {
+    format!(
+        "{}/{}",
         env!("CARGO_TARGET_TMPDIR"),
         now.duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
             .as_secs()
-    ))
-    .arg("--offline")
-    .env("RUST_LOG", "debug");
+    )
+    .into()
+}
+
+fn device_inventory_command(data_dir: &Path) -> Command {
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_device-inventory"));
+    cmd.args(["--inventory", data_dir.as_os_str().to_str().unwrap()])
+        .arg("--offline")
+        .env("RUST_LOG", "debug");
     cmd
 }
 
@@ -24,26 +30,12 @@ fn device_inventory_command(now: SystemTime) -> Command {
 #[test]
 fn can_export_loans_from_get_response() {
     let now = SystemTime::now();
+    let data_dir = data_dir(now);
 
-    let json_str = fs::read_to_string("test-data/get-loans-response.json").unwrap();
-    let mut child = device_inventory_command(now)
-        .arg("import")
-        .arg("--source=json")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(json_str.as_bytes())
-        .unwrap();
-    let output = child.wait_with_output().unwrap();
-    assert!(output.status.success());
-    assert_eq!(output.stdout, b"");
+    fs::create_dir_all(&data_dir).unwrap();
+    fs::copy("test-data/devices.json", data_dir.join("devices.json")).unwrap();
 
-    let output = device_inventory_command(now)
+    let output = device_inventory_command(&data_dir)
         .arg("activate")
         .args(["--destination", "environment"])
         .stderr(Stdio::inherit())
