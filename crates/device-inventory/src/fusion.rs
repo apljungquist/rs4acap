@@ -1,7 +1,5 @@
 use std::{borrow::Cow, cmp::Ordering};
 
-use anyhow::Context;
-use log::warn;
 use rs4a_vapix::basic_device_info_1::UnrestrictedProperties;
 use rs4a_vlt::responses::{DeviceArchitecture, DeviceStatus, Loan};
 use url::Host;
@@ -195,7 +193,7 @@ impl Device {
         values.extend(self.dut_device.as_ref().map(|d| d.https_port));
         values.extend(self.inventory_device.as_ref().map(|(_, d)| d.https_port));
         values.extend(self.vlt_loan.as_ref().map(|d| match d.https_port() {
-            80 => None,
+            443 => None,
             p => Some(p),
         }));
         debug_assert!(values.len() < 2);
