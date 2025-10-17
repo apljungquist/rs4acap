@@ -220,7 +220,7 @@ impl ListCommand {
                         devices
                             .get_mut(&fingerprint)
                             .expect("Fingerprint comes from a device already in devices")
-                            .replace_properties(properties);
+                            .add_properties(properties)?;
                     }
                     Err(e) => {
                         warn!("Could not get properties for a device: {e:?}");

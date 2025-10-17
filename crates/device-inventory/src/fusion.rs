@@ -1,5 +1,6 @@
 use std::{borrow::Cow, cmp::Ordering, str::FromStr};
 
+use anyhow::bail;
 use rs4a_vapix::basic_device_info_1::UnrestrictedProperties;
 use rs4a_vlt::responses::{DeviceArchitecture, DeviceStatus, Loan};
 use semver::{BuildMetadata, Version, VersionReq};
@@ -131,11 +132,17 @@ impl Device {
             .expect("At least one field is some")
     }
 
-    pub fn replace_properties(
-        &mut self,
-        properties: UnrestrictedProperties,
-    ) -> Option<UnrestrictedProperties> {
-        self.basic_device_info.replace(properties)
+    pub fn add_properties(&mut self, properties: UnrestrictedProperties) -> anyhow::Result<()> {
+        let UnrestrictedProperties { version, .. } = properties;
+        let new = coerce_firmware_version(&version.to_string())?;
+        if let Some(old) = self.firmware.as_ref() {
+            if old != &new {
+                bail!("Attempted to add conflicting firmware")
+            }
+        } else {
+            self.firmware = Some(new);
+        }
+        Ok(())
     }
 
     pub fn replace_dut_device(&mut self, device: rs4a_dut::Device) -> Option<rs4a_dut::Device> {
