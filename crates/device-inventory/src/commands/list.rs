@@ -124,24 +124,6 @@ async fn probe_device(
     Ok((fingerprint, properties))
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, clap::ValueEnum)]
-pub(crate) enum Source {
-    /// Devices stored in the device-inventory database
-    Di,
-    /// Device activated using the DUT protocol.
-    Dut,
-    /// Devices discoverable using mDNS.
-    Mdns,
-    /// Devices from VLT loans and device listings.
-    Vlt,
-}
-
-impl Source {
-    fn all() -> Vec<Self> {
-        vec![Self::Di, Self::Dut, Self::Mdns, Self::Vlt]
-    }
-}
-
 #[derive(Clone, Debug, clap::Parser)]
 pub struct ListCommand {
     /// Probe devices for properties not indexed by the source.
@@ -149,9 +131,12 @@ pub struct ListCommand {
     /// Note that devices found only in the VLT source are not probed.
     #[arg(long)]
     probe: bool,
-    /// Sources to gather devices from.
-    #[arg(long = "source")]
-    sources: Option<Vec<Source>>,
+    /// Consider devices from mDNS.
+    #[arg(long, env = "DI_MDNS")]
+    mdns: bool,
+    /// Consider loans and devices from the VLT.
+    #[arg(long, env = "DI_VLT")]
+    vlt: bool,
     #[command(flatten)]
     device_filter: DeviceFilterParser,
 }
@@ -160,43 +145,39 @@ impl ListCommand {
     pub async fn exec(self, db: &Database, offline: bool) -> anyhow::Result<()> {
         let Self {
             probe,
+            mdns,
+            vlt,
             device_filter,
-            sources,
         } = self;
         let device_filter = device_filter.into_filter()?;
-        let sources = sources.unwrap_or_else(Source::all);
 
         let mut devices: HashMap<String, Device> = HashMap::new();
 
-        if sources.contains(&Source::Dut) {
-            if let Some(d) = rs4a_dut::Device::from_anywhere()? {
-                let f = active_fingerprint(&d);
-                match devices.entry(f) {
-                    Entry::Occupied(mut e) => {
-                        e.get_mut().replace_dut_device(d);
-                    }
-                    Entry::Vacant(e) => {
-                        e.insert(Device::from_dut_device(d));
-                    }
-                };
-            }
+        if let Some(d) = rs4a_dut::Device::from_anywhere()? {
+            let f = active_fingerprint(&d);
+            match devices.entry(f) {
+                Entry::Occupied(mut e) => {
+                    e.get_mut().replace_dut_device(d);
+                }
+                Entry::Vacant(e) => {
+                    e.insert(Device::from_dut_device(d));
+                }
+            };
         }
 
-        if sources.contains(&Source::Di) {
-            for (a, d) in db.read_devices()? {
-                let f = inventory_fingerprint(&d);
-                match devices.entry(f) {
-                    Entry::Occupied(mut e) => {
-                        e.get_mut().replace_inventory_device(a, d);
-                    }
-                    Entry::Vacant(e) => {
-                        e.insert(Device::from_inventory_device(a, d));
-                    }
-                };
-            }
+        for (a, d) in db.read_devices()? {
+            let f = inventory_fingerprint(&d);
+            match devices.entry(f) {
+                Entry::Occupied(mut e) => {
+                    e.get_mut().replace_inventory_device(a, d);
+                }
+                Entry::Vacant(e) => {
+                    e.insert(Device::from_inventory_device(a, d));
+                }
+            };
         }
 
-        if sources.contains(&Source::Mdns) {
+        if mdns {
             for d in mdns_source::discover_devices().await? {
                 let f = mdns_fingerprint(&d);
                 match devices.entry(f) {
@@ -237,7 +218,7 @@ impl ListCommand {
         }
 
         // Don't probe indexed sources
-        if sources.contains(&Source::Vlt) {
+        if vlt {
             let client = db_vlt::client(db, offline)
                 .await?
                 .context("VLT is not configured, skipping VLT devices")?;

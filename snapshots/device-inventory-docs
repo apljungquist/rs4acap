@@ -119,14 +119,15 @@ Options:
           
           Note that devices found only in the VLT source are not probed.
 
-      --source <SOURCES>
-          Sources to gather devices from
+      --mdns
+          Consider devices from mDNS
+          
+          [env: DI_MDNS=]
 
-          Possible values:
-          - di:   Devices stored in the device-inventory database
-          - dut:  Device activated using the DUT protocol
-          - mdns: Devices discoverable using mDNS
-          - vlt:  Devices from VLT loans and device listings
+      --vlt
+          Consider loans and devices from the VLT
+          
+          [env: DI_VLT=]
 
       --alias <ALIAS>
           Consider only devices with a matching alias.
