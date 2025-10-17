@@ -1,7 +1,9 @@
-use std::{borrow::Cow, cmp::Ordering};
+use std::{borrow::Cow, cmp::Ordering, str::FromStr};
 
+use anyhow::bail;
 use rs4a_vapix::basic_device_info_1::UnrestrictedProperties;
 use rs4a_vlt::responses::{DeviceArchitecture, DeviceStatus, Loan};
+use semver::{BuildMetadata, Version, VersionReq};
 use url::Host;
 
 use crate::mdns_source;
@@ -13,6 +15,25 @@ pub struct Device {
     mdns_device: Option<mdns_source::Device>,
     vlt_loan: Option<Loan>,
     vlt_device: Option<rs4a_vlt::responses::Device>,
+    firmware: Option<Version>,
+}
+
+fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
+    let mut parts = s.splitn(4, '.');
+    let major = parts.next().unwrap_or_default().parse()?;
+    let minor = parts.next().unwrap_or_default().parse()?;
+    let patch = parts.next().unwrap_or_default().parse()?;
+    let build = match parts.next() {
+        None => BuildMetadata::EMPTY,
+        Some(s) => BuildMetadata::from_str(s)?,
+    };
+    Ok(Version {
+        major,
+        minor,
+        patch,
+        pre: Default::default(),
+        build,
+    })
 }
 
 impl Device {
@@ -32,6 +53,7 @@ impl Device {
             mdns_device: None,
             vlt_loan: None,
             vlt_device: None,
+            firmware: None,
         }
     }
     pub fn from_inventory_device(alias: String, device: crate::db::Device) -> Self {
@@ -42,6 +64,7 @@ impl Device {
             mdns_device: None,
             vlt_loan: None,
             vlt_device: None,
+            firmware: None,
         }
     }
     pub fn from_mdns_device(device: crate::mdns_source::Device) -> Self {
@@ -52,6 +75,7 @@ impl Device {
             mdns_device: Some(device),
             vlt_loan: None,
             vlt_device: None,
+            firmware: None,
         }
     }
 
@@ -63,18 +87,23 @@ impl Device {
             vlt_loan: Some(loan),
             vlt_device: None,
             mdns_device: None,
+            firmware: None,
         }
     }
 
-    pub fn from_vlt_device(device: rs4a_vlt::responses::Device) -> Self {
-        Self {
+    pub fn from_vlt_device(device: rs4a_vlt::responses::Device) -> anyhow::Result<Self> {
+        let firmware = Some(coerce_firmware_version(
+            &device.firmware_version.to_string(),
+        )?);
+        Ok(Self {
             basic_device_info: None,
             dut_device: None,
             inventory_device: None,
             vlt_loan: None,
             vlt_device: Some(device),
             mdns_device: None,
-        }
+            firmware,
+        })
     }
 
     pub fn fingerprint(&self) -> String {
@@ -85,6 +114,7 @@ impl Device {
             vlt_loan: from_loan,
             vlt_device: from_other,
             mdns_device,
+            firmware: _,
         } = self;
         let from_active = from_active.as_ref().map(active_fingerprint);
         let from_inventory = from_inventory
@@ -102,11 +132,17 @@ impl Device {
             .expect("At least one field is some")
     }
 
-    pub fn replace_properties(
-        &mut self,
-        properties: UnrestrictedProperties,
-    ) -> Option<UnrestrictedProperties> {
-        self.basic_device_info.replace(properties)
+    pub fn add_properties(&mut self, properties: UnrestrictedProperties) -> anyhow::Result<()> {
+        let UnrestrictedProperties { version, .. } = properties;
+        let new = coerce_firmware_version(&version.to_string())?;
+        if let Some(old) = self.firmware.as_ref() {
+            if old != &new {
+                bail!("Attempted to add conflicting firmware")
+            }
+        } else {
+            self.firmware = Some(new);
+        }
+        Ok(())
     }
 
     pub fn replace_dut_device(&mut self, device: rs4a_dut::Device) -> Option<rs4a_dut::Device> {
@@ -157,6 +193,10 @@ impl Device {
         None
     }
 
+    pub(crate) fn firmware(&self) -> Option<&Version> {
+        self.firmware.as_ref()
+    }
+
     pub(crate) fn host(&self) -> Host {
         if let Some(d) = self.dut_device.as_ref() {
             return d.host.clone();
@@ -192,6 +232,7 @@ impl Device {
             p => Some(p),
         }));
         values.extend(self.mdns_device.as_ref().map(|_| None));
+        values.dedup();
         debug_assert!(values.len() < 2);
         values.pop()
     }
@@ -212,6 +253,7 @@ impl Device {
             p => Some(p),
         }));
         values.extend(self.mdns_device.as_ref().map(|_| None));
+        values.dedup();
         debug_assert!(values.len() < 2);
         values.pop()
     }
@@ -284,6 +326,7 @@ impl Device {
         device_filter.matches(BorrowedDevice {
             alias: self.alias(),
             architecture: self.architecture(),
+            firmware: self.firmware(),
             model: self.model(),
             status: self.status(),
         })
@@ -296,69 +339,9 @@ impl Device {}
 pub struct BorrowedDevice<'a> {
     pub(crate) alias: Option<Cow<'a, str>>,
     pub(crate) architecture: Option<DeviceArchitecture>,
+    pub(crate) firmware: Option<&'a Version>,
     pub(crate) model: Option<Cow<'a, str>>,
     pub(crate) status: Option<DeviceStatus>,
-}
-
-impl<'a> From<&'a (String, crate::db::Device)> for BorrowedDevice<'a> {
-    fn from(value: &'a (String, crate::db::Device)) -> Self {
-        Self {
-            alias: Some(Cow::Borrowed(value.0.as_str())),
-            architecture: None,
-            model: None,
-            status: None,
-        }
-    }
-}
-
-impl<'a> From<&'a rs4a_dut::Device> for BorrowedDevice<'a> {
-    fn from(_value: &'a rs4a_dut::Device) -> Self {
-        Self {
-            alias: None,
-            architecture: None,
-            model: None,
-            status: None,
-        }
-    }
-}
-
-impl<'a> From<&'a rs4a_vlt::responses::Device> for BorrowedDevice<'a> {
-    fn from(value: &'a rs4a_vlt::responses::Device) -> Self {
-        let rs4a_vlt::responses::Device {
-            architecture,
-            model,
-            status,
-            ..
-        } = value;
-        Self {
-            alias: None,
-            architecture: Some(*architecture),
-            model: Some(model.into()),
-            status: Some(*status),
-        }
-    }
-}
-
-impl<'a> From<&'a Loan> for BorrowedDevice<'a> {
-    fn from(_value: &'a Loan) -> Self {
-        Self {
-            alias: None,
-            architecture: None,
-            model: None,
-            status: None,
-        }
-    }
-}
-
-impl<'a> From<&'a mdns_source::Device> for BorrowedDevice<'a> {
-    fn from(_value: &'a mdns_source::Device) -> Self {
-        Self {
-            alias: None,
-            architecture: None,
-            model: None,
-            status: None,
-        }
-    }
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -371,6 +354,14 @@ pub struct DeviceFilterParser {
     /// Consider only devices with a matching architecture.
     #[arg(long, short)]
     architecture: Option<DeviceArchitecture>,
+    /// Consider only devices with a matching firmware version.
+    ///
+    /// Accepts the same version requirement syntax as Cargo, see
+    /// <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#version-requirement-syntax>
+    ///
+    /// Older firmware versions, which don't follow SemVer, are coerced into SemVer.
+    #[arg(long)]
+    firmware: Option<VersionReq>,
     /// Consider only devices with a matching model.
     ///
     /// Accepts a glob pattern.
@@ -386,6 +377,7 @@ impl DeviceFilterParser {
         let Self {
             alias,
             architecture,
+            firmware,
             model,
             status,
         } = self;
@@ -399,6 +391,7 @@ impl DeviceFilterParser {
             alias,
             model,
             architecture,
+            firmware,
             status,
         })
     }
@@ -408,6 +401,7 @@ pub struct DeviceFilter {
     alias: Option<glob::Pattern>,
     model: Option<glob::Pattern>,
     architecture: Option<DeviceArchitecture>,
+    firmware: Option<VersionReq>,
     status: Option<DeviceStatus>,
 }
 
@@ -416,6 +410,7 @@ impl DeviceFilter {
         let BorrowedDevice {
             alias,
             architecture,
+            firmware,
             model,
             status,
         } = d;
@@ -443,6 +438,15 @@ impl DeviceFilter {
         if let Some(a) = self.architecture {
             if let Some(architecture) = architecture {
                 if a != architecture {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        if let Some(req) = self.firmware.as_ref() {
+            if let Some(v) = firmware {
+                if !req.matches(v) {
                     return false;
                 }
             } else {

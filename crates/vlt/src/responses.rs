@@ -1,5 +1,9 @@
 //! Facilities for parsing responses.
-use std::{fmt::Display, net::Ipv4Addr, path::PathBuf};
+use std::{
+    fmt::{Display, Formatter},
+    net::Ipv4Addr,
+    path::PathBuf,
+};
 
 use anyhow::Context;
 use chrono::{DateTime, SecondsFormat, Utc};
@@ -8,7 +12,13 @@ use serde_json::Value;
 use url::Host;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct FirmwareVersion(pub(crate) String);
+pub struct FirmwareVersion(String);
+
+impl Display for FirmwareVersion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 struct DataEnvelope<T> {

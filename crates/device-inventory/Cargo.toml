@@ -13,6 +13,7 @@ glob = { workspace = true }
 log = { workspace = true }
 macaddr = { workspace = true }
 mdns = { workspace = true }
+semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["raw_value"] }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }

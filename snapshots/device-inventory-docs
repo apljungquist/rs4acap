@@ -138,6 +138,13 @@ Options:
           
           [possible values: aarch64, armv7hf, armv7l, mips]
 
+      --firmware <FIRMWARE>
+          Consider only devices with a matching firmware version.
+          
+          Accepts the same version requirement syntax as Cargo, see <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#version-requirement-syntax>
+          
+          Older firmware versions, which don't follow SemVer, are coerced into SemVer.
+
   -m, --model <MODEL>
           Consider only devices with a matching model.
           
@@ -192,6 +199,13 @@ Options:
           Consider only devices with a matching architecture
           
           [possible values: aarch64, armv7hf, armv7l, mips]
+
+      --firmware <FIRMWARE>
+          Consider only devices with a matching firmware version.
+          
+          Accepts the same version requirement syntax as Cargo, see <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#version-requirement-syntax>
+          
+          Older firmware versions, which don't follow SemVer, are coerced into SemVer.
 
   -m, --model <MODEL>
           Consider only devices with a matching model.
