@@ -198,8 +198,12 @@ impl ListCommand {
                     offline,
                     device.fingerprint(),
                     device.host(),
-                    device.http_port(),
-                    device.https_port(),
+                    device
+                        .http_port()
+                        .expect("all devices added have a http port"),
+                    device
+                        .https_port()
+                        .expect("all devices added have a https port"),
                 ));
             }
             for r in join_set.join_all().await {

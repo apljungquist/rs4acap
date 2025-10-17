@@ -1,5 +1,7 @@
 use std::{borrow::Cow, cmp::Ordering};
 
+use anyhow::Context;
+use log::warn;
 use rs4a_vapix::basic_device_info_1::UnrestrictedProperties;
 use rs4a_vlt::responses::{DeviceArchitecture, DeviceStatus, Loan};
 use url::Host;
@@ -176,44 +178,28 @@ impl Device {
         unreachable!()
     }
 
-    pub fn http_port(&self) -> Option<u16> {
-        if let Some(p) = self.dut_device.as_ref().and_then(|d| d.http_port) {
-            return Some(p);
-        }
-        if let Some(p) = self
-            .inventory_device
-            .as_ref()
-            .and_then(|(_, d)| d.http_port)
-        {
-            return Some(p);
-        }
-        if let Some(p) = self.vlt_loan.as_ref().map(|d| d.http_port()) {
-            return Some(p);
-        }
-        if let Some(p) = self.vlt_device.as_ref().map(|d| d.http_port()) {
-            return Some(p);
-        }
-        None
+    pub fn http_port(&self) -> Option<Option<u16>> {
+        let mut values = Vec::new();
+        values.extend(self.dut_device.as_ref().map(|d| d.http_port));
+        values.extend(self.inventory_device.as_ref().map(|(_, d)| d.http_port));
+        values.extend(self.vlt_loan.as_ref().map(|d| match d.http_port() {
+            80 => None,
+            p => Some(p),
+        }));
+        debug_assert!(values.len() < 2);
+        values.pop()
     }
 
-    pub fn https_port(&self) -> Option<u16> {
-        if let Some(p) = self.dut_device.as_ref().and_then(|d| d.https_port) {
-            return Some(p);
-        }
-        if let Some(p) = self
-            .inventory_device
-            .as_ref()
-            .and_then(|(_, d)| d.https_port)
-        {
-            return Some(p);
-        }
-        if let Some(p) = self.vlt_loan.as_ref().map(|d| d.https_port()) {
-            return Some(p);
-        }
-        if let Some(p) = self.vlt_device.as_ref().map(|d| d.https_port()) {
-            return Some(p);
-        }
-        None
+    pub fn https_port(&self) -> Option<Option<u16>> {
+        let mut values = Vec::new();
+        values.extend(self.dut_device.as_ref().map(|d| d.https_port));
+        values.extend(self.inventory_device.as_ref().map(|(_, d)| d.https_port));
+        values.extend(self.vlt_loan.as_ref().map(|d| match d.https_port() {
+            80 => None,
+            p => Some(p),
+        }));
+        debug_assert!(values.len() < 2);
+        values.pop()
     }
 
     pub(crate) fn model(&self) -> Option<Cow<str>> {
@@ -477,7 +463,7 @@ pub fn loan_fingerprint(d: &Loan) -> String {
 }
 
 pub fn other_fingerprint(d: &rs4a_vlt::responses::Device) -> String {
-    format!("{}:{}", d.host(), d.http_port())
+    format!("{}:{}", d.host(), d.external_ip.http_port())
 }
 
 pub fn mdns_fingerprint(d: &mdns_source::Device) -> String {
