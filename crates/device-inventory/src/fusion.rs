@@ -1,6 +1,5 @@
 use std::{borrow::Cow, cmp::Ordering, str::FromStr};
 
-use log::warn;
 use rs4a_vapix::basic_device_info_1::UnrestrictedProperties;
 use rs4a_vlt::responses::{DeviceArchitecture, DeviceStatus, Loan};
 use semver::{BuildMetadata, Version, VersionReq};
@@ -15,43 +14,25 @@ pub struct Device {
     mdns_device: Option<mdns_source::Device>,
     vlt_loan: Option<Loan>,
     vlt_device: Option<rs4a_vlt::responses::Device>,
+    firmware: Option<Version>,
 }
 
-fn coerce_firmware_version(s: &str) -> Version {
+fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
     let mut parts = s.splitn(4, '.');
-    let major = parts
-        .next()
-        .unwrap_or_default()
-        .parse()
-        .inspect_err(|e| warn!("Could not coerce major from {s}: {e}"))
-        .unwrap_or_default();
-    let minor = parts
-        .next()
-        .unwrap_or_default()
-        .parse()
-        .inspect_err(|e| warn!("Could not coerce minor from {s}: {e}"))
-        .unwrap_or_default();
-    let patch = parts
-        .next()
-        .unwrap_or_default()
-        .parse()
-        .inspect_err(|e| warn!("Could not coerce patch from {s}: {e}"))
-        .unwrap_or_default();
-    let build = parts
-        .next()
-        .and_then(|s| {
-            BuildMetadata::from_str(s)
-                .inspect_err(|e| warn!("Could not coerce {s:?} to build metadata: {e}"))
-                .ok()
-        })
-        .unwrap_or_default();
-    Version {
+    let major = parts.next().unwrap_or_default().parse()?;
+    let minor = parts.next().unwrap_or_default().parse()?;
+    let patch = parts.next().unwrap_or_default().parse()?;
+    let build = match parts.next() {
+        None => BuildMetadata::EMPTY,
+        Some(s) => BuildMetadata::from_str(s)?,
+    };
+    Ok(Version {
         major,
         minor,
         patch,
         pre: Default::default(),
         build,
-    }
+    })
 }
 
 impl Device {
@@ -71,6 +52,7 @@ impl Device {
             mdns_device: None,
             vlt_loan: None,
             vlt_device: None,
+            firmware: None,
         }
     }
     pub fn from_inventory_device(alias: String, device: crate::db::Device) -> Self {
@@ -81,6 +63,7 @@ impl Device {
             mdns_device: None,
             vlt_loan: None,
             vlt_device: None,
+            firmware: None,
         }
     }
     pub fn from_mdns_device(device: crate::mdns_source::Device) -> Self {
@@ -91,6 +74,7 @@ impl Device {
             mdns_device: Some(device),
             vlt_loan: None,
             vlt_device: None,
+            firmware: None,
         }
     }
 
@@ -102,18 +86,23 @@ impl Device {
             vlt_loan: Some(loan),
             vlt_device: None,
             mdns_device: None,
+            firmware: None,
         }
     }
 
-    pub fn from_vlt_device(device: rs4a_vlt::responses::Device) -> Self {
-        Self {
+    pub fn from_vlt_device(device: rs4a_vlt::responses::Device) -> anyhow::Result<Self> {
+        let firmware = Some(coerce_firmware_version(
+            &device.firmware_version.to_string(),
+        )?);
+        Ok(Self {
             basic_device_info: None,
             dut_device: None,
             inventory_device: None,
             vlt_loan: None,
             vlt_device: Some(device),
             mdns_device: None,
-        }
+            firmware,
+        })
     }
 
     pub fn fingerprint(&self) -> String {
@@ -124,6 +113,7 @@ impl Device {
             vlt_loan: from_loan,
             vlt_device: from_other,
             mdns_device,
+            firmware: _,
         } = self;
         let from_active = from_active.as_ref().map(active_fingerprint);
         let from_inventory = from_inventory
@@ -196,17 +186,8 @@ impl Device {
         None
     }
 
-    pub(crate) fn firmware(&self) -> Option<Version> {
-        let mut values = Vec::new();
-        if let Some(p) = self.basic_device_info.as_ref() {
-            values.push(coerce_firmware_version(p.version.as_str()));
-        }
-        if let Some(d) = self.vlt_device.as_ref() {
-            values.push(coerce_firmware_version(&d.firmware_version.to_string()));
-        }
-        values.dedup();
-        debug_assert!(values.len() < 2);
-        values.pop()
+    pub(crate) fn firmware(&self) -> Option<&Version> {
+        self.firmware.as_ref()
     }
 
     pub(crate) fn host(&self) -> Host {
@@ -351,76 +332,9 @@ impl Device {}
 pub struct BorrowedDevice<'a> {
     pub(crate) alias: Option<Cow<'a, str>>,
     pub(crate) architecture: Option<DeviceArchitecture>,
-    pub(crate) firmware: Option<Version>,
+    pub(crate) firmware: Option<&'a Version>,
     pub(crate) model: Option<Cow<'a, str>>,
     pub(crate) status: Option<DeviceStatus>,
-}
-
-impl<'a> From<&'a (String, crate::db::Device)> for BorrowedDevice<'a> {
-    fn from(value: &'a (String, crate::db::Device)) -> Self {
-        Self {
-            alias: Some(Cow::Borrowed(value.0.as_str())),
-            architecture: None,
-            firmware: None,
-            model: None,
-            status: None,
-        }
-    }
-}
-
-impl<'a> From<&'a rs4a_dut::Device> for BorrowedDevice<'a> {
-    fn from(_value: &'a rs4a_dut::Device) -> Self {
-        Self {
-            alias: None,
-            architecture: None,
-            firmware: None,
-            model: None,
-            status: None,
-        }
-    }
-}
-
-impl<'a> From<&'a rs4a_vlt::responses::Device> for BorrowedDevice<'a> {
-    fn from(value: &'a rs4a_vlt::responses::Device) -> Self {
-        let rs4a_vlt::responses::Device {
-            architecture,
-            model,
-            status,
-            firmware_version,
-            ..
-        } = value;
-        Self {
-            alias: None,
-            architecture: Some(*architecture),
-            firmware: Some(coerce_firmware_version(&firmware_version.to_string())),
-            model: Some(model.into()),
-            status: Some(*status),
-        }
-    }
-}
-
-impl<'a> From<&'a Loan> for BorrowedDevice<'a> {
-    fn from(value: &'a Loan) -> Self {
-        Self {
-            alias: None,
-            architecture: None,
-            firmware: None,
-            model: Some(value.loanable.model.as_str().into()),
-            status: None,
-        }
-    }
-}
-
-impl<'a> From<&'a mdns_source::Device> for BorrowedDevice<'a> {
-    fn from(_value: &'a mdns_source::Device) -> Self {
-        Self {
-            alias: None,
-            architecture: None,
-            firmware: None,
-            model: None,
-            status: None,
-        }
-    }
 }
 
 #[derive(Clone, Debug, clap::Parser)]

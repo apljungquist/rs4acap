@@ -251,7 +251,7 @@ impl ListCommand {
                 match devices.entry(f) {
                     Entry::Occupied(mut e) => e.get_mut().replace_vlt_device(d),
                     Entry::Vacant(e) => {
-                        e.insert(Device::from_vlt_device(d));
+                        e.insert(Device::from_vlt_device(d)?);
                         None
                     }
                 };
