@@ -176,6 +176,13 @@ impl Device {
         unreachable!()
     }
 
+    /// Returns any port mapping for the HTTP port.
+    ///
+    /// This is how the values should be interpreted:
+    ///
+    /// - `None`: Not known, because the device is not accessible or should not be accessed.
+    /// - `Some(None)`: No port remapping.
+    /// - `Some(p)`: The port has been remapped to `p`
     pub fn http_port(&self) -> Option<Option<u16>> {
         let mut values = Vec::new();
         values.extend(self.dut_device.as_ref().map(|d| d.http_port));
@@ -184,10 +191,18 @@ impl Device {
             80 => None,
             p => Some(p),
         }));
+        values.extend(self.mdns_device.as_ref().map(|_| None));
         debug_assert!(values.len() < 2);
         values.pop()
     }
 
+    /// Returns any port mapping for the HTTPS port.
+    ///
+    /// This is how the values should be interpreted:
+    ///
+    /// - `None`: Not known, because the device is not accessible or should not be accessed.
+    /// - `Some(None)`: No port remapping.
+    /// - `Some(p)`: The port has been remapped to `p`
     pub fn https_port(&self) -> Option<Option<u16>> {
         let mut values = Vec::new();
         values.extend(self.dut_device.as_ref().map(|d| d.https_port));
@@ -196,6 +211,7 @@ impl Device {
             443 => None,
             p => Some(p),
         }));
+        values.extend(self.mdns_device.as_ref().map(|_| None));
         debug_assert!(values.len() < 2);
         values.pop()
     }
