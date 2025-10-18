@@ -41,8 +41,22 @@ Activate an existing device
 Usage: device-inventory activate [OPTIONS]
 
 Options:
-      --alias <ALIAS>
-          The alias of the device to activate
+      --probe
+          Probe devices for properties not indexed by the source.
+          
+          Note that devices found only in the VLT source are not probed.
+
+      --reason <REASON>
+          Reason why the device is being borrowed.
+          
+          Needed only to create a new VLT loan.
+
+      --hours <HOURS>
+          Number of hours to borrow a device.
+          
+          Used only when a new VLT loan is created.
+          
+          [default: 8]
 
       --destination <DESTINATION>
           [default: filesystem]
@@ -50,6 +64,33 @@ Options:
           Possible values:
           - filesystem:  Write information to the filesystem
           - environment: Print information as a shell script that can be sourced
+
+      --alias <ALIAS>
+          Consider only devices with a matching alias.
+          
+          Accepts a glob pattern.
+
+  -a, --architecture <ARCHITECTURE>
+          Consider only devices with a matching architecture
+          
+          [possible values: aarch64, armv7hf, armv7l, mips]
+
+      --firmware <FIRMWARE>
+          Consider only devices with a matching firmware version.
+          
+          Accepts the same version requirement syntax as Cargo, see <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#version-requirement-syntax>
+          
+          Older firmware versions, which don't follow SemVer, are coerced into SemVer.
+
+  -m, --model <MODEL>
+          Consider only devices with a matching model.
+          
+          Accepts a glob pattern.
+
+  -s, --status <STATUS>
+          Consider only devices with a matching status
+          
+          [possible values: connected, on-loan]
 
   -h, --help
           Print help (see a summary with '-h')

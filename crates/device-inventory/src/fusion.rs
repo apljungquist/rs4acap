@@ -20,7 +20,7 @@ pub struct Device {
 }
 
 // TODO: Consider removing the non-exhaustive attribute on `Architecture`
-fn convert_architecture(a: Architecture) -> anyhow::Result<DeviceArchitecture> {
+pub fn convert_architecture(a: Architecture) -> anyhow::Result<DeviceArchitecture> {
     match a {
         Architecture::Aarch64 => Ok(DeviceArchitecture::Aarch64),
         Architecture::Armv7hf => Ok(DeviceArchitecture::Armv7hf),
@@ -30,7 +30,7 @@ fn convert_architecture(a: Architecture) -> anyhow::Result<DeviceArchitecture> {
     }
 }
 
-fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
+pub fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
     let mut parts = s.splitn(4, '.');
     let major = parts.next().unwrap_or_default().parse()?;
     let minor = parts.next().unwrap_or_default().parse()?;
@@ -397,14 +397,17 @@ impl Device {
         None
     }
 
-    pub fn is_matched_by(&self, device_filter: &DeviceFilter) -> bool {
-        device_filter.matches(BorrowedDevice {
-            alias: self.alias(),
-            architecture: self.architecture(),
-            firmware: self.firmware(),
-            model: self.model(),
-            status: self.status(),
-        })
+    pub fn is_matched_by(&self, device_filter: &DeviceFilter, default: bool) -> bool {
+        device_filter.matches(
+            BorrowedDevice {
+                alias: self.alias(),
+                architecture: self.architecture(),
+                firmware: self.firmware(),
+                model: self.model(),
+                status: self.status(),
+            },
+            default,
+        )
     }
 }
 
@@ -417,6 +420,54 @@ pub struct BorrowedDevice<'a> {
     pub(crate) firmware: Option<&'a Version>,
     pub(crate) model: Option<Cow<'a, str>>,
     pub(crate) status: Option<DeviceStatus>,
+}
+
+impl<'a> From<(&'a String, &'a crate::db::Device)> for BorrowedDevice<'a> {
+    fn from(value: (&'a String, &'a crate::db::Device)) -> Self {
+        Self {
+            alias: Some(Cow::Borrowed(value.0.as_str())),
+            architecture: None,
+            firmware: None,
+            model: None,
+            status: None,
+        }
+    }
+}
+
+impl<'a> From<&'a rs4a_dut::Device> for BorrowedDevice<'a> {
+    fn from(_value: &'a rs4a_dut::Device) -> Self {
+        Self {
+            alias: None,
+            architecture: None,
+            firmware: None,
+            model: None,
+            status: None,
+        }
+    }
+}
+
+impl<'a> From<&'a Loan> for BorrowedDevice<'a> {
+    fn from(_value: &'a Loan) -> Self {
+        Self {
+            alias: None,
+            architecture: None,
+            firmware: None,
+            model: None,
+            status: None,
+        }
+    }
+}
+
+impl<'a> From<&'a mdns_source::Device> for BorrowedDevice<'a> {
+    fn from(_value: &'a mdns_source::Device) -> Self {
+        Self {
+            alias: None,
+            architecture: None,
+            firmware: None,
+            model: None,
+            status: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -481,7 +532,7 @@ pub struct DeviceFilter {
 }
 
 impl DeviceFilter {
-    pub fn matches(&self, d: BorrowedDevice) -> bool {
+    pub fn matches(&self, d: BorrowedDevice, default: bool) -> bool {
         let BorrowedDevice {
             alias,
             architecture,
@@ -496,7 +547,7 @@ impl DeviceFilter {
                     return false;
                 }
             } else {
-                return false;
+                return default;
             }
         }
 
@@ -506,7 +557,7 @@ impl DeviceFilter {
                     return false;
                 }
             } else {
-                return false;
+                return default;
             }
         }
 
@@ -516,7 +567,7 @@ impl DeviceFilter {
                     return false;
                 }
             } else {
-                return false;
+                return default;
             }
         }
         if let Some(req) = self.firmware.as_ref() {
@@ -525,7 +576,7 @@ impl DeviceFilter {
                     return false;
                 }
             } else {
-                return false;
+                return default;
             }
         }
 
@@ -535,11 +586,67 @@ impl DeviceFilter {
                     return false;
                 }
             } else {
-                return false;
+                return default;
             }
         }
 
         true
+    }
+
+    pub fn matches_with_properties(
+        &self,
+        device: BorrowedDevice,
+        fallback_architecture: Option<DeviceArchitecture>,
+        fallback_firmware: Option<&Version>,
+        fallback_model: Option<Cow<'static, str>>,
+        default: bool,
+    ) -> bool {
+        let BorrowedDevice {
+            alias,
+            architecture,
+            firmware,
+            model,
+            status,
+        } = device;
+        let architecture = architecture.or(fallback_architecture);
+        let firmware = firmware.or(fallback_firmware);
+        let model = model.or(fallback_model);
+
+        self.matches(
+            BorrowedDevice {
+                alias,
+                architecture,
+                firmware,
+                model,
+                status,
+            },
+            default,
+        )
+    }
+
+    pub fn try_matches_vlt_device(
+        &self,
+        device: &rs4a_vlt::responses::Device,
+        default: bool,
+    ) -> anyhow::Result<bool> {
+        let rs4a_vlt::responses::Device {
+            architecture,
+            model,
+            status,
+            firmware_version,
+            ..
+        } = device;
+        let firmware_version = coerce_firmware_version(&firmware_version.to_string())?;
+        Ok(self.matches(
+            BorrowedDevice {
+                alias: None,
+                architecture: Some(*architecture),
+                firmware: Some(&firmware_version),
+                model: Some(model.into()),
+                status: Some(*status),
+            },
+            default,
+        ))
     }
 }
 

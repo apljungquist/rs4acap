@@ -46,7 +46,10 @@ pub async fn import(db: &Database, offline: bool) -> anyhow::Result<HashMap<Stri
     store_parsed(db, loans)
 }
 
-fn store_parsed(db: &Database, loans: Vec<Loan>) -> anyhow::Result<HashMap<String, Device>> {
+pub(crate) fn store_parsed(
+    db: &Database,
+    loans: Vec<Loan>,
+) -> anyhow::Result<HashMap<String, Device>> {
     let mut devices = db.read_devices()?;
     for loan in loans.into_iter() {
         let (alias, device) = device_from_loan(loan);
