@@ -2,7 +2,11 @@ use std::collections::{hash_map::Entry, HashMap};
 
 use anyhow::Context;
 use log::warn;
-use rs4a_vapix::{apis, basic_device_info_1::UnrestrictedProperties, json_rpc_http::JsonRpcHttp};
+use rs4a_vapix::{
+    apis,
+    basic_device_info_1::{AllProperties, RestrictedProperties, UnrestrictedProperties},
+    json_rpc_http::JsonRpcHttp,
+};
 use rs4a_vlt::requests;
 use tokio::task::JoinSet;
 use url::Host;
@@ -115,21 +119,46 @@ async fn probe_device(
     host: Host,
     http_port: Option<u16>,
     https_port: Option<u16>,
-) -> anyhow::Result<(String, UnrestrictedProperties)> {
+    username: Option<String>,
+    password: Option<String>,
+) -> anyhow::Result<(String, UnrestrictedProperties, Option<RestrictedProperties>)> {
     assert!(!offline);
-    let client = rs4a_vapix::Client::builder(host)
-        .plain_port(http_port)
-        .secure_port(https_port)
-        .with_inner(|b| b.danger_accept_invalid_certs(true))
-        .build_with_automatic_scheme()
-        .await
-        .context("Could not create client")?;
+    match (username, password) {
+        (Some(username), Some(password)) => {
+            let client = rs4a_vapix::Client::builder(host)
+                .basic_authentication(&username, &password)
+                .plain_port(http_port)
+                .secure_port(https_port)
+                .with_inner(|b| b.danger_accept_invalid_certs(true))
+                .build_with_automatic_scheme()
+                .await
+                .context("Could not create client")?;
 
-    let properties = apis::basic_device_info_1::get_all_unrestricted_properties()
-        .send(&client)
-        .await?
-        .property_list;
-    Ok((fingerprint, properties))
+            let AllProperties {
+                unrestricted,
+                restricted,
+            } = apis::basic_device_info_1::get_all_properties()
+                .send(&client)
+                .await?
+                .property_list;
+            Ok((fingerprint, unrestricted, Some(restricted)))
+        }
+        _ => {
+            let client = rs4a_vapix::Client::builder(host)
+                .plain_port(http_port)
+                .secure_port(https_port)
+                .with_inner(|b| b.danger_accept_invalid_certs(true))
+                .build_with_automatic_scheme()
+                .await
+                .context("Could not create client")?;
+
+            let unrestricted = apis::basic_device_info_1::get_all_unrestricted_properties()
+                .send(&client)
+                .await?
+                .property_list;
+            Ok((fingerprint, unrestricted, None))
+        }
+    }
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -199,6 +228,28 @@ impl ListCommand {
             }
         }
 
+        let vlt_client = match vlt {
+            true => Some(
+                db_vlt::client(db, offline)
+                    .await?
+                    .context("VLT is not configured, skipping VLT devices")?,
+            ),
+            false => None,
+        };
+
+        if let Some(client) = vlt_client.as_ref() {
+            for d in requests::loans().send(client).await? {
+                let f = loan_fingerprint(&d);
+                match devices.entry(f) {
+                    Entry::Occupied(mut e) => e.get_mut().replace_vlt_loan(d),
+                    Entry::Vacant(e) => {
+                        e.insert(Device::from_vlt_loan(d));
+                        None
+                    }
+                };
+            }
+        }
+
         if probe {
             let mut join_set = JoinSet::new();
             for device in devices.values() {
@@ -212,15 +263,20 @@ impl ListCommand {
                     device
                         .https_port()
                         .expect("all devices added have a https port"),
+                    device.username(),
+                    device.password(),
                 ));
             }
             for r in join_set.join_all().await {
                 match r {
-                    Ok((fingerprint, properties)) => {
-                        devices
+                    Ok((fingerprint, unrestricted, restricted)) => {
+                        let device = devices
                             .get_mut(&fingerprint)
-                            .expect("Fingerprint comes from a device already in devices")
-                            .add_properties(properties)?;
+                            .expect("Fingerprint comes from a device already in devices");
+                        device.add_unrestricted_properties(unrestricted)?;
+                        if let Some(restricted) = restricted {
+                            device.add_restricted_properties(restricted)?;
+                        }
                     }
                     Err(e) => {
                         warn!("Could not get properties for a device: {e:?}");
@@ -229,30 +285,13 @@ impl ListCommand {
             }
         }
 
-        // Don't probe indexed sources
-        if vlt {
-            let client = db_vlt::client(db, offline)
-                .await?
-                .context("VLT is not configured, skipping VLT devices")?;
-
-            for d in requests::loans().send(&client).await? {
-                let f = loan_fingerprint(&d);
-                match devices.entry(f) {
-                    Entry::Occupied(mut e) => e.get_mut().replace_vlt_loan(d),
-                    Entry::Vacant(e) => {
-                        e.insert(Device::from_vlt_loan(d));
-                        None
-                    }
-                };
-            }
-
-            for d in requests::devices().send(&client).await? {
+        if let Some(client) = vlt_client.as_ref() {
+            for d in requests::devices().send(client).await? {
                 let f = other_fingerprint(&d);
                 match devices.entry(f) {
-                    Entry::Occupied(mut e) => e.get_mut().replace_vlt_device(d),
+                    Entry::Occupied(mut e) => e.get_mut().add_vlt_device(d)?,
                     Entry::Vacant(e) => {
                         e.insert(Device::from_vlt_device(d)?);
-                        None
                     }
                 };
             }
