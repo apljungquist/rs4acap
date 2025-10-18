@@ -155,9 +155,9 @@ impl Device {
         &mut self,
         properties: UnrestrictedProperties,
     ) -> anyhow::Result<()> {
-        let UnrestrictedProperties { version, .. } = properties;
+        let UnrestrictedProperties { version, .. } = &properties;
 
-        let new = coerce_firmware_version(&version.to_string())?;
+        let new = coerce_firmware_version(version)?;
         if let Some(old) = self.firmware.as_ref() {
             if old != &new {
                 bail!("Attempted to add conflicting firmware")
@@ -165,6 +165,8 @@ impl Device {
         } else {
             self.firmware = Some(new);
         }
+
+        self.basic_device_info = Some(properties);
 
         Ok(())
     }
