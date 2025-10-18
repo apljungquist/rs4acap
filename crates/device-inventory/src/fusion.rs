@@ -19,14 +19,14 @@ pub struct Device {
     architecture: Option<DeviceArchitecture>,
 }
 
-fn convert_architecture(a: Architecture) -> DeviceArchitecture {
+// TODO: Consider removing the non-exhaustive attribute on `Architecture`
+fn convert_architecture(a: Architecture) -> anyhow::Result<DeviceArchitecture> {
     match a {
-        Architecture::Aarch64 => DeviceArchitecture::Aarch64,
-        Architecture::Armv7hf => DeviceArchitecture::Armv7hf,
-        Architecture::Armv7l => DeviceArchitecture::Armv7l,
-        Architecture::Mips => DeviceArchitecture::Mips,
-        // TODO: Consider making this conversion fallible or finding another way to avoid panicking.
-        _ => unimplemented!(),
+        Architecture::Aarch64 => Ok(DeviceArchitecture::Aarch64),
+        Architecture::Armv7hf => Ok(DeviceArchitecture::Armv7hf),
+        Architecture::Armv7l => Ok(DeviceArchitecture::Armv7l),
+        Architecture::Mips => Ok(DeviceArchitecture::Mips),
+        _ => Err(anyhow::anyhow!("not implemented for {a:?}")),
     }
 }
 
@@ -175,7 +175,7 @@ impl Device {
     ) -> anyhow::Result<()> {
         let RestrictedProperties { architecture, .. } = properties;
 
-        let new = convert_architecture(architecture);
+        let new = convert_architecture(architecture)?;
         if let Some(old) = self.architecture.as_ref() {
             if old != &new {
                 bail!("Attempted to add conflicting architecture")
@@ -311,18 +311,23 @@ impl Device {
                 .map(|(_, d)| d.username.clone()),
         );
         values.extend(self.vlt_loan.as_ref().map(|d| d.username.clone()));
+        values.dedup();
+        debug_assert!(values.len() < 2);
         values.pop()
     }
 
     pub fn password(&self) -> Option<String> {
         let mut values = Vec::new();
         values.extend(self.dut_device.as_ref().map(|d| d.password.clone()));
+        // TODO: Consider propagating the password type or removing it altogether.
         values.extend(
             self.inventory_device
                 .as_ref()
                 .map(|(_, d)| d.password.dangerous_reveal().to_string()),
         );
         values.extend(self.vlt_loan.as_ref().map(|d| d.password.clone()));
+        values.dedup();
+        debug_assert!(values.len() < 2);
         values.pop()
     }
 
