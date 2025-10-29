@@ -108,7 +108,9 @@ pub struct ActionRule {
     pub rule_id: u16,
     pub name: String,
     pub enabled: String,
-    pub conditions: Conditions,
+    // TODO: Consider encoding the observation that conditions and start_event are not both set
+    pub conditions: Option<Conditions>,
+    pub start_event: Option<Condition>,
     pub primary_action: u16,
 }
 #[derive(Debug, Deserialize)]
@@ -126,6 +128,8 @@ pub struct GetActionRulesResponse {
 
 #[cfg(test)]
 mod tests {
+    use expect_test::expect;
+
     use crate::{
         services::action1::{action_rules::AddActionRuleResponse, GetActionRulesResponse},
         soap::parse_soap,
@@ -139,9 +143,63 @@ mod tests {
     }
 
     #[test]
-    fn can_deserialize_get_action_rules_response() {
-        let text = include_str!("examples/get_action_rules_response.xml");
+    fn can_deserialize_get_action_rules_200_empty_response() {
+        let text = include_str!("examples/get_action_rules_200_empty.xml");
         let data = parse_soap::<GetActionRulesResponse>(text).unwrap();
         assert!(data.action_rules.action_rule.is_empty());
+    }
+
+    #[test]
+    fn can_deserialize_get_action_rules_200_response_with_conditions() {
+        let text = include_str!("examples/get_action_rules_200_conditions.xml");
+        let data = parse_soap::<GetActionRulesResponse>(text).unwrap();
+        expect![[r#"
+            ActionRules {
+                action_rule: [
+                    ActionRule {
+                        rule_id: 30,
+                        name: "remote_recording",
+                        enabled: "true",
+                        conditions: Some(
+                            Conditions {
+                                condition: [
+                                    Condition {
+                                        topic_expression: "tnsaxis:CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY",
+                                        message_content: "boolean(//SimpleItem[@Name=\"active\" and @Value=\"1\"])",
+                                    },
+                                ],
+                            },
+                        ),
+                        start_event: None,
+                        primary_action: 31,
+                    },
+                ],
+            }
+        "#]].assert_debug_eq(&data.action_rules);
+    }
+
+    #[test]
+    fn can_deserialize_get_action_rules_200_response_with_start_event() {
+        let text = include_str!("examples/get_action_rules_200_start_event.xml");
+        let data = parse_soap::<GetActionRulesResponse>(text).unwrap();
+        expect![[r#"
+            ActionRules {
+                action_rule: [
+                    ActionRule {
+                        rule_id: 16,
+                        name: "Motion (email)",
+                        enabled: "false",
+                        conditions: None,
+                        start_event: Some(
+                            Condition {
+                                topic_expression: "tnsaxis:CameraApplicationPlatform/ObjectAnalytics/Device1Scenario1",
+                                message_content: "boolean(//SimpleItem[@Name=\"active\" and @Value=\"1\"])",
+                            },
+                        ),
+                        primary_action: 17,
+                    },
+                ],
+            }
+        "#]].assert_debug_eq(&data.action_rules);
     }
 }
