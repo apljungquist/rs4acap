@@ -25,7 +25,7 @@ struct DataEnvelope<T> {
     success: bool,
     data: Option<T>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    meta: Option<Vec<()>>,
+    meta: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -43,7 +43,7 @@ pub enum ParseError {
     Remote,
 }
 
-fn debug_assert_lossless<T>(s: &str, data: &T, meta: Option<Vec<()>>)
+fn debug_assert_lossless<T>(s: &str, data: &T, meta: Option<Vec<String>>)
 where
     T: Clone + for<'de> Deserialize<'de> + Serialize,
 {
@@ -293,7 +293,7 @@ pub struct NewLoan {
     pub status: DeviceStatus,
     pub username: String,
     pub loanable: NewLoanable,
-    pub meta: Vec<()>,
+    pub meta: Vec<String>,
 }
 
 #[non_exhaustive]
@@ -307,7 +307,7 @@ pub struct Loan {
     #[serde(serialize_with = "serialize_datetime")]
     pub loan_start: DateTime<Utc>,
     pub loanable: Loanable,
-    pub meta: Vec<()>,
+    pub meta: Vec<String>,
     pub password: String,
     pub selected_firmware: FirmwareVersion,
     #[serde(serialize_with = "serialize_datetime")]

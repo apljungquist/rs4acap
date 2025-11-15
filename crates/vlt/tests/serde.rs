@@ -48,6 +48,7 @@ fn can_deserialize_get_devices_responses() {
 fn can_deserialize_get_loans_responses() {
     parse_data::<Vec<Loan>>(include_str!("responses/get_loans_empty.json")).unwrap();
     parse_data::<Vec<Loan>>(include_str!("responses/get_loans_non_empty.json")).unwrap();
+    parse_data::<Vec<Loan>>(include_str!("responses/get_loans_radar.json")).unwrap();
 }
 
 #[test]
