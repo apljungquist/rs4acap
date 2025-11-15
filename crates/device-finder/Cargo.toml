@@ -12,7 +12,7 @@ futures-util = { workspace = true }
 itertools = { workspace = true }
 log = { workspace = true }
 mdns = { workspace = true }
-reqwest = { workspace = true }
+reqwest = { workspace = true, features = ["charset", "http2", "rustls-tls"] }
 rs4a-vapix = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 url = { workspace = true }

@@ -9,7 +9,7 @@ description = "Utilities for working with VAPIX"
 anyhow = { workspace = true }
 base32 = { workspace = true }
 log = { workspace = true }
-reqwest = { workspace = true, features = ["json"] }
+reqwest = { workspace = true, features = ["json", "http2"] }
 serde = { workspace = true, features = ["derive"] }
 base64 = { workspace = true }
 quick-xml = { workspace = true, features = ["serialize"] }
@@ -22,3 +22,6 @@ env_logger = { workspace = true }
 expect-test = { workspace = true }
 insta = { workspace = true }
 tokio = { workspace = true, features = ["macros"] }
+
+[features]
+default = ["reqwest/rustls-tls"]
