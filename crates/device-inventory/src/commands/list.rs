@@ -113,7 +113,7 @@ impl Table {
     }
 }
 
-async fn probe_device(
+pub(crate) async fn probe_device(
     offline: bool,
     fingerprint: String,
     host: Host,
@@ -302,7 +302,7 @@ impl ListCommand {
 
         let mut table = Table::new();
         for device in devices {
-            if device.is_matched_by(&device_filter) {
+            if device.is_matched_by(&device_filter, false) {
                 table.push(device);
             }
         }

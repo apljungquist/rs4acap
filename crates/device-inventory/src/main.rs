@@ -49,7 +49,7 @@ impl Cli {
             Commands::Import(cmd) => cmd.exec(&db, offline).await?,
             Commands::ForEach(cmd) => cmd.exec(db).await?,
             Commands::List(cmd) => cmd.exec(&db, offline).await?,
-            Commands::Activate(cmd) => cmd.exec(db).await?,
+            Commands::Activate(cmd) => cmd.exec(&db, offline).await?,
             Commands::Return(cmd) => cmd.exec(&db, offline).await?,
             Commands::Remove(cmd) => cmd.exec(db).await?,
             Commands::Dump(cmd) => cmd.exec(&db).await?,

@@ -46,7 +46,7 @@ impl ReturnCommand {
 
         let mut candidates = candidates
             .into_values()
-            .filter(|d| d.is_matched_by(&device_filter))
+            .filter(|d| d.is_matched_by(&device_filter, false))
             .collect::<Vec<_>>();
         candidates.sort_by(Device::cmp);
 

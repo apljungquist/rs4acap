@@ -355,7 +355,7 @@ impl Loan {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Deserialize, Serialize)]
 pub struct LoanId(u32);
 
 impl Display for LoanId {
