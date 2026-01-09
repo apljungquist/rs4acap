@@ -4,7 +4,7 @@
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
     mkhelp = {
-      url = "github:apljungquist/mkhelp-rs/nix";
+      url = "github:apljungquist/mkhelp-rs";
       inputs.rust-overlay.follows = "rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };

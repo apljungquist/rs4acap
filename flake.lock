@@ -47,16 +47,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1767995536,
+        "lastModified": 1767999696,
         "narHash": "sha256-UjGLWDGg+VCWRPRMa62nzVfLbl1Xpq7tzK45s86JpKc=",
         "owner": "apljungquist",
         "repo": "mkhelp-rs",
-        "rev": "b5cdcd9fcc613bbb7d0fcd4aa20f320b74b702e0",
+        "rev": "914d2f6e1a29a524775e22211c6dccd5582724bc",
         "type": "github"
       },
       "original": {
         "owner": "apljungquist",
-        "ref": "nix",
         "repo": "mkhelp-rs",
         "type": "github"
       }
