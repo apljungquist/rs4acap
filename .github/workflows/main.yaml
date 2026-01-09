@@ -10,17 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v31
-        with:
-          nix_path: nixpkgs=channel:nixos-24.11
       - uses: cachix/cachix-action@v14
         with:
           name: apljungquist-rs4a
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - name: Print nixpkgs version
-        run: nix-instantiate --eval -E '(import <nixpkgs> {}).lib.version'
       - name: Install dependencies
-        run: nix-shell --pure --run "exit"
-      - name: Verify that dependencies were installed
-        run: nix-shell --pure --run "make"
+        run: nix develop --ignore-env --command make
       - name: Run checks
-        run: nix-shell --pure --run "make check"
+        run: nix develop --ignore-env --command make check
