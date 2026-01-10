@@ -37,6 +37,9 @@
 
         formatter = pkgs.nixfmt-rfc-style;
 
+        packages.device-finder = pkgs.callPackage ./crates/device-finder/package.nix { };
+        packages.device-inventory = pkgs.callPackage ./crates/device-inventory/package.nix { };
+
         devShells.default = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
             clang

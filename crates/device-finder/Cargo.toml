@@ -3,6 +3,7 @@ name = "device-finder"
 version = "0.1.0"
 edition.workspace = true
 license = "MIT"
+description = "Find Axis devices on the local network"
 
 [dependencies]
 anyhow = { workspace = true }
