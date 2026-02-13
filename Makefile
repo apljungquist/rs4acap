@@ -44,12 +44,10 @@ check_format_nix:
 .PHONY: check_format_nix
 
 check_format_rs:
-	fd --type f '.*+.rs$$' \
-	| xargs rustfmt --check \
-		--config imports_granularity=Crate \
-		--config group_imports=StdExternalCrate \
-		--edition 2021
-	cargo fmt --check
+	cargo fmt \
+		--check \
+		-- \
+		--config imports_granularity=Crate,group_imports=StdExternalCrate
 .PHONY: check_format_rs
 
 ## _
@@ -90,12 +88,9 @@ fix_format_nix:
 .PHONY: fix_format_nix
 
 fix_format_rs:
-	fd --type f '.*+.rs$$' \
-	| xargs rustfmt \
-		--config imports_granularity=Crate \
-		--config group_imports=StdExternalCrate \
-		--edition 2021
-	cargo fmt
+	cargo fmt \
+	-- \
+	--config imports_granularity=Crate,group_imports=StdExternalCrate
 .PHONY: fix_format_rs
 
 ## _
