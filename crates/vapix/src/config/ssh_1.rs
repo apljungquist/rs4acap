@@ -36,9 +36,15 @@ impl RestHttp for AddUserRequest {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
-pub struct AddUserResponse(String);
+#[serde(untagged)]
+pub enum AddUserResponse {
+    /// Returned on AXIS OS 11.11.73.
+    /// The string is usually empty.
+    None(String),
+    /// Returned on AXIS OS 12.7.61.
+    Echo { comment: String, username: String },
+}
 
 #[derive(Serialize)]
 pub struct SetUserProperties {

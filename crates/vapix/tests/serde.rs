@@ -50,10 +50,17 @@ fn can_deserialize_basic_device_info_1_examples() {
 }
 
 #[test]
-fn can_deserialize_ssh_1_post_user_201_response() {
+fn can_deserialize_ssh_1_post_user_201_response_from_axis_os_11() {
     let text = include_str!("../src/config/ssh_1_examples/add_user_201_response.json");
     rest::parse_data::<AddUserResponse>(text).unwrap();
 }
+
+#[test]
+fn can_deserialize_ssh_1_post_user_201_response_from_axis_os_12() {
+    let text = include_str!("../src/config/ssh_1_examples/add_user_201_response_12_7_61.json");
+    rest::parse_data::<AddUserResponse>(text).unwrap();
+}
+
 #[test]
 fn can_deserialize_ssh_1_success_response() {
     let text = include_str!("../src/config/ssh_1_examples/set_user_200_response.json");
