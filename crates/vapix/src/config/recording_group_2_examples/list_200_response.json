@@ -1,0 +1,33 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "containerFormat": "cmaf",
+      "description": "",
+      "destinations": [
+        {
+          "remoteObjectStorage": {
+            "id": "my_id",
+            "postfix": "",
+            "prefix": "my/prefix"
+          }
+        }
+      ],
+      "id": "20260120_175850_CDD3D355",
+      "maxRetentionTime": 0,
+      "niceName": "",
+      "postDuration": 0,
+      "preDuration": 5,
+      "segmentDuration": {
+        "max": 10,
+        "target": 5
+      },
+      "segmentSize": {
+        "max": 26214400,
+        "target": 15728640
+      },
+      "spanDuration": 3600,
+      "streamOptions": ""
+    }
+  ]
+}

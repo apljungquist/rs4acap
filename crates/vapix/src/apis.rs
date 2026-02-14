@@ -19,8 +19,8 @@ pub mod remote_object_storage_1 {
     pub use crate::config::remote_object_storage_1::create_destinations;
 }
 
-pub mod recording_group_1 {
-    pub use crate::config::recording_group_1::create_recording_groups;
+pub mod recording_group_2 {
+    pub use crate::config::recording_group_2::{create, delete, get, list};
 }
 
 pub mod ssh_1 {

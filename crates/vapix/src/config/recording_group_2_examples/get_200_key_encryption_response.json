@@ -1,0 +1,45 @@
+{
+  "status": "success",
+  "data": {
+    "containerFormat": "cmaf",
+    "description": "",
+    "destinations": [
+      {
+        "remoteObjectStorage": {
+          "id": "smoke_test_recording_destination_258842",
+          "postfix": "",
+          "prefix": ""
+        }
+      }
+    ],
+    "encryption": {
+      "contentEncryption": null,
+      "keyEncryption": {
+        "certificateIds": null,
+        "keyRotationDuration": 3600,
+        "publicKeys": [
+          {
+            "key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAER6C4Swg6ki/GjOJFWklUoIN4+58f\nTTgv91yx0AQpL279e35DVCCl3CcNqd7M+raTVTuT3Om/iOt+RdV+XnHapg==\n-----END PUBLIC KEY-----",
+            "keyId": "aabbccdd-1122-3344-5566-778899aabbcc"
+          }
+        ]
+      },
+      "protectionScheme": "CENC"
+    },
+    "id": "20260214_235408_EE9245B",
+    "maxRetentionTime": 0,
+    "niceName": "",
+    "postDuration": 0,
+    "preDuration": 0,
+    "segmentDuration": {
+      "max": 30,
+      "target": 15
+    },
+    "segmentSize": {
+      "max": 26214400,
+      "target": 15728640
+    },
+    "spanDuration": 3600,
+    "streamOptions": ""
+  }
+}

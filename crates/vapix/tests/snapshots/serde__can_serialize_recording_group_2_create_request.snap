@@ -1,0 +1,6 @@
+---
+source: crates/vapix/tests/serde.rs
+assertion_line: 220
+expression: path
+---
+config/rest/recording-group/v2/recordingGroups

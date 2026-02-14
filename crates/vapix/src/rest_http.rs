@@ -78,7 +78,8 @@ pub trait RestHttp: Send + Sized {
             let json = json!({"data":data});
             if cfg!(debug_assertions) {
                 println!(
-                    "Sending to {path}: {}",
+                    "Sending {} to {path}: {}",
+                    Self::METHOD,
                     serde_json::to_string(&json).unwrap()
                 );
             }

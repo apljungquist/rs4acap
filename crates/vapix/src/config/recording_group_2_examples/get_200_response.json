@@ -1,0 +1,31 @@
+{
+  "status": "success",
+  "data": {
+    "containerFormat": "matroska",
+    "description": "",
+    "destinations": [
+      {
+        "remoteObjectStorage": {
+          "id": "smoke_test_recording_destination_256307",
+          "postfix": "",
+          "prefix": ""
+        }
+      }
+    ],
+    "id": "20260214_231153_182CB254",
+    "maxRetentionTime": 0,
+    "niceName": "",
+    "postDuration": 0,
+    "preDuration": 0,
+    "segmentDuration": {
+      "max": 30,
+      "target": 15
+    },
+    "segmentSize": {
+      "max": 26214400,
+      "target": 15728640
+    },
+    "spanDuration": 3600,
+    "streamOptions": ""
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "status": "success",
+  "data": {
+    "containerFormat": "cmaf",
+    "description": "",
+    "destinations": [
+      {
+        "remoteObjectStorage": {
+          "id": "smoke_test_recording_destination_258840",
+          "postfix": "",
+          "prefix": ""
+        }
+      }
+    ],
+    "encryption": {
+      "contentEncryption": {
+        "key": "***",
+        "keyId": "00112233-4455-6677-8899-aabbccddeeff"
+      },
+      "keyEncryption": null,
+      "protectionScheme": "CENC"
+    },
+    "id": "20260214_235406_302F0FC4",
+    "maxRetentionTime": 0,
+    "niceName": "",
+    "postDuration": 0,
+    "preDuration": 0,
+    "segmentDuration": {
+      "max": 30,
+      "target": 15
+    },
+    "segmentSize": {
+      "max": 26214400,
+      "target": 15728640
+    },
+    "spanDuration": 3600,
+    "streamOptions": ""
+  }
+}
