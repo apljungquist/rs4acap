@@ -38,11 +38,15 @@ Usage: device-inventory [OPTIONS] <COMMAND>
 Commands:
   login        Login to a pool of shared devices
   add          Add a device
+  deactivate   Deactivate any active device
   import       Import devices
   for-each     Run a command with environment variables set for each device
   list         List available devices
-  export       Print export statements for a device
+  activate     Activate an existing device
+  return       Return any matching borrowed device
   remove       Remove a device
+  dump         Print the device-inventory database to stdout
+  load         Load the device-inventory database from stdin
   completions  Print a completion file for the given shell
   help         Print this message or the help of the given subcommand(s)
 
