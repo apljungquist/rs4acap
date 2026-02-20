@@ -167,10 +167,11 @@ Options:
 + device-inventory help login
 Login to a pool of shared devices
 
-Usage: device-inventory login [OPTIONS]
+Usage: device-inventory login <--username <USERNAME>|--cookie>
 
 Options:
-  -u, --username <USERNAME>  The username to authenticate as, if not using a session id
+  -u, --username <USERNAME>  Authenticate with a username and password
+  -c, --cookie               Store an existing session
   -h, --help                 Print help
 + device-inventory help remove
 Remove a device
