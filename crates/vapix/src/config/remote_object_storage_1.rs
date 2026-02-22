@@ -8,6 +8,7 @@ pub struct CreateDestinationResponse {
     pub id: String,
 }
 
+#[deprecated]
 pub fn create_destinations() -> RequestBuilder<CreateDestinationResponse> {
     RequestBuilder::new("config/rest/remote-object-storage/v1beta/destinations")
 }
