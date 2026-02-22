@@ -1,6 +1,6 @@
 //! Utilities for working with JSON RPC style APIs.
 
-use std::future::Future;
+use std::{convert::Infallible, future::Future};
 
 use anyhow::Context;
 use log::trace;
@@ -8,6 +8,7 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    http::Error,
     json_rpc::{parse_data, parse_data_lossless},
     Client,
 };
@@ -33,9 +34,19 @@ pub trait JsonRpcHttp: Serialize + Send + Sized {
 
     const PATH: &'static str;
 
-    fn send(self, client: &Client) -> impl Future<Output = anyhow::Result<Self::Data>> + Send {
+    fn send(
+        self,
+        client: &Client,
+    ) -> impl Future<Output = Result<Self::Data, Error<Infallible>>> + Send {
         async move {
-            let response = client.post(Self::PATH)?.json(&self).send().await?;
+            let response = client
+                .post(Self::PATH)
+                .map_err(Error::Request)?
+                .json(&self)
+                .send()
+                .await
+                .context("Failed to send request")
+                .map_err(Error::Transport)?;
             let status = response.status();
             let text = response.text().await;
 
@@ -45,7 +56,7 @@ pub trait JsonRpcHttp: Serialize + Send + Sized {
                 }
             }
 
-            from_response(status, text)
+            from_response(status, text).map_err(Error::Decode)
         }
     }
 }

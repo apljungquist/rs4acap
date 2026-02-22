@@ -2,6 +2,7 @@ pub mod apis;
 mod axis_cgi;
 mod client;
 mod config;
+pub mod http;
 pub mod json_rpc;
 pub mod json_rpc_http;
 pub mod rest;

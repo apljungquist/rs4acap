@@ -1785,6 +1785,7 @@ dependencies = [
  "rs4a-dut",
  "serde",
  "serde_json",
+ "thiserror",
  "tokio",
  "url",
 ]

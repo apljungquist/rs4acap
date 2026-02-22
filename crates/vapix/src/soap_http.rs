@@ -1,11 +1,13 @@
 //! Utilities for working with SOAP style APIs over HTTP.
-use std::future::Future;
+
+use std::{convert::Infallible, future::Future};
 
 use anyhow::Context;
 use log::{trace, warn};
 use serde::Deserialize;
 
 use crate::{
+    http::Error,
     soap::{parse_soap, SimpleRequest},
     Client,
 };
@@ -15,24 +17,37 @@ const PATH: &str = "vapix/services";
 pub trait SoapHttpRequest: SoapRequest + Send + Sized {
     type Data: SoapResponse;
 
-    fn send(self, client: &Client) -> impl Future<Output = anyhow::Result<Self::Data>> + Send {
+    fn send(
+        self,
+        client: &Client,
+    ) -> impl Future<Output = Result<Self::Data, Error<Infallible>>> + Send {
         async move {
-            let body = self.to_envelope()?;
+            let body = self.to_envelope().map_err(Error::Request)?;
             if cfg!(debug_assertions) {
                 println!("Sending to {PATH}: {body}");
             }
             let response = client
-                .post(PATH)?
+                .post(PATH)
+                .context("Failed to create request")
+                .map_err(Error::Request)?
                 .header("Content-Type", "application/soap+xml; charset=utf-8")
                 .body(body)
                 .send()
-                .await?;
+                .await
+                .context("Failed to send request")
+                .map_err(Error::Transport)?;
             let status = response.status();
-            let text = response.text().await.context(status)?;
+            let text = response
+                .text()
+                .await
+                .context(status)
+                .map_err(Error::Transport)?;
             if cfg!(debug_assertions) {
                 trace!("Received {status}: {text}");
             }
-            let result = Self::Data::from_envelope(&text).context(status);
+            let result = Self::Data::from_envelope(&text)
+                .context(status)
+                .map_err(Error::Decode);
             if status.is_success() != result.is_ok() {
                 warn!("HTTP status {status} does not match SOAP response");
             }

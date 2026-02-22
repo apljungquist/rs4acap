@@ -1,6 +1,9 @@
 //! Utilities for working with REST-style configuration APIs.
 
-use std::fmt::{Display, Formatter};
+use std::{
+    any,
+    fmt::{Display, Formatter},
+};
 
 use anyhow::Context;
 use serde::Deserialize;
@@ -31,7 +34,7 @@ impl Display for Error {
 
 impl std::error::Error for Error {}
 
-pub fn parse_data<T>(text: &str) -> anyhow::Result<T>
+pub fn parse_data<T>(text: &str) -> anyhow::Result<Result<T, Error>>
 where
     T: for<'a> Deserialize<'a>,
 {
@@ -48,15 +51,33 @@ where
                 error.get()
             )
         })?;
-        return Err(error).with_context(|| format!("Received error; config-status: {status:?}"));
+        return Ok(Err(error));
     }
-    let Some(data) = data else {
-        return serde_json::from_str("null").context("Could not parse data from null");
+    let data = match data {
+        None => serde_json::from_str("null")
+            .with_context(|| format!("Could not parse {} from null", any::type_name::<T>())),
+        Some(data) => serde_json::from_str(data.get()).with_context(|| {
+            format!(
+                "Could not parse data as {}; config-status: {status:?}; data-text: {}",
+                any::type_name::<T>(),
+                data.get()
+            )
+        }),
     };
-    serde_json::from_str(data.get()).with_context(|| {
-        format!(
-            "Could not parse data; config-status: {status:?}; data-text: {}",
-            data.get()
-        )
-    })
+    Ok(Ok(data?))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn can_parse_null_data() {
+        assert_eq!(
+            parse_data::<serde_json::Value>(r#"{"status":"success"}"#)
+                .unwrap()
+                .unwrap(),
+            serde_json::Value::Null
+        );
+    }
 }

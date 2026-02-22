@@ -8,18 +8,22 @@ use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::{rest::parse_data, Client};
+use crate::{http::Error, rest, rest::parse_data, Client};
 
-fn from_response<T>(http_status: StatusCode, text: reqwest::Result<String>) -> anyhow::Result<T>
+fn from_response<T>(
+    http_status: StatusCode,
+    text: reqwest::Result<String>,
+) -> Result<T, Error<rest::Error>>
 where
     T: for<'a> Deserialize<'a>,
 {
-    let text = text.with_context(|| format!("Could not fetch text, status was {http_status}"))?;
+    let text = text
+        .with_context(|| format!("Could not fetch text, status was {http_status}"))
+        .map_err(Error::Transport)?;
     if cfg!(debug_assertions) {
         println!("Received {http_status}: {text}");
     }
-    parse_data(&text)
-        .with_context(|| format!("Could not parse response as data; status: {http_status}."))
+    Error::flat_result(parse_data(&text))
 }
 
 pub struct RequestBuilder<T> {
@@ -72,21 +76,25 @@ pub trait RestHttp: Send + Sized {
     fn send(
         self,
         client: &Client,
-    ) -> impl Future<Output = anyhow::Result<Self::ResponseData>> + Send {
+    ) -> impl Future<Output = Result<Self::ResponseData, Error<rest::Error>>> + Send {
         async move {
-            let (path, data) = self.to_path_and_data()?;
+            let (path, data) = self.to_path_and_data().map_err(Error::Request)?;
             let json = json!({"data":data});
             if cfg!(debug_assertions) {
                 println!(
-                    "Sending to {path}: {}",
+                    "Sending {} to {path}: {}",
+                    Self::METHOD,
                     serde_json::to_string(&json).unwrap()
                 );
             }
             let response = client
-                .request(Self::METHOD, &path)?
+                .request(Self::METHOD, &path)
+                .map_err(Error::Request)?
                 .json(&json)
                 .send()
-                .await?;
+                .await
+                .context("Failed to send request")
+                .map_err(Error::Transport)?;
             let status = response.status();
             let text = response.text().await;
 
