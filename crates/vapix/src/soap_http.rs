@@ -28,7 +28,6 @@ pub trait SoapHttpRequest: SoapRequest + Send + Sized {
             }
             let response = client
                 .post(PATH)
-                .context("Failed to create request")
                 .map_err(Error::Request)?
                 .header("Content-Type", "application/soap+xml; charset=utf-8")
                 .body(body)
