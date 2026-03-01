@@ -252,9 +252,12 @@ async fn remote_object_storage_1_beta_crud() {
 
     let id = DestinationId::new("my_destination_id".to_string());
 
-    let _ = DeleteDestinationRequest::new(id.clone())
-        .send(&client, None)
-        .await;
+    // Commented out to avoid waiting for failed requests when replaying.
+    // Left in for easier cleanup.
+
+    // let _ = DeleteDestinationRequest::new(id.clone())
+    //     .send(&client, None)
+    //     .await;
 
     for cassette in cassettes {
         let mut cassette = Some(cassette);
@@ -286,26 +289,33 @@ async fn remote_object_storage_1_beta_crud() {
         // TODO: Consider retrying the request if the destination is not yet available.
 
         // Update
-        let updated_sas = "my-updated-sas".to_string();
-        UpdateDestinationRequest::azure(
+        let () = UpdateDestinationRequest::azure(
             created.id.clone(),
             AzureDestination {
-                sas: Some(updated_sas.clone()),
+                sas: Some("my-updated-sas".to_string()),
                 ..created.azure.unwrap()
             },
         )
         .send(&client, cassette.as_mut())
         .await
         .unwrap();
+        // The effect of this update cannot be observed since the sas is redacted.
+
+        let updated_description = format!("{}-updated", created.description.unwrap());
+        let () =
+            UpdateDestinationRequest::description(created.id.clone(), updated_description.clone())
+                .send(&client, cassette.as_mut())
+                .await
+                .unwrap();
         let all = ListDestinationsRequest::new()
             .send(&client, cassette.as_mut())
             .await
             .unwrap();
         let updated = all.into_iter().find(|d| d.id == created.id).unwrap();
-        assert_eq!(updated.azure.unwrap().sas.as_deref().unwrap(), "*****");
+        assert_eq!(updated.description.unwrap(), updated_description);
 
         // Delete
-        DeleteDestinationRequest::new(created.id.clone())
+        let () = DeleteDestinationRequest::new(created.id.clone())
             .send(&client, cassette.as_mut())
             .await
             .unwrap();
