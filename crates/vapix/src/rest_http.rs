@@ -8,9 +8,17 @@ use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::{http::Error, rest, rest::parse_data, Client};
+use crate::{
+    http::Error,
+    rest,
+    rest::{parse_data, parse_data_lossless},
+    Client,
+};
 
-fn from_response<T>(
+// The device configuration API reports status codes both in the HTTP header and in the body.
+// TODO: Consider if there is any value in this.
+
+pub(crate) fn from_response<T>(
     http_status: StatusCode,
     text: reqwest::Result<String>,
 ) -> Result<T, Error<rest::Error>>
@@ -24,6 +32,22 @@ where
         println!("Received {http_status}: {text}");
     }
     Error::flat_result(parse_data(&text))
+}
+
+pub(crate) fn from_response_lossless<T>(
+    http_status: StatusCode,
+    text: reqwest::Result<String>,
+) -> Result<T, Error<rest::Error>>
+where
+    T: for<'a> Deserialize<'a> + Serialize,
+{
+    let text = text
+        .with_context(|| format!("Could not fetch text, status was {http_status}"))
+        .map_err(Error::Transport)?;
+    if cfg!(debug_assertions) {
+        println!("Received {http_status}: {text}");
+    }
+    Error::flat_result(parse_data_lossless(&text))
 }
 
 pub struct RequestBuilder<T> {

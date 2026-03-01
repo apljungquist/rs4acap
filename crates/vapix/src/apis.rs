@@ -16,7 +16,15 @@ pub mod jpg_3 {
 }
 
 pub mod remote_object_storage_1 {
+    #[allow(deprecated)]
     pub use crate::config::remote_object_storage_1::create_destinations;
+}
+
+pub mod remote_object_storage_1_beta {
+    pub use crate::config::remote_object_storage_1_beta::{
+        CreateDestinationRequest, DeleteDestinationRequest, ListDestinationsRequest,
+        UpdateDestinationRequest,
+    };
 }
 
 pub mod recording_group_1 {

@@ -5,7 +5,9 @@ use rs4a_vapix::{
     action1::Condition,
     apis,
     json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless},
+    remote_object_storage_1_beta::{CreateDestinationRequest, DestinationId, S3Destination},
     rest_http::RestHttp,
+    rest_http2::RestHttp2,
     soap_http::SoapHttpRequest,
     Client, ClientBuilder,
 };
@@ -151,24 +153,25 @@ async fn recording_group_1_create_returns_ok() {
     let expected_recording_destination_id =
         somewhat_unique_name("smoke_test_recording_destination_");
 
-    let actual_recording_destination_id = apis::remote_object_storage_1::create_destinations()
-        .data(json!({
-            "id":expected_recording_destination_id,
-            "s3": {
-                "accessKeyId": "myAccessKeyId",
-                "secretAccessKey": "mySecretAccessKey",
-                "bucket": "myBucket",
-                "url": "https://s3.eu-north-1.amazonaws.com",
-            }
-        }))
-        .send(&client)
-        .await
-        .unwrap()
-        .id;
+    let actual_recording_destination_id = CreateDestinationRequest::s3(
+        DestinationId::new(expected_recording_destination_id.clone()),
+        S3Destination {
+            bucket: "myBucket".to_string(),
+            region: None,
+            url: "https://s3.eu-north-1.amazonaws.com".to_string(),
+            access_key_id: Some("myAccessKeyId".to_string()),
+            secret_access_key: Some("mySecretAccessKey".to_string()),
+            session_token: None,
+        },
+    )
+    .send(&client, None)
+    .await
+    .unwrap()
+    .id;
 
     assert_eq!(
         expected_recording_destination_id,
-        actual_recording_destination_id
+        actual_recording_destination_id.into_string()
     );
 
     apis::recording_group_1::create_recording_groups()
