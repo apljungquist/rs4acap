@@ -1,0 +1,13 @@
+POST config/rest/recording-group/v2/recordingGroups
+
+{
+  "data": {
+    "destinations": [
+      {
+        "remoteObjectStorage": {
+          "id": "rg2_destination_id"
+        }
+      }
+    ]
+  }
+}

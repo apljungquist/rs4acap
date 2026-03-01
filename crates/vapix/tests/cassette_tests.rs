@@ -8,6 +8,9 @@ use rs4a_vapix::{
     cassette::{Cassette, Mode},
     http,
     json_rpc_http::JsonRpcHttp,
+    recording_group_2::{
+        CreateRecordingGroupRequest, DeleteRecordingGroupRequest, ListRecordingGroupsRequest,
+    },
     remote_object_storage_1_beta::{
         AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
         DestinationId, ListDestinationsRequest, UpdateDestinationRequest,
@@ -240,6 +243,78 @@ async fn device_configuration_item_already_exists() {
         // TODO: Consider running this only when recording and excluding it from the cassette.
 
         DeleteDestinationRequest::new(id.clone())
+            .send(&client, cassette.as_mut())
+            .await
+            .unwrap();
+    }
+}
+
+#[tokio::test]
+async fn recording_group_2_crud() {
+    let Setup { client, cassettes } = setup("recording_group_2_crud").await;
+
+    let destination_id = DestinationId::new("rg2_destination_id".to_string());
+
+    // Commented out to avoid waiting for failed requests when replaying.
+    // Left in for easier cleanup.
+
+    // let all = ListRecordingGroupsRequest::new()
+    //     .send(&client, None)
+    //     .await
+    //     .unwrap();
+    // for g in all {
+    //     let _ = DeleteRecordingGroupRequest::new(g.id)
+    //         .send(&client, None)
+    //         .await;
+    // }
+    // let _ = DeleteDestinationRequest::new(destination_id.clone())
+    //     .send(&client, None)
+    //     .await;
+
+    for cassette in cassettes {
+        let mut cassette = Some(cassette);
+
+        // Setup: Create a remote object storage destination
+        let DestinationData { .. } = CreateDestinationRequest::azure(
+            destination_id.clone(),
+            AzureDestination::new(
+                "my-container".to_string(),
+                "my-sas".to_string(),
+                Url::parse("https://s3.eu-north-1.amazonaws.com").unwrap(),
+            ),
+        )
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
+
+        // Create
+        let created = CreateRecordingGroupRequest::remote_object_storage(destination_id.clone())
+            .send(&client, cassette.as_mut())
+            .await
+            .unwrap();
+
+        // List
+        let all = ListRecordingGroupsRequest::new()
+            .send(&client, cassette.as_mut())
+            .await
+            .unwrap();
+        assert!(all.iter().any(|g| g.id == created.id));
+
+        // Delete
+        let () = DeleteRecordingGroupRequest::new(created.id.clone())
+            .send(&client, cassette.as_mut())
+            .await
+            .unwrap();
+
+        // Verify deletion
+        let all = ListRecordingGroupsRequest::new()
+            .send(&client, cassette.as_mut())
+            .await
+            .unwrap();
+        assert!(!all.iter().any(|g| g.id == created.id));
+
+        // Cleanup: Delete the remote object storage destination
+        DeleteDestinationRequest::new(destination_id.clone())
             .send(&client, cassette.as_mut())
             .await
             .unwrap();

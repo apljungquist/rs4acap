@@ -31,6 +31,12 @@ pub mod recording_group_1 {
     pub use crate::config::recording_group_1::create_recording_groups;
 }
 
+pub mod recording_group_2 {
+    pub use crate::config::recording_group_2::{
+        CreateRecordingGroupRequest, DeleteRecordingGroupRequest, ListRecordingGroupsRequest,
+    };
+}
+
 pub mod ssh_1 {
     pub use crate::config::ssh_1::{add_user, set_user};
 }

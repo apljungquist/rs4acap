@@ -1,0 +1,35 @@
+200 OK
+
+{
+  "status": "success",
+  "data": [
+    {
+      "containerFormat": "cmaf",
+      "description": "Managed by sgai_agent",
+      "destinations": [
+        {
+          "remoteObjectStorage": {
+            "id": "remote_recording_0225a",
+            "postfix": "",
+            "prefix": "devices/dev-dev-000/video"
+          }
+        }
+      ],
+      "id": "20260301_182753_A82A491C",
+      "maxRetentionTime": 0,
+      "niceName": "",
+      "postDuration": 0,
+      "preDuration": 5,
+      "segmentDuration": {
+        "max": 10,
+        "target": 5
+      },
+      "segmentSize": {
+        "max": 26214400,
+        "target": 15728640
+      },
+      "spanDuration": 3600,
+      "streamOptions": ""
+    }
+  ]
+}
