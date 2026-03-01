@@ -175,7 +175,7 @@ impl UpdateDestinationRequest {
         Self {
             id,
             property: "description".to_string(),
-            data: serde_json::Value::String(description.to_string()),
+            data: serde_json::Value::String(description),
         }
     }
 }
