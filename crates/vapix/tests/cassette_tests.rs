@@ -252,6 +252,10 @@ async fn remote_object_storage_1_beta_crud() {
 
     let id = DestinationId::new("my_destination_id".to_string());
 
+    let _ = DeleteDestinationRequest::new(id.clone())
+        .send(&client, None)
+        .await;
+
     for cassette in cassettes {
         let mut cassette = Some(cassette);
 
@@ -282,20 +286,23 @@ async fn remote_object_storage_1_beta_crud() {
         // TODO: Consider retrying the request if the destination is not yet available.
 
         // Update
-        let updated_description = "my-updated-description".to_string();
-        UpdateDestinationRequest::description(created.id.clone(), updated_description.clone())
-            .send(&client, cassette.as_mut())
-            .await
-            .unwrap();
+        let updated_sas = "my-updated-sas".to_string();
+        UpdateDestinationRequest::azure(
+            created.id.clone(),
+            AzureDestination {
+                sas: Some(updated_sas.clone()),
+                ..created.azure.unwrap()
+            },
+        )
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
         let all = ListDestinationsRequest::new()
             .send(&client, cassette.as_mut())
             .await
             .unwrap();
-        let updated = all.iter().find(|d| d.id == created.id).unwrap();
-        assert_eq!(
-            updated.description.as_deref(),
-            Some(updated_description.as_str())
-        );
+        let updated = all.into_iter().find(|d| d.id == created.id).unwrap();
+        assert_eq!(updated.azure.unwrap().sas.as_deref().unwrap(), "*****");
 
         // Delete
         DeleteDestinationRequest::new(created.id.clone())

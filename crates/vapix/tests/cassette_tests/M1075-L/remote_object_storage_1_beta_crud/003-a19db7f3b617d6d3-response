@@ -11,7 +11,7 @@
         "sharedKey": "",
         "url": "https://s3.eu-north-1.amazonaws.com/"
       },
-      "description": "my-updated-description",
+      "description": "my-description",
       "id": "my_destination_id"
     }
   ]

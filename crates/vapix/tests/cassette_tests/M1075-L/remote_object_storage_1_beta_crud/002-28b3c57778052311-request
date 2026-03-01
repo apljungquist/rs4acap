@@ -1,5 +1,0 @@
-PATCH config/rest/remote-object-storage/v1beta/destinations/my_destination_id/description
-
-{
-  "data": "my-updated-description"
-}

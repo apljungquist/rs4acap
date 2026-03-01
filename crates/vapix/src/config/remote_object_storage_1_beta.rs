@@ -23,6 +23,10 @@ impl DestinationId {
     pub fn into_string(self) -> String {
         self.0
     }
+
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
 }
 
 // Objects (used by both requests and responses)
@@ -171,6 +175,14 @@ pub struct UpdateDestinationRequest {
 }
 
 impl UpdateDestinationRequest {
+    pub fn azure(id: DestinationId, azure: AzureDestination) -> Self {
+        Self {
+            id,
+            property: "azure".to_string(),
+            data: serde_json::to_value(azure).unwrap(),
+        }
+    }
+
     pub fn description(id: DestinationId, description: String) -> Self {
         Self {
             id,
