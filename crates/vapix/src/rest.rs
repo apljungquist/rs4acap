@@ -43,9 +43,18 @@ pub struct Error {
 impl Error {
     pub fn kind(&self) -> Option<ErrorKind> {
         match self.code {
-            2 => Some(ErrorKind::NotFound),
-            5 => Some(ErrorKind::ValidationError),
-            6 => Some(ErrorKind::AlreadyExists),
+            2 => {
+                debug_assert!(self.message.starts_with("Item does not exist:"));
+                Some(ErrorKind::NotFound)
+            }
+            5 => {
+                debug_assert!(self.message.starts_with("Validation error:"));
+                Some(ErrorKind::ValidationError)
+            }
+            6 => {
+                debug_assert!(self.message.starts_with("Item already exists:"));
+                Some(ErrorKind::AlreadyExists)
+            }
             _ => None,
         }
     }

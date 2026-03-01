@@ -145,7 +145,7 @@ async fn setup(test_name: &'static str) -> Setup {
 async fn device_configuration_item_does_not_exist() {
     let Setup { client, cassettes } = setup("device_configuration_item_does_not_exist").await;
 
-    let id = DestinationId::new("device_configuration_item_does_not_exist".to_string());
+    let id = DestinationId::new("my_destination_id".to_string());
 
     for cassette in cassettes {
         let mut cassette = Some(cassette);
@@ -167,7 +167,7 @@ async fn device_configuration_item_does_not_exist() {
 async fn device_configuration_validation_error() {
     let Setup { client, cassettes } = setup("device_configuration_validation_error").await;
 
-    let id = DestinationId::new("device_configuration_validation_error".to_string());
+    let id = DestinationId::new("my_destination_id".to_string());
 
     // Test
     for cassette in cassettes {
@@ -197,7 +197,7 @@ async fn device_configuration_validation_error() {
 async fn device_configuration_item_already_exists() {
     let Setup { client, cassettes } = setup("device_configuration_item_already_exists").await;
 
-    let id = DestinationId::new("device_configuration_validation_error".to_string());
+    let id = DestinationId::new("my_destination_id".to_string());
 
     // Test
     for cassette in cassettes {
@@ -232,16 +232,28 @@ async fn device_configuration_item_already_exists() {
         };
 
         assert_eq!(error.kind().unwrap(), ErrorKind::AlreadyExists);
+
+        // Cleanup
+
+        // Leaving the destination behind may affect other tests, even if we didn't reuse it.
+        // But we don't really need this last track on the cassette.
+        // TODO: Consider running this only when recording and excluding it from the cassette.
+
+        DeleteDestinationRequest::new(id.clone())
+            .send(&client, cassette.as_mut())
+            .await
+            .unwrap();
     }
 }
 
 #[tokio::test]
 async fn remote_object_storage_1_beta_crud() {
     let Setup { client, cassettes } = setup("remote_object_storage_1_beta_crud").await;
+
+    let id = DestinationId::new("my_destination_id".to_string());
+
     for cassette in cassettes {
         let mut cassette = Some(cassette);
-
-        let id = DestinationId::new("remote_object_storage_1_beta_crud".to_string());
 
         // Create
         let created = CreateDestinationRequest::azure(
@@ -265,6 +277,9 @@ async fn remote_object_storage_1_beta_crud() {
             .await
             .unwrap();
         assert!(all.iter().any(|d| d.id == created.id));
+
+        // On at least one occasion when recording, this returned an item does not exist error.
+        // TODO: Consider retrying the request if the destination is not yet available.
 
         // Update
         let updated_description = "my-updated-description".to_string();

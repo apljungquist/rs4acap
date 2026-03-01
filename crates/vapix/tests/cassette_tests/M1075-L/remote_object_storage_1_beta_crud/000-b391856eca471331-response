@@ -10,6 +10,7 @@
       "sharedKey": "",
       "url": "https://s3.eu-north-1.amazonaws.com/"
     },
-    "id": "device_configuration_validation_error"
+    "description": "my-description",
+    "id": "my_destination_id"
   }
 }

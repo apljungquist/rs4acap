@@ -10,7 +10,6 @@
       "sharedKey": "",
       "url": "https://s3.eu-north-1.amazonaws.com/"
     },
-    "description": "my-description",
-    "id": "remote_object_storage_1_beta_crud"
+    "id": "my_destination_id"
   }
 }

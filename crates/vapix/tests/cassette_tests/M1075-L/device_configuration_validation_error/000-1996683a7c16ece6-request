@@ -4,9 +4,9 @@ POST config/rest/remote-object-storage/v1beta/destinations
   "data": {
     "azure": {
       "container": "my-container",
-      "sas": "my-sas",
+      "sas": "",
       "url": "https://s3.eu-north-1.amazonaws.com/"
     },
-    "id": "device_configuration_validation_error"
+    "id": "my_destination_id"
   }
 }

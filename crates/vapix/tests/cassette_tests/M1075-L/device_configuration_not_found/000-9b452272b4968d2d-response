@@ -1,9 +1,0 @@
-404 Not Found
-
-{
-  "status": "error",
-  "error": {
-    "code": 2,
-    "message": "Item does not exist: destination does not exist"
-  }
-}
