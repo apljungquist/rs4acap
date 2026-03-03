@@ -9,7 +9,7 @@ use crate::{
 #[serde(rename_all = "PascalCase")]
 pub struct AddActionConfigurationResponse {
     #[serde(rename = "ConfigurationID")]
-    pub configuration_id: u16,
+    pub configuration_id: u32,
 }
 
 pub struct AddActionConfigurationRequest {
@@ -105,7 +105,7 @@ pub struct Parameters {
     pub parameter: Vec<Parameter>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Parameter {
     #[serde(rename = "@Name")]
     pub name: String,
