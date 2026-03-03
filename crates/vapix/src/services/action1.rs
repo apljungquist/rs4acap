@@ -4,12 +4,16 @@
 mod action_configurations;
 mod action_rules;
 
-pub use action_configurations::{AddActionConfigurationResponse, GetActionConfigurationsResponse};
+pub use action_configurations::{
+    AddActionConfigurationResponse, GetActionConfigurationsResponse,
+    RemoveActionConfigurationResponse,
+};
 pub use action_rules::{AddActionRuleResponse, Condition, GetActionRulesResponse};
 
 use crate::{
     action1::{
-        action_configurations::AddActionConfigurationRequest, action_rules::AddActionRuleRequest,
+        action_configurations::{AddActionConfigurationRequest, RemoveActionConfigurationRequest},
+        action_rules::AddActionRuleRequest,
     },
     soap::SimpleRequest,
 };
@@ -20,6 +24,10 @@ pub fn add_action_configuration(template_token: &str) -> AddActionConfigurationR
 
 pub fn add_action_rule(name: String, primary_action: u16) -> AddActionRuleRequest {
     AddActionRuleRequest::new(name, primary_action)
+}
+
+pub fn remove_action_configuration(configuration_id: u32) -> RemoveActionConfigurationRequest {
+    RemoveActionConfigurationRequest::new(configuration_id)
 }
 
 pub fn get_action_configurations() -> SimpleRequest<GetActionConfigurationsResponse> {

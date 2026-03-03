@@ -1,6 +1,7 @@
 pub mod action_1 {
     pub use crate::action1::{
         add_action_configuration, add_action_rule, get_action_configurations, get_action_rules,
+        remove_action_configuration,
     };
 }
 pub mod basic_device_info_1 {
