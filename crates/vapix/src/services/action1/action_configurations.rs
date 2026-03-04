@@ -18,6 +18,22 @@ pub struct AddActionConfigurationRequest {
     parameters: Parameters,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct InputActionConfiguration {
+    pub name: String,
+    pub template_token: String,
+    pub parameters: Parameters,
+}
+
+impl InputActionConfiguration {
+    pub fn could_create(&self, other: &ActionConfiguration) -> bool {
+        self.template_token == other.template_token
+            && self.name == other.name
+            && self.parameters.parameter == other.parameters.parameter
+    }
+}
+
 // TODO: Consider enabling typed templates to give users early feedback about missing params
 impl AddActionConfigurationRequest {
     pub(crate) fn new(template_token: &str) -> AddActionConfigurationRequest {
@@ -27,6 +43,19 @@ impl AddActionConfigurationRequest {
             parameters: Parameters {
                 parameter: Vec::new(),
             },
+        }
+    }
+
+    pub fn from_input(input: InputActionConfiguration) -> Self {
+        let InputActionConfiguration {
+            name,
+            template_token,
+            parameters,
+        } = input;
+        Self {
+            name: Some(name),
+            template_token,
+            parameters,
         }
     }
 

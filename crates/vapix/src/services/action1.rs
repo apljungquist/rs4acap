@@ -15,7 +15,7 @@ pub use action_rules::{
 use crate::{
     action1::{
         action_configurations::{AddActionConfigurationRequest, RemoveActionConfigurationRequest},
-        action_rules::{AddActionRuleRequest, RemoveActionRuleRequest},
+        action_rules::{AddActionRuleRequest, GetActionRulesRequest, RemoveActionRuleRequest},
     },
     soap::SimpleRequest,
 };
@@ -43,6 +43,6 @@ pub fn get_action_configurations() -> SimpleRequest<GetActionConfigurationsRespo
     )
 }
 
-pub fn get_action_rules() -> SimpleRequest<GetActionRulesResponse> {
-    SimpleRequest::new("http://www.axis.com/vapix/ws/action1", "GetActionRules")
+pub fn get_action_rules() -> GetActionRulesRequest {
+    GetActionRulesRequest::new()
 }

@@ -88,6 +88,27 @@ pub struct AddActionRuleResponse {
     pub id: u32,
 }
 
+pub struct GetActionRulesRequest(SimpleRequest<GetActionRulesResponse>);
+
+impl GetActionRulesRequest {
+    pub fn new() -> Self {
+        Self(SimpleRequest::new(
+            "http://www.axis.com/vapix/ws/action1",
+            "GetActionRules",
+        ))
+    }
+}
+
+impl SoapRequest for GetActionRulesRequest {
+    fn to_envelope(self) -> anyhow::Result<String> {
+        self.0.to_envelope()
+    }
+}
+
+impl SoapHttpRequest for GetActionRulesRequest {
+    type Data = GetActionRulesResponse;
+}
+
 #[derive(Debug, Eq, PartialEq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Condition {
