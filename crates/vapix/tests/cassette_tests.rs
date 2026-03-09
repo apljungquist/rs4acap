@@ -300,6 +300,9 @@ const TESTS: &[(&str, TestFn)] = &[
             Box::pin(remote_object_storage_1_beta_crud(client, cassette, prelude))
         },
     ),
+    ("never", |client, cassette, prelude| {
+        Box::pin(never(client, cassette, prelude))
+    }),
 ];
 
 fn record_trials(library: &Library) -> Vec<Trial> {
@@ -608,4 +611,9 @@ async fn remote_object_storage_1_beta_crud(
         .await
         .unwrap();
     assert!(!all.iter().any(|d| d.id == created.id));
+}
+
+// Placeholder for tests that skip recording based on the prelude
+async fn never(_client: Client, _cassette: Cassette, _prelude: Option<Prelude>) {
+    return;
 }
