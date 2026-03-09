@@ -66,7 +66,7 @@ impl Manifest {
     }
 
     fn save(&self, path: &Path) -> anyhow::Result<()> {
-        let content = serde_json::to_string_pretty(self)?;
+        let content = serde_json::to_string_pretty(self)? + "\n";
         fs::write(path, content)?;
         Ok(())
     }
