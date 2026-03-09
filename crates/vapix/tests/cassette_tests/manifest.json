@@ -1,0 +1,53 @@
+{
+  "groups": {
+    "all": [
+      "D2210-VE@12.9.57",
+      "D4200-VE@12.9.57",
+      "M1075-L@12.9.57"
+    ]
+  },
+  "devices": {
+    "D2210-VE@12.9.57": {
+      "prod_nbr": "D2210-VE",
+      "version": "12.9.57"
+    },
+    "D4200-VE@12.9.57": {
+      "prod_nbr": "D4200-VE",
+      "version": "12.9.57"
+    },
+    "M1075-L@12.9.57": {
+      "prod_nbr": "M1075-L",
+      "version": "12.9.57"
+    }
+  },
+  "cassettes": {
+    "device_configuration_item_already_exists": {
+      "e06e2485ee6dfb12": [
+        "D2210-VE@12.9.57",
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57"
+      ]
+    },
+    "device_configuration_item_does_not_exist": {
+      "258f193867a34156": [
+        "D2210-VE@12.9.57",
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57"
+      ]
+    },
+    "device_configuration_validation_error": {
+      "367ed4cb8d6980a0": [
+        "D2210-VE@12.9.57",
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57"
+      ]
+    },
+    "remote_object_storage_1_beta_crud": {
+      "ecbb9a29d7b8c619": [
+        "D2210-VE@12.9.57",
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57"
+      ]
+    }
+  }
+}
