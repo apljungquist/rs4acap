@@ -27,16 +27,10 @@ use rs4a_vapix::{
 use serde::{Deserialize, Serialize};
 use url::{Host, Url};
 
-// Responses will vary depending on hardware model and software version.
-// Content-addressed storage deduplicates identical cassettes across devices.
-
 // Responses may vary due to time, initial state of the device, test order, etc.
 // Manually determining when cassettes should be updated is tedious and error prone.
 // Furthermore, if cassettes are addressed by their content, it cache hits will suffer.
 // TODO: Automatically deal with non-reproducible responses.
-
-// Not all tests are applicable to all hardware models and all software versions.
-// Tests receive a Prelude during recording and can return early if the device doesn't support the API.
 
 // When a test fails, it may leave resources intact that will cause future runs to fail.
 // This must be cleaned up manually by either removing them individually or resetting the device.
