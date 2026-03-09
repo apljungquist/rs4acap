@@ -37,6 +37,14 @@ use url::{Host, Url};
 // This is tedious, but hopefully updating cassettes will be rare.
 // TODO: Avoid manual cleanup.
 
+// When comparing cassettes, it is difficult to know where they are different.
+// For example, in a test like `device_configuration_item_already_exists` the first two responses
+// are the same on AXIS OS 11 and 12, but the third is different.
+// This could be alleviated by:
+// - Including the response hash in the response name
+// - Provide a diff tool
+// TODO: Make it easier to compare cassettes.
+
 #[derive(Clone, Debug)]
 struct Prelude {
     props: UnrestrictedProperties,
@@ -54,6 +62,8 @@ struct Manifest {
     groups: BTreeMap<String, Vec<String>>,
     devices: BTreeMap<String, DeviceInfo>,
     cassettes: BTreeMap<String, BTreeMap<String, Vec<String>>>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    skipped: BTreeMap<String, Vec<String>>,
 }
 
 impl Manifest {
@@ -71,19 +81,16 @@ impl Manifest {
         Ok(())
     }
 
-    fn resolve_label(&self, test_name: &str, hash: &str) -> String {
-        let devices = match self.cassettes.get(test_name).and_then(|t| t.get(hash)) {
-            Some(devices) => devices.iter().collect::<BTreeSet<_>>(),
-            None => return hash.to_string(),
-        };
+    fn resolve_devices_label(&self, devices: &[String], fallback: &str) -> String {
+        let device_set = devices.iter().collect::<BTreeSet<_>>();
 
         let mut matched = None;
         for (label, group_devices) in &self.groups {
             let group_set = group_devices.iter().collect::<BTreeSet<_>>();
-            if devices == group_set {
+            if device_set == group_set {
                 if let Some(prev) = matched {
                     panic!(
-                        "Ambiguous group match for {test_name}::{hash}: \
+                        "Ambiguous group match for {fallback}: \
                          both '{prev}' and '{label}' match the same device set"
                     );
                 }
@@ -91,7 +98,14 @@ impl Manifest {
             }
         }
 
-        matched.unwrap_or(hash).to_string()
+        matched.unwrap_or(fallback).to_string()
+    }
+
+    fn resolve_label(&self, test_name: &str, hash: &str) -> String {
+        match self.cassettes.get(test_name).and_then(|t| t.get(hash)) {
+            Some(devices) => self.resolve_devices_label(devices, hash),
+            None => hash.to_string(),
+        }
     }
 }
 
@@ -185,6 +199,19 @@ fn finalize_recording(
     };
     if is_empty {
         let _ = fs::remove_dir_all(staging_dir);
+
+        // Record the skip in the manifest
+        let manifest_path = library_dir.join("manifest.json");
+        let mut manifest = Manifest::load(&manifest_path)?;
+        manifest
+            .devices
+            .insert(device_key.to_string(), device_info.clone());
+        let skipped_entry = manifest.skipped.entry(test_name.to_string()).or_default();
+        if !skipped_entry.contains(&device_key.to_string()) {
+            skipped_entry.push(device_key.to_string());
+            skipped_entry.sort();
+        }
+        manifest.save(&manifest_path)?;
         return Ok(());
     }
 
@@ -205,6 +232,14 @@ fn finalize_recording(
     manifest
         .devices
         .insert(device_key.to_string(), device_info.clone());
+
+    // Remove device from skipped since it produced a real cassette
+    if let Some(skipped_devices) = manifest.skipped.get_mut(test_name) {
+        skipped_devices.retain(|d| d != device_key);
+        if skipped_devices.is_empty() {
+            manifest.skipped.remove(test_name);
+        }
+    }
 
     let test_entry = manifest.cassettes.entry(test_name.to_string()).or_default();
 
@@ -334,7 +369,8 @@ fn playback_trials(library: &Library) -> Vec<Trial> {
             let cassette_dirs = library.cassettes_for_test(test_name);
             let client = client.clone();
             let manifest = &manifest;
-            cassette_dirs.into_iter().map(move |cassette_dir| {
+
+            let cassette_trials = cassette_dirs.into_iter().map(move |cassette_dir| {
                 let hash = cassette_dir
                     .file_name()
                     .unwrap()
@@ -353,7 +389,20 @@ fn playback_trials(library: &Library) -> Vec<Trial> {
                     rt.block_on(test_fn(client, cassette, None));
                     Ok(())
                 })
-            })
+            });
+
+            let skipped_trial = manifest
+                .skipped
+                .get(test_name)
+                .filter(|devices| !devices.is_empty())
+                .map(|devices| {
+                    let fallback = devices.join("+");
+                    let label = manifest.resolve_devices_label(devices, &fallback);
+                    let trial_name = format!("{test_name}::{label}");
+                    Trial::test(trial_name, || Ok(())).with_ignored_flag(true)
+                });
+
+            cassette_trials.chain(skipped_trial)
         })
         .collect()
 }
