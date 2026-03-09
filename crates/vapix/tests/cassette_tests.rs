@@ -191,13 +191,18 @@ fn main() {
         .is_test(true)
         .try_init();
 
-    let args = Arguments::from_args();
+    let mut args = Arguments::from_args();
     let library = Library::new().unwrap();
 
     let trials = match env_flag("UPDATE_CASSETTES") {
         true => record_trials(&library),
         false => playback_trials(&library),
     };
+
+    if args.test_threads.is_none() {
+        println!("Running tests in single-threaded mode");
+        args.test_threads = Some(1);
+    }
 
     libtest_mimic::run(&args, trials).exit();
 }
