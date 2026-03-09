@@ -29,7 +29,7 @@ where
         .with_context(|| format!("Could not fetch text, status was {http_status}"))
         .map_err(Error::Transport)?;
     if cfg!(debug_assertions) {
-        println!("Received {http_status}: {text}");
+        trace!("Received {http_status}: {text}");
     }
     Error::flat_result(parse_data(&text))
 }
@@ -45,7 +45,7 @@ where
         .with_context(|| format!("Could not fetch text, status was {http_status}"))
         .map_err(Error::Transport)?;
     if cfg!(debug_assertions) {
-        println!("Received {http_status}: {text}");
+        trace!("Received {http_status}: {text}");
     }
     Error::flat_result(parse_data_lossless(&text))
 }
@@ -105,7 +105,7 @@ pub trait RestHttp: Send + Sized {
             let (path, data) = self.to_path_and_data().map_err(Error::Request)?;
             let json = json!({"data":data});
             if cfg!(debug_assertions) {
-                println!(
+                trace!(
                     "Sending {} to {path}: {}",
                     Self::METHOD,
                     serde_json::to_string(&json).unwrap()

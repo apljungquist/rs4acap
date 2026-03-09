@@ -13,17 +13,6 @@
       },
       "description": "my-description-updated",
       "id": "my_destination_id"
-    },
-    {
-      "id": "smoke_test_recording_destination_1511253",
-      "s3": {
-        "accessKeyId": "*****",
-        "bucket": "myBucket",
-        "region": "",
-        "secretAccessKey": "*****",
-        "sessionToken": "",
-        "url": "https://s3.eu-north-1.amazonaws.com"
-      }
     }
   ]
 }
