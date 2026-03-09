@@ -98,7 +98,13 @@ impl Manifest {
             }
         }
 
-        matched.unwrap_or(fallback).to_string()
+        if let Some(label) = matched {
+            return label.to_string();
+        }
+        if devices.len() == 1 {
+            return devices[0].clone();
+        }
+        fallback.to_string()
     }
 
     fn resolve_label(&self, test_name: &str, hash: &str) -> String {
