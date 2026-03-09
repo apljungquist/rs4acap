@@ -24,7 +24,7 @@ pub trait SoapHttpRequest: SoapRequest + Send + Sized {
         async move {
             let body = self.to_envelope().map_err(Error::Request)?;
             if cfg!(debug_assertions) {
-                println!("Sending to {PATH}: {body}");
+                trace!("Sending to {PATH}: {body}");
             }
             let response = client
                 .post(PATH)

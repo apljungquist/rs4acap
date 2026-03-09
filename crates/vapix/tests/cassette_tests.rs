@@ -1,6 +1,7 @@
-use std::{fs, path::PathBuf};
+use std::{fs, future::Future, path::PathBuf, pin::Pin};
 
 use anyhow::Context;
+use libtest_mimic::{Arguments, Trial};
 use log::LevelFilter;
 use rs4a_vapix::{
     apis,
@@ -17,6 +18,7 @@ use rs4a_vapix::{
     Client, ClientBuilder, Scheme,
 };
 use url::{Host, Url};
+
 // Responses will vary depending on hardware model and software version.
 // Creating a new shelf for each would be unwieldy.
 // TODO: Automatically deduplicate shelves.
@@ -29,15 +31,12 @@ use url::{Host, Url};
 // Not all tests are applicable to all hardware models and all software versions.
 // TODO: Allow tests to filter on device capabilities.
 
-// Keeping track of which shelves pass, fail, or are skipped is difficult when using a loop.
-// TODO: Find a way to report the results from each cassette.
-
 // When a test fails, it may leave resources intact that will cause future runs to fail.
 // This must be cleaned up manually by either removing them individually or resetting the device.
 // This is tedious, but hopefully updating cassettes will be rare.
 // TODO: Avoid manual cleanup.
 
-fn env_flag(key: &'static str) -> bool {
+fn env_flag(key: &str) -> bool {
     match std::env::var(key).as_deref() {
         Ok("0") => false,
         Ok("1") => true,
@@ -64,9 +63,7 @@ impl Library {
                 .join("cassette_tests"),
         ))
     }
-}
 
-impl Library {
     async fn shelf(&self, client: &Client) -> anyhow::Result<Shelf> {
         let UnrestrictedProperties { prod_nbr, .. } =
             apis::basic_device_info_1::get_all_unrestricted_properties()
@@ -92,239 +89,273 @@ impl Library {
 struct Shelf(PathBuf);
 
 impl Shelf {
-    fn cassette(&self, name: &'static str, mode: Mode) -> Cassette {
+    fn name(&self) -> &str {
+        self.0.file_name().unwrap().to_str().unwrap()
+    }
+
+    fn cassette(&self, name: &str, mode: Mode) -> Cassette {
         Cassette::new(self.0.join(name), mode)
     }
 }
 
-struct Setup {
-    client: Client,
-    cassettes: Vec<Cassette>,
+type TestFn = fn(Client, Cassette) -> Pin<Box<dyn Future<Output = ()> + Send>>;
+
+const TESTS: &[(&str, TestFn)] = &[
+    (
+        "device_configuration_item_does_not_exist",
+        |client, cassette| Box::pin(device_configuration_item_does_not_exist(client, cassette)),
+    ),
+    (
+        "device_configuration_validation_error",
+        |client, cassette| Box::pin(device_configuration_validation_error(client, cassette)),
+    ),
+    (
+        "device_configuration_item_already_exists",
+        |client, cassette| Box::pin(device_configuration_item_already_exists(client, cassette)),
+    ),
+    ("remote_object_storage_1_beta_crud", |client, cassette| {
+        Box::pin(remote_object_storage_1_beta_crud(client, cassette))
+    }),
+];
+
+fn record_trials(library: &Library) -> Vec<Trial> {
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let client = rt.block_on(async {
+        ClientBuilder::from_dut()
+            .unwrap()
+            .unwrap()
+            .with_inner(|b| b.danger_accept_invalid_certs(true))
+            .build_with_automatic_scheme()
+            .await
+            .unwrap()
+    });
+    let shelf = rt.block_on(library.shelf(&client)).unwrap();
+
+    TESTS
+        .iter()
+        .map(|&(test_name, test_fn)| {
+            let cassette = shelf.cassette(test_name, Mode::Write);
+            cassette.clear().unwrap();
+            let client = client.clone();
+            Trial::test(test_name, move || {
+                let rt = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap();
+                rt.block_on(test_fn(client, cassette));
+                Ok(())
+            })
+        })
+        .collect()
 }
 
-async fn setup(test_name: &'static str) -> Setup {
+fn playback_trials(library: &Library) -> Vec<Trial> {
+    let client = dummy_client();
+    let shelves = library.shelves().unwrap();
+
+    shelves
+        .into_iter()
+        .flat_map(|shelf| {
+            let shelf_name = shelf.name().to_string();
+            let client = client.clone();
+            TESTS.iter().map(move |&(test_name, test_fn)| {
+                let trial_name = format!("{test_name}::{shelf_name}");
+                let cassette_dir = shelf.0.join(test_name);
+                let has_cassette = cassette_dir.exists();
+                let client = client.clone();
+                let mut trial = Trial::test(trial_name, move || {
+                    let cassette = Cassette::new(cassette_dir, Mode::Read);
+                    let rt = tokio::runtime::Builder::new_current_thread()
+                        .enable_all()
+                        .build()
+                        .unwrap();
+                    rt.block_on(test_fn(client, cassette));
+                    Ok(())
+                });
+                if !has_cassette {
+                    trial = trial.with_ignored_flag(true);
+                }
+                trial
+            })
+        })
+        .collect()
+}
+
+fn main() {
     let _ = env_logger::Builder::new()
-        .filter_level(LevelFilter::Trace)
+        .filter_level(LevelFilter::Warn)
         .parse_default_env()
         .is_test(true)
         .try_init();
 
+    let args = Arguments::from_args();
     let library = Library::new().unwrap();
 
-    match env_flag("UPDATE_CASSETTES") {
-        true => {
-            let client = ClientBuilder::from_dut()
-                .unwrap()
-                .unwrap()
-                .with_inner(|b| b.danger_accept_invalid_certs(true))
-                .build_with_automatic_scheme()
-                .await
-                .unwrap();
-            let shelf = library.shelf(&client).await.unwrap();
+    let trials = match env_flag("UPDATE_CASSETTES") {
+        true => record_trials(&library),
+        false => playback_trials(&library),
+    };
 
-            let cassette = shelf.cassette(test_name, Mode::Write);
-            cassette.clear().unwrap();
-            Setup {
-                client,
-                cassettes: vec![cassette],
-            }
-        }
-        false => {
-            let client = dummy_client();
-            let shelves = library.shelves().unwrap();
-            let cassettes = shelves
-                .into_iter()
-                .map(|shelf| shelf.cassette(test_name, Mode::Read))
-                .collect();
-            Setup { client, cassettes }
-        }
-    }
+    libtest_mimic::run(&args, trials).exit();
 }
 
-#[tokio::test]
-async fn device_configuration_item_does_not_exist() {
-    let Setup { client, cassettes } = setup("device_configuration_item_does_not_exist").await;
+async fn device_configuration_item_does_not_exist(client: Client, cassette: Cassette) {
+    let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
 
-    for cassette in cassettes {
-        let mut cassette = Some(cassette);
-
-        let error = DeleteDestinationRequest::new(id.clone())
-            .send(&client, cassette.as_mut())
-            .await
-            .unwrap_err();
-
-        let http::Error::Service(error) = error else {
-            panic!("Expected Service error but got {error:?}");
-        };
-
-        assert_eq!(error.kind().unwrap(), ErrorKind::NotFound);
-    }
-}
-
-#[tokio::test]
-async fn device_configuration_validation_error() {
-    let Setup { client, cassettes } = setup("device_configuration_validation_error").await;
-
-    let id = DestinationId::new("my_destination_id".to_string());
-
-    // Test
-    for cassette in cassettes {
-        let mut cassette = Some(cassette);
-
-        let error = CreateDestinationRequest::azure(
-            id.clone(),
-            AzureDestination::new(
-                "my-container".to_string(),
-                "".to_string(),
-                Url::parse("https://s3.eu-north-1.amazonaws.com").unwrap(),
-            ),
-        )
+    let error = DeleteDestinationRequest::new(id.clone())
         .send(&client, cassette.as_mut())
         .await
         .unwrap_err();
 
-        let http::Error::Service(error) = error else {
-            panic!("Expected Service error but got {error:?}");
-        };
+    let http::Error::Service(error) = error else {
+        panic!("Expected Service error but got {error:?}");
+    };
 
-        assert_eq!(error.kind().unwrap(), ErrorKind::ValidationError);
-    }
+    assert_eq!(error.kind().unwrap(), ErrorKind::NotFound);
 }
 
-#[tokio::test]
-async fn device_configuration_item_already_exists() {
-    let Setup { client, cassettes } = setup("device_configuration_item_already_exists").await;
+async fn device_configuration_validation_error(client: Client, cassette: Cassette) {
+    let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
 
-    // Test
-    for cassette in cassettes {
-        let mut cassette = Some(cassette);
+    let error = CreateDestinationRequest::azure(
+        id.clone(),
+        AzureDestination::new(
+            "my-container".to_string(),
+            "".to_string(),
+            Url::parse("https://s3.eu-north-1.amazonaws.com").unwrap(),
+        ),
+    )
+    .send(&client, cassette.as_mut())
+    .await
+    .unwrap_err();
 
-        let DestinationData { .. } = CreateDestinationRequest::azure(
-            id.clone(),
-            AzureDestination::new(
-                "my-container".to_string(),
-                "my-sas".to_string(),
-                Url::parse("https://s3.eu-north-1.amazonaws.com").unwrap(),
-            ),
-        )
-        .send(&client, cassette.as_mut())
-        .await
-        .unwrap();
+    let http::Error::Service(error) = error else {
+        panic!("Expected Service error but got {error:?}");
+    };
 
-        let error = CreateDestinationRequest::azure(
-            id.clone(),
-            AzureDestination::new(
-                "my-container".to_string(),
-                "my-sas".to_string(),
-                Url::parse("https://s3.eu-north-1.amazonaws.com").unwrap(),
-            ),
-        )
-        .send(&client, cassette.as_mut())
-        .await
-        .unwrap_err();
-
-        let http::Error::Service(error) = error else {
-            panic!("Expected Service error but got {error:?}");
-        };
-
-        assert_eq!(error.kind().unwrap(), ErrorKind::AlreadyExists);
-
-        // Cleanup
-
-        // Leaving the destination behind may affect other tests, even if we didn't reuse it.
-        // But we don't really need this last track on the cassette.
-        // TODO: Consider running this only when recording and excluding it from the cassette.
-
-        DeleteDestinationRequest::new(id.clone())
-            .send(&client, cassette.as_mut())
-            .await
-            .unwrap();
-    }
+    assert_eq!(error.kind().unwrap(), ErrorKind::ValidationError);
 }
 
-#[tokio::test]
-async fn remote_object_storage_1_beta_crud() {
-    let Setup { client, cassettes } = setup("remote_object_storage_1_beta_crud").await;
+async fn device_configuration_item_already_exists(client: Client, cassette: Cassette) {
+    let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
 
-    // Commented out to avoid waiting for failed requests when replaying.
-    // Left in for easier cleanup.
+    let DestinationData { .. } = CreateDestinationRequest::azure(
+        id.clone(),
+        AzureDestination::new(
+            "my-container".to_string(),
+            "my-sas".to_string(),
+            Url::parse("https://s3.eu-north-1.amazonaws.com").unwrap(),
+        ),
+    )
+    .send(&client, cassette.as_mut())
+    .await
+    .unwrap();
 
-    // let _ = DeleteDestinationRequest::new(id.clone())
-    //     .send(&client, None)
-    //     .await;
+    let error = CreateDestinationRequest::azure(
+        id.clone(),
+        AzureDestination::new(
+            "my-container".to_string(),
+            "my-sas".to_string(),
+            Url::parse("https://s3.eu-north-1.amazonaws.com").unwrap(),
+        ),
+    )
+    .send(&client, cassette.as_mut())
+    .await
+    .unwrap_err();
 
-    for cassette in cassettes {
-        let mut cassette = Some(cassette);
+    let http::Error::Service(error) = error else {
+        panic!("Expected Service error but got {error:?}");
+    };
 
-        // Create
-        let created = CreateDestinationRequest::azure(
-            id.clone(),
-            AzureDestination::new(
-                "my-container".to_string(),
-                "my-sas".to_string(),
-                Url::parse("https://s3.eu-north-1.amazonaws.com").unwrap(),
-            ),
-        )
-        .description("my-description".to_string())
+    assert_eq!(error.kind().unwrap(), ErrorKind::AlreadyExists);
+
+    // Cleanup
+
+    // Leaving the destination behind may affect other tests, even if we didn't reuse it.
+    // But we don't really need this last track on the cassette.
+    // TODO: Consider running this only when recording and excluding it from the cassette.
+
+    DeleteDestinationRequest::new(id.clone())
         .send(&client, cassette.as_mut())
         .await
         .unwrap();
-        assert_eq!(&created.id, &id);
-        assert!(created.azure.is_some());
+}
 
-        // List
-        let all = ListDestinationsRequest::new()
-            .send(&client, cassette.as_mut())
-            .await
-            .unwrap();
-        assert!(all.iter().any(|d| d.id == created.id));
+async fn remote_object_storage_1_beta_crud(client: Client, cassette: Cassette) {
+    let mut cassette = Some(cassette);
 
-        // On at least one occasion when recording, this returned an item does not exist error.
-        // TODO: Consider retrying the request if the destination is not yet available.
+    let id = DestinationId::new("my_destination_id".to_string());
 
-        // Update
-        let () = UpdateDestinationRequest::azure(
-            created.id.clone(),
-            AzureDestination {
-                sas: Some("my-updated-sas".to_string()),
-                ..created.azure.unwrap()
-            },
-        )
+    // Create
+    let created = CreateDestinationRequest::azure(
+        id.clone(),
+        AzureDestination::new(
+            "my-container".to_string(),
+            "my-sas".to_string(),
+            Url::parse("https://s3.eu-north-1.amazonaws.com").unwrap(),
+        ),
+    )
+    .description("my-description".to_string())
+    .send(&client, cassette.as_mut())
+    .await
+    .unwrap();
+    assert_eq!(&created.id, &id);
+    assert!(created.azure.is_some());
+
+    // List
+    let all = ListDestinationsRequest::new()
         .send(&client, cassette.as_mut())
         .await
         .unwrap();
-        // The effect of this update cannot be observed since the sas is redacted.
+    assert!(all.iter().any(|d| d.id == created.id));
 
-        let updated_description = format!("{}-updated", created.description.unwrap());
-        let () =
-            UpdateDestinationRequest::description(created.id.clone(), updated_description.clone())
-                .send(&client, cassette.as_mut())
-                .await
-                .unwrap();
-        let all = ListDestinationsRequest::new()
-            .send(&client, cassette.as_mut())
-            .await
-            .unwrap();
-        let updated = all.into_iter().find(|d| d.id == created.id).unwrap();
-        assert_eq!(updated.description.unwrap(), updated_description);
+    // On at least one occasion when recording, this returned an item does not exist error.
+    // TODO: Consider retrying the request if the destination is not yet available.
 
-        // Delete
-        let () = DeleteDestinationRequest::new(created.id.clone())
-            .send(&client, cassette.as_mut())
-            .await
-            .unwrap();
+    // Update
+    let () = UpdateDestinationRequest::azure(
+        created.id.clone(),
+        AzureDestination {
+            sas: Some("my-updated-sas".to_string()),
+            ..created.azure.unwrap()
+        },
+    )
+    .send(&client, cassette.as_mut())
+    .await
+    .unwrap();
+    // The effect of this update cannot be observed since the sas is redacted.
 
-        // Verify deletion
-        let all = ListDestinationsRequest::new()
-            .send(&client, cassette.as_mut())
-            .await
-            .unwrap();
-        assert!(!all.iter().any(|d| d.id == created.id));
-    }
+    let updated_description = format!("{}-updated", created.description.unwrap());
+    let () = UpdateDestinationRequest::description(created.id.clone(), updated_description.clone())
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
+    let all = ListDestinationsRequest::new()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
+    let updated = all.into_iter().find(|d| d.id == created.id).unwrap();
+    assert_eq!(updated.description.unwrap(), updated_description);
+
+    // Delete
+    let () = DeleteDestinationRequest::new(created.id.clone())
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
+
+    // Verify deletion
+    let all = ListDestinationsRequest::new()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
+    assert!(!all.iter().any(|d| d.id == created.id));
 }

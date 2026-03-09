@@ -23,7 +23,12 @@ url = { workspace = true }
 env_logger = { workspace = true }
 expect-test = { workspace = true }
 insta = { workspace = true }
+libtest-mimic = { workspace = true }
 tokio = { workspace = true, features = ["macros"] }
 
 [features]
 default = ["reqwest/rustls-tls"]
+
+[[test]]
+name = "cassette_tests"
+harness = false
