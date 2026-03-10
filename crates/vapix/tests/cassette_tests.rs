@@ -1,4 +1,11 @@
-use std::{fs, future::Future, path::PathBuf, pin::Pin};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    future::Future,
+    hash::{DefaultHasher, Hash, Hasher},
+    path::{Path, PathBuf},
+    pin::Pin,
+};
 
 use anyhow::Context;
 use libtest_mimic::{Arguments, Trial};
@@ -17,24 +24,110 @@ use rs4a_vapix::{
     rest_http2::RestHttp2,
     Client, ClientBuilder, Scheme,
 };
+use serde::{Deserialize, Serialize};
 use url::{Host, Url};
-
-// Responses will vary depending on hardware model and software version.
-// Creating a new shelf for each would be unwieldy.
-// TODO: Automatically deduplicate shelves.
 
 // Responses may vary due to time, initial state of the device, test order, etc.
 // Manually determining when cassettes should be updated is tedious and error prone.
 // Furthermore, if cassettes are addressed by their content, it cache hits will suffer.
 // TODO: Automatically deal with non-reproducible responses.
 
-// Not all tests are applicable to all hardware models and all software versions.
-// TODO: Allow tests to filter on device capabilities.
-
 // When a test fails, it may leave resources intact that will cause future runs to fail.
 // This must be cleaned up manually by either removing them individually or resetting the device.
 // This is tedious, but hopefully updating cassettes will be rare.
 // TODO: Avoid manual cleanup.
+
+// When comparing cassettes, it is difficult to know where they are different.
+// For example, in a test like `device_configuration_item_already_exists` the first two responses
+// are the same on AXIS OS 11 and 12, but the third is different.
+// This could be alleviated by:
+// - Including the response hash in the response name
+// - Provide a diff tool
+// TODO: Make it easier to compare cassettes.
+
+#[derive(Clone, Debug)]
+struct Prelude {
+    props: UnrestrictedProperties,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct DeviceInfo {
+    prod_nbr: String,
+    version: String,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct Manifest {
+    #[serde(default)]
+    groups: BTreeMap<String, Vec<String>>,
+    devices: BTreeMap<String, DeviceInfo>,
+    cassettes: BTreeMap<String, BTreeMap<String, Vec<String>>>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    skipped: BTreeMap<String, Vec<String>>,
+}
+
+impl Manifest {
+    fn load(path: &Path) -> anyhow::Result<Self> {
+        match fs::read_to_string(path) {
+            Ok(content) => Ok(serde_json::from_str(&content)?),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::default()),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    fn save(&self, path: &Path) -> anyhow::Result<()> {
+        let content = serde_json::to_string_pretty(self)? + "\n";
+        fs::write(path, content)?;
+        Ok(())
+    }
+
+    fn resolve_devices_label(&self, devices: &[String], fallback: &str) -> String {
+        let device_set = devices.iter().collect::<BTreeSet<_>>();
+
+        let mut matched = None;
+        for (label, group_devices) in &self.groups {
+            let group_set = group_devices.iter().collect::<BTreeSet<_>>();
+            if device_set == group_set {
+                if let Some(prev) = matched {
+                    panic!(
+                        "Ambiguous group match for {fallback}: \
+                         both '{prev}' and '{label}' match the same device set"
+                    );
+                }
+                matched = Some(label.as_str());
+            }
+        }
+
+        if let Some(label) = matched {
+            return label.to_string();
+        }
+        if devices.len() == 1 {
+            return devices[0].clone();
+        }
+        fallback.to_string()
+    }
+
+    fn resolve_label(&self, test_name: &str, hash: &str) -> String {
+        match self.cassettes.get(test_name).and_then(|t| t.get(hash)) {
+            Some(devices) => self.resolve_devices_label(devices, hash),
+            None => hash.to_string(),
+        }
+    }
+}
+
+fn content_hash_of_dir(dir: &Path) -> anyhow::Result<String> {
+    let mut entries: Vec<_> = fs::read_dir(dir)?.collect::<Result<Vec<_>, _>>()?;
+    entries.sort_by_key(|e| e.file_name());
+
+    // Use DefaultHasher to match the hashing approach in cassette.rs.
+    let mut hasher = DefaultHasher::new();
+    for entry in &entries {
+        entry.file_name().hash(&mut hasher);
+        fs::read(entry.path())?.hash(&mut hasher);
+    }
+
+    Ok(format!("{:016x}", hasher.finish()))
+}
 
 fn env_flag(key: &str) -> bool {
     match std::env::var(key).as_deref() {
@@ -64,57 +157,151 @@ impl Library {
         ))
     }
 
-    async fn shelf(&self, client: &Client) -> anyhow::Result<Shelf> {
-        let UnrestrictedProperties { prod_nbr, .. } =
-            apis::basic_device_info_1::get_all_unrestricted_properties()
-                .send(client)
-                .await?
-                .property_list;
-
-        Ok(Shelf(self.0.join(prod_nbr)))
+    fn dir(&self) -> &Path {
+        &self.0
     }
 
-    fn shelves(&self) -> anyhow::Result<Vec<Shelf>> {
-        let mut shelves = Vec::new();
-        for entry in fs::read_dir(self.0.as_path())? {
-            let entry = entry?;
-            if entry.file_type()?.is_dir() {
-                shelves.push(Shelf(entry.path()));
+    fn staging_dir(&self, test_name: &str) -> PathBuf {
+        self.0.join(test_name).join(".staging")
+    }
+
+    fn clean_staging(&self, test_name: &str) {
+        let staging = self.staging_dir(test_name);
+        let _ = fs::remove_dir_all(&staging);
+    }
+
+    fn cassettes_for_test(&self, test_name: &str) -> Vec<PathBuf> {
+        let test_dir = self.0.join(test_name);
+        let mut dirs = Vec::new();
+        if let Ok(entries) = fs::read_dir(&test_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    let name = entry.file_name();
+                    let name_str = name.to_string_lossy();
+                    if !name_str.starts_with('.') {
+                        dirs.push(path);
+                    }
+                }
             }
         }
-        Ok(shelves)
+        dirs.sort();
+        dirs
     }
 }
 
-struct Shelf(PathBuf);
+fn finalize_recording(
+    library_dir: &Path,
+    test_name: &str,
+    staging_dir: &Path,
+    device_key: &str,
+    device_info: &DeviceInfo,
+) -> anyhow::Result<()> {
+    // If the staging dir is empty or doesn't exist, the test was skipped
+    let is_empty = match fs::read_dir(staging_dir) {
+        Ok(mut entries) => entries.next().is_none(),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => true,
+        Err(e) => return Err(e.into()),
+    };
+    if is_empty {
+        let _ = fs::remove_dir_all(staging_dir);
 
-impl Shelf {
-    fn name(&self) -> &str {
-        self.0.file_name().unwrap().to_str().unwrap()
+        // Record the skip in the manifest
+        let manifest_path = library_dir.join("manifest.json");
+        let mut manifest = Manifest::load(&manifest_path)?;
+        manifest
+            .devices
+            .insert(device_key.to_string(), device_info.clone());
+        let skipped_entry = manifest.skipped.entry(test_name.to_string()).or_default();
+        if !skipped_entry.contains(&device_key.to_string()) {
+            skipped_entry.push(device_key.to_string());
+            skipped_entry.sort();
+        }
+        manifest.save(&manifest_path)?;
+        return Ok(());
     }
 
-    fn cassette(&self, name: &str, mode: Mode) -> Cassette {
-        Cassette::new(self.0.join(name), mode)
+    let hash = content_hash_of_dir(staging_dir)?;
+    let dest_dir = library_dir.join(test_name).join(&hash);
+
+    if dest_dir.exists() {
+        // Duplicate cassette - remove staging
+        fs::remove_dir_all(staging_dir)?;
+    } else {
+        fs::rename(staging_dir, &dest_dir)?;
     }
+
+    // Update manifest
+    let manifest_path = library_dir.join("manifest.json");
+    let mut manifest = Manifest::load(&manifest_path)?;
+
+    manifest
+        .devices
+        .insert(device_key.to_string(), device_info.clone());
+
+    // Remove the device from skipped since it produced a real cassette
+    if let Some(skipped_devices) = manifest.skipped.get_mut(test_name) {
+        skipped_devices.retain(|d| d != device_key);
+        if skipped_devices.is_empty() {
+            manifest.skipped.remove(test_name);
+        }
+    }
+
+    let test_entry = manifest.cassettes.entry(test_name.to_string()).or_default();
+
+    // Remove the device from any old hash entry for this test
+    for devices in test_entry.values_mut() {
+        devices.retain(|d| d != device_key);
+    }
+    // Remove empty entries
+    test_entry.retain(|_, devices| !devices.is_empty());
+
+    // Add a device to a new hash entry
+    let hash_entry = test_entry.entry(hash).or_default();
+    if !hash_entry.contains(&device_key.to_string()) {
+        hash_entry.push(device_key.to_string());
+        hash_entry.sort();
+    }
+
+    manifest.save(&manifest_path)?;
+    Ok(())
 }
 
-type TestFn = fn(Client, Cassette) -> Pin<Box<dyn Future<Output = ()> + Send>>;
+type TestFn = fn(Client, Cassette, Option<Prelude>) -> Pin<Box<dyn Future<Output = ()> + Send>>;
 
 const TESTS: &[(&str, TestFn)] = &[
     (
         "device_configuration_item_does_not_exist",
-        |client, cassette| Box::pin(device_configuration_item_does_not_exist(client, cassette)),
+        |client, cassette, prelude| {
+            Box::pin(device_configuration_item_does_not_exist(
+                client, cassette, prelude,
+            ))
+        },
     ),
     (
         "device_configuration_validation_error",
-        |client, cassette| Box::pin(device_configuration_validation_error(client, cassette)),
+        |client, cassette, prelude| {
+            Box::pin(device_configuration_validation_error(
+                client, cassette, prelude,
+            ))
+        },
     ),
     (
         "device_configuration_item_already_exists",
-        |client, cassette| Box::pin(device_configuration_item_already_exists(client, cassette)),
+        |client, cassette, prelude| {
+            Box::pin(device_configuration_item_already_exists(
+                client, cassette, prelude,
+            ))
+        },
     ),
-    ("remote_object_storage_1_beta_crud", |client, cassette| {
-        Box::pin(remote_object_storage_1_beta_crud(client, cassette))
+    (
+        "remote_object_storage_1_beta_crud",
+        |client, cassette, prelude| {
+            Box::pin(remote_object_storage_1_beta_crud(client, cassette, prelude))
+        },
+    ),
+    ("never", |client, cassette, prelude| {
+        Box::pin(never(client, cassette, prelude))
     }),
 ];
 
@@ -132,20 +319,48 @@ fn record_trials(library: &Library) -> Vec<Trial> {
             .await
             .unwrap()
     });
-    let shelf = rt.block_on(library.shelf(&client)).unwrap();
+
+    let prelude = rt.block_on(async {
+        let props = apis::basic_device_info_1::get_all_unrestricted_properties()
+            .send(&client)
+            .await
+            .unwrap()
+            .property_list;
+        Prelude { props }
+    });
+    let device_key = format!("{}@{}", prelude.props.prod_nbr, prelude.props.version);
+    let device_info = DeviceInfo {
+        prod_nbr: prelude.props.prod_nbr.clone(),
+        version: prelude.props.version.clone(),
+    };
 
     TESTS
         .iter()
         .map(|&(test_name, test_fn)| {
-            let cassette = shelf.cassette(test_name, Mode::Write);
+            library.clean_staging(test_name);
+            let staging_dir = library.staging_dir(test_name);
+            let cassette = Cassette::new(staging_dir.clone(), Mode::Write);
             cassette.clear().unwrap();
             let client = client.clone();
+            let prelude = prelude.clone();
+            let library_dir = library.dir().to_path_buf();
+            let device_key = device_key.clone();
+            let device_info = device_info.clone();
+
             Trial::test(test_name, move || {
                 let rt = tokio::runtime::Builder::new_current_thread()
                     .enable_all()
                     .build()
                     .unwrap();
-                rt.block_on(test_fn(client, cassette));
+                rt.block_on(test_fn(client, cassette, Some(prelude)));
+
+                finalize_recording(
+                    &library_dir,
+                    test_name,
+                    &staging_dir,
+                    &device_key,
+                    &device_info,
+                )?;
                 Ok(())
             })
         })
@@ -154,32 +369,49 @@ fn record_trials(library: &Library) -> Vec<Trial> {
 
 fn playback_trials(library: &Library) -> Vec<Trial> {
     let client = dummy_client();
-    let shelves = library.shelves().unwrap();
+    let manifest_path = library.dir().join("manifest.json");
+    let manifest = Manifest::load(&manifest_path).unwrap();
 
-    shelves
-        .into_iter()
-        .flat_map(|shelf| {
-            let shelf_name = shelf.name().to_string();
+    TESTS
+        .iter()
+        .flat_map(|&(test_name, test_fn)| {
+            let cassette_dirs = library.cassettes_for_test(test_name);
             let client = client.clone();
-            TESTS.iter().map(move |&(test_name, test_fn)| {
-                let trial_name = format!("{test_name}::{shelf_name}");
-                let cassette_dir = shelf.0.join(test_name);
-                let has_cassette = cassette_dir.exists();
+            let manifest = &manifest;
+
+            let cassette_trials = cassette_dirs.into_iter().map(move |cassette_dir| {
+                let hash = cassette_dir
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string();
+                let label = manifest.resolve_label(test_name, &hash);
+                let trial_name = format!("{test_name}::{label}");
                 let client = client.clone();
-                let mut trial = Trial::test(trial_name, move || {
+                Trial::test(trial_name, move || {
                     let cassette = Cassette::new(cassette_dir, Mode::Read);
                     let rt = tokio::runtime::Builder::new_current_thread()
                         .enable_all()
                         .build()
                         .unwrap();
-                    rt.block_on(test_fn(client, cassette));
+                    rt.block_on(test_fn(client, cassette, None));
                     Ok(())
+                })
+            });
+
+            let skipped_trial = manifest
+                .skipped
+                .get(test_name)
+                .filter(|devices| !devices.is_empty())
+                .map(|devices| {
+                    let fallback = devices.join("+");
+                    let label = manifest.resolve_devices_label(devices, &fallback);
+                    let trial_name = format!("{test_name}::{label}");
+                    Trial::test(trial_name, || Ok(())).with_ignored_flag(true)
                 });
-                if !has_cassette {
-                    trial = trial.with_ignored_flag(true);
-                }
-                trial
-            })
+
+            cassette_trials.chain(skipped_trial)
         })
         .collect()
 }
@@ -207,7 +439,11 @@ fn main() {
     libtest_mimic::run(&args, trials).exit();
 }
 
-async fn device_configuration_item_does_not_exist(client: Client, cassette: Cassette) {
+async fn device_configuration_item_does_not_exist(
+    client: Client,
+    cassette: Cassette,
+    _prelude: Option<Prelude>,
+) {
     let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
@@ -224,7 +460,11 @@ async fn device_configuration_item_does_not_exist(client: Client, cassette: Cass
     assert_eq!(error.kind().unwrap(), ErrorKind::NotFound);
 }
 
-async fn device_configuration_validation_error(client: Client, cassette: Cassette) {
+async fn device_configuration_validation_error(
+    client: Client,
+    cassette: Cassette,
+    _prelude: Option<Prelude>,
+) {
     let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
@@ -248,7 +488,11 @@ async fn device_configuration_validation_error(client: Client, cassette: Cassett
     assert_eq!(error.kind().unwrap(), ErrorKind::ValidationError);
 }
 
-async fn device_configuration_item_already_exists(client: Client, cassette: Cassette) {
+async fn device_configuration_item_already_exists(
+    client: Client,
+    cassette: Cassette,
+    _prelude: Option<Prelude>,
+) {
     let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
@@ -295,7 +539,11 @@ async fn device_configuration_item_already_exists(client: Client, cassette: Cass
         .unwrap();
 }
 
-async fn remote_object_storage_1_beta_crud(client: Client, cassette: Cassette) {
+async fn remote_object_storage_1_beta_crud(
+    client: Client,
+    cassette: Cassette,
+    _prelude: Option<Prelude>,
+) {
     let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
@@ -364,3 +612,6 @@ async fn remote_object_storage_1_beta_crud(client: Client, cassette: Cassette) {
         .unwrap();
     assert!(!all.iter().any(|d| d.id == created.id));
 }
+
+// Placeholder for tests that skip recording based on the prelude
+async fn never(_client: Client, _cassette: Cassette, _prelude: Option<Prelude>) {}
