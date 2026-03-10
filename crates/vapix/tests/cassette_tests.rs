@@ -197,7 +197,7 @@ fn finalize_recording(
     device_key: &str,
     device_info: &DeviceInfo,
 ) -> anyhow::Result<()> {
-    // If staging dir is empty or doesn't exist, the test was skipped
+    // If the staging dir is empty or doesn't exist, the test was skipped
     let is_empty = match fs::read_dir(staging_dir) {
         Ok(mut entries) => entries.next().is_none(),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => true,
@@ -239,7 +239,7 @@ fn finalize_recording(
         .devices
         .insert(device_key.to_string(), device_info.clone());
 
-    // Remove device from skipped since it produced a real cassette
+    // Remove the device from skipped since it produced a real cassette
     if let Some(skipped_devices) = manifest.skipped.get_mut(test_name) {
         skipped_devices.retain(|d| d != device_key);
         if skipped_devices.is_empty() {
@@ -249,14 +249,14 @@ fn finalize_recording(
 
     let test_entry = manifest.cassettes.entry(test_name.to_string()).or_default();
 
-    // Remove device from any old hash entry for this test
+    // Remove the device from any old hash entry for this test
     for devices in test_entry.values_mut() {
         devices.retain(|d| d != device_key);
     }
     // Remove empty entries
     test_entry.retain(|_, devices| !devices.is_empty());
 
-    // Add device to new hash entry
+    // Add a device to a new hash entry
     let hash_entry = test_entry.entry(hash).or_default();
     if !hash_entry.contains(&device_key.to_string()) {
         hash_entry.push(device_key.to_string());
@@ -614,6 +614,4 @@ async fn remote_object_storage_1_beta_crud(
 }
 
 // Placeholder for tests that skip recording based on the prelude
-async fn never(_client: Client, _cassette: Cassette, _prelude: Option<Prelude>) {
-    return;
-}
+async fn never(_client: Client, _cassette: Cassette, _prelude: Option<Prelude>) {}
