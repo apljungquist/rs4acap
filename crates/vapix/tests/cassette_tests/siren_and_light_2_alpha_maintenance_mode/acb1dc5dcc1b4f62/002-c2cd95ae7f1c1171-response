@@ -1,0 +1,9 @@
+200 OK
+
+{
+  "status": "success",
+  "data": {
+    "running": false,
+    "supported": true
+  }
+}

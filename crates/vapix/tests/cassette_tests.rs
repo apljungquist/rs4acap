@@ -22,6 +22,9 @@ use rs4a_vapix::{
     },
     rest::ErrorKind,
     rest_http2::RestHttp2,
+    siren_and_light_2_alpha::{
+        GetMaintenanceModeRequest, StartMaintenanceModeRequest, StopMaintenanceModeRequest,
+    },
     Client, ClientBuilder, Scheme,
 };
 use serde::{Deserialize, Serialize};
@@ -298,6 +301,14 @@ const TESTS: &[(&str, TestFn)] = &[
         "remote_object_storage_1_beta_crud",
         |client, cassette, prelude| {
             Box::pin(remote_object_storage_1_beta_crud(client, cassette, prelude))
+        },
+    ),
+    (
+        "siren_and_light_2_alpha_maintenance_mode",
+        |client, cassette, prelude| {
+            Box::pin(siren_and_light_2_alpha_maintenance_mode(
+                client, cassette, prelude,
+            ))
         },
     ),
     ("never", |client, cassette, prelude| {
@@ -611,6 +622,45 @@ async fn remote_object_storage_1_beta_crud(
         .await
         .unwrap();
     assert!(!all.iter().any(|d| d.id == created.id));
+}
+
+async fn siren_and_light_2_alpha_maintenance_mode(
+    client: Client,
+    cassette: Cassette,
+    _prelude: Option<Prelude>,
+) {
+    let mut cassette = Some(cassette);
+
+    let running = GetMaintenanceModeRequest::new()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap()
+        .running;
+    assert_eq!(running, Some(true));
+
+    StopMaintenanceModeRequest::new()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
+
+    let running = GetMaintenanceModeRequest::new()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap()
+        .running;
+    assert_eq!(running, Some(false));
+
+    StartMaintenanceModeRequest::new()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
+
+    let running = GetMaintenanceModeRequest::new()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap()
+        .running;
+    assert_eq!(running, Some(true));
 }
 
 // Placeholder for tests that skip recording based on the prelude

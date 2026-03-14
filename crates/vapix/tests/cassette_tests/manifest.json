@@ -21,6 +21,10 @@
       "prod_nbr": "D2210-VE",
       "version": "12.9.57"
     },
+    "D4200-VE@12.4.59": {
+      "prod_nbr": "D4200-VE",
+      "version": "12.4.59"
+    },
     "D4200-VE@12.9.57": {
       "prod_nbr": "D4200-VE",
       "version": "12.9.57"
@@ -67,6 +71,11 @@
         "D2210-VE@12.9.57",
         "D4200-VE@12.9.57",
         "M1075-L@12.9.57"
+      ]
+    },
+    "siren_and_light_2_alpha_maintenance_mode": {
+      "acb1dc5dcc1b4f62": [
+        "D4200-VE@12.4.59"
       ]
     }
   },
