@@ -15,5 +15,8 @@ pub mod soap_http;
 
 pub use axis_cgi::{basic_device_info_1, system_ready_1};
 pub use client::{Client, ClientBuilder, Scheme};
-pub use config::{recording_group_1, remote_object_storage_1, remote_object_storage_1_beta, ssh_1};
+pub use config::{
+    recording_group_1, remote_object_storage_1, remote_object_storage_1_beta,
+    siren_and_light_2_alpha, ssh_1,
+};
 pub use services::{action1, event1};
