@@ -31,6 +31,12 @@ pub mod recording_group_1 {
     pub use crate::config::recording_group_1::create_recording_groups;
 }
 
+pub mod siren_and_light_2_alpha {
+    pub use crate::config::siren_and_light_2_alpha::{
+        GetMaintenanceModeRequest, StartMaintenanceModeRequest, StopMaintenanceModeRequest,
+    };
+}
+
 pub mod ssh_1 {
     pub use crate::config::ssh_1::{add_user, set_user};
 }
