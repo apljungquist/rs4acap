@@ -1,4 +1,5 @@
 POST config/rest/remote-object-storage/v1beta/destinations
+Content-Type: application/json
 
 {
   "data": {
@@ -7,6 +8,7 @@ POST config/rest/remote-object-storage/v1beta/destinations
       "sas": "my-sas",
       "url": "https://s3.eu-north-1.amazonaws.com/"
     },
+    "description": "my-description",
     "id": "my_destination_id"
   }
 }

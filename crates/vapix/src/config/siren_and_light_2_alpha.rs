@@ -42,7 +42,7 @@ impl RestHttp2 for GetMaintenanceModeRequest {
     type ResponseData = MaintenanceModeData;
 
     fn to_request(self) -> Request {
-        Request::new(Method::GET, format!("{BASE_PATH}/maintenanceMode"))
+        Request::no_content(Method::GET, format!("{BASE_PATH}/maintenanceMode"))
     }
 }
 
@@ -65,7 +65,7 @@ impl RestHttp2 for StartMaintenanceModeRequest {
     fn to_request(self) -> Request {
         // PANICS:
         // The `unwrap` will never panic because `self.data` can always be serialized to JSON.
-        Request::new(Method::POST, format!("{BASE_PATH}/maintenanceMode/start"))
+        Request::json(Method::POST, format!("{BASE_PATH}/maintenanceMode/start"))
             .body(serde_json::to_string_pretty(&json!({"data": self.data})).unwrap())
     }
 }
@@ -85,7 +85,7 @@ impl RestHttp2 for StopMaintenanceModeRequest {
     fn to_request(self) -> Request {
         // PANICS:
         // The `unwrap` will never panic because the body is a static JSON value.
-        Request::new(Method::POST, format!("{BASE_PATH}/maintenanceMode/stop"))
+        Request::json(Method::POST, format!("{BASE_PATH}/maintenanceMode/stop"))
             .body(serde_json::to_string_pretty(&json!({"data": {}})).unwrap())
     }
 }

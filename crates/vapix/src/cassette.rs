@@ -18,14 +18,25 @@ pub struct Request {
     method: Method,
     path: String,
     body: Option<String>,
+    content_type: Option<String>,
 }
 
 impl Request {
-    pub fn new(method: Method, path: String) -> Self {
+    pub fn json(method: Method, path: String) -> Self {
         Self {
             method,
             path,
             body: None,
+            content_type: Some("application/json".to_string()),
+        }
+    }
+
+    pub fn no_content(method: Method, path: String) -> Self {
+        Self {
+            method,
+            path,
+            body: None,
+            content_type: None,
         }
     }
 
@@ -35,19 +46,33 @@ impl Request {
     }
 
     fn write(&self, file: &Path) -> anyhow::Result<()> {
-        let Self { method, path, body } = self;
+        let Self {
+            method,
+            path,
+            body,
+            content_type,
+        } = self;
         let () = create_dir_all(file.parent().context("the file has no parent")?)?;
-        let () = match body {
-            None => fs::write(file, format!("{method} {path}\n")),
-            Some(body) => fs::write(file, format!("{method} {path}\n\n{body}")),
+        let mut content = format!("{method} {path}\n");
+        if let Some(content_type) = content_type {
+            content.push_str(&format!("Content-Type: {content_type}\n"));
         }
-        .with_context(|| format!("Could not write file {file:?}"))?;
+        if let Some(body) = body {
+            content.push_str(&format!("\n{body}"));
+        }
+        let () =
+            fs::write(file, content).with_context(|| format!("Could not write file {file:?}"))?;
 
         Ok(())
     }
 
     fn checksum(&self) -> u64 {
-        let Self { method, path, body } = self;
+        let Self {
+            method,
+            path,
+            body,
+            content_type,
+        } = self;
 
         // The `DefaultHasher` is not guaranteed to be stable across rust versions.
         // If it changes, all cassettes tracked in VCS will be invalidated.
@@ -59,6 +84,7 @@ impl Request {
         if let Some(body) = body {
             body.hash(&mut hasher);
         }
+        content_type.hash(&mut hasher);
         hasher.finish()
     }
 
@@ -99,7 +125,11 @@ impl Request {
         let mut request_builder = client
             .request(self.method, &self.path)
             .map_err(Error::Request)?;
+        if let Some(content_type) = self.content_type.as_deref() {
+            request_builder = request_builder.header(reqwest::header::CONTENT_TYPE, content_type);
+        }
         if let Some(body) = self.body {
+            debug_assert!(self.content_type.is_some());
             request_builder = request_builder.body(body);
         }
         let response = request_builder

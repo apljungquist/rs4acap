@@ -3,7 +3,7 @@
 {
   "status": "success",
   "data": {
-    "running": false,
-    "supported": true
+    "running": true,
+    "supported": false
   }
 }

@@ -1,4 +1,5 @@
 POST config/rest/remote-object-storage/v1beta/destinations
+Content-Type: application/json
 
 {
   "data": {
