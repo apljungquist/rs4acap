@@ -1802,6 +1802,7 @@ dependencies = [
  "quick-xml",
  "reqwest",
  "rs4a-dut",
+ "semver",
  "serde",
  "serde_json",
  "thiserror",

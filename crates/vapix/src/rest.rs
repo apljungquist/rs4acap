@@ -26,6 +26,8 @@ struct Response<'a> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum ErrorKind {
+    /// Internal error
+    InternalError = 0,
     /// Item does not exist
     NotFound = 2,
     /// Validation error
@@ -43,6 +45,10 @@ pub struct Error {
 impl Error {
     pub fn kind(&self) -> Option<ErrorKind> {
         match self.code {
+            0 => {
+                debug_assert!(self.message.starts_with("Internal error"));
+                Some(ErrorKind::InternalError)
+            }
             2 => {
                 debug_assert!(self.message.starts_with("Item does not exist:"));
                 Some(ErrorKind::NotFound)
