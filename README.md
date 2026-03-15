@@ -56,6 +56,26 @@ Options:
   -h, --help                   Print help
 ```
 
+### `firmware-inventory`
+
+```console
+$ firmware-inventory help
+Usage: firmware-inventory [OPTIONS] <COMMAND>
+
+Commands:
+  login        Login to access firmware downloads
+  update       Update the local firmware index for products matching a glob
+  list         List indexed firmware versions, showing which are cached locally
+  get          Get firmware matching product and version requirement
+  completions  Print a completion file for the given shell
+  help         Print this message or the help of the given subcommand(s)
+
+Options:
+      --inventory <INVENTORY>  Location of the application data [env: FIRMWARE_INVENTORY_LOCATION=]
+      --offline                [env: FIRMWARE_INVENTORY_OFFLINE=]
+  -h, --help                   Print help
+```
+
 ## Installation
 
 The tools in this project can be installed using Cargo:

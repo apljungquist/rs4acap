@@ -51,7 +51,12 @@ check_format_rs:
 .PHONY: check_format_rs
 
 ## _
-check_generated_files: Cargo.lock snapshots/device-finder-docs snapshots/device-inventory-docs snapshots/device-inventory-smoke-test
+check_generated_files: \
+	Cargo.lock \
+	snapshots/device-finder-docs \
+	snapshots/device-inventory-docs \
+	snapshots/device-inventory-smoke-test \
+	snapshots/firmware-inventory-docs
 	git update-index -q --refresh
 	git --no-pager diff --exit-code HEAD -- $^
 .PHONY: check_generated_files

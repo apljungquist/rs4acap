@@ -4,7 +4,6 @@ use std::collections::HashMap;
 
 use anyhow::Context;
 use rs4a_vlt::{
-    authentication::AxisConnectSessionSID,
     client::Client,
     responses::{Loan, Loanable},
 };
@@ -27,10 +26,7 @@ pub async fn client(db: &Database, offline: bool) -> anyhow::Result<Option<Clien
         return Ok(None);
     };
 
-    Some(Client::try_new(AxisConnectSessionSID::try_from_string(
-        cookie,
-    )?))
-    .transpose()
+    Some(Client::try_new(cookie)).transpose()
 }
 
 /// Add any new devices from the VLT to the local inventory
