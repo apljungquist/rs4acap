@@ -1,0 +1,7 @@
+POST axis-cgi/systemready.cgi
+Content-Type: application/json
+
+{
+  "apiVersion": "1",
+  "method": "systemready"
+}

@@ -1,0 +1,3 @@
+200 OK
+
+{"apiVersion": "1.5", "method": "systemready", "data": {"systemready": "yes", "needsetup": "no", "uptime": "0", "bootid": "00000000-0000-0000-0000-000000000000", "passphrasepolicy": "none"}}

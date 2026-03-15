@@ -1,8 +1,8 @@
 {
   "groups": {
-    "no-siren-and-light": [
-      "D2210-VE@12.9.57",
-      "M1075-L@12.9.57"
+    "11": [
+      "D2210-VE@11.11.192",
+      "P8815-2@11.11.192"
     ],
     "12": [
       "D2210-VE@12.9.57",
@@ -14,6 +14,19 @@
       "D2210-VE@12.9.57",
       "D4200-VE@12.9.57",
       "M1075-L@12.9.57"
+    ],
+    "with-remote-object-storage-1": [
+      "D2210-VE@11.11.192",
+      "D2210-VE@12.9.57",
+      "D4200-VE@12.9.57",
+      "M1075-L@12.9.57",
+      "P8815-2@11.11.192"
+    ],
+    "without-siren-and-light-2": [
+      "D2210-VE@12.9.57",
+      "M1075-L@12.9.57",
+      "P8815-2@10.12.228",
+      "P8815-2@11.11.192"
     ]
   },
   "devices": {
@@ -32,6 +45,14 @@
     "M1075-L@12.9.57": {
       "prod_nbr": "M1075-L",
       "version": "12.9.57"
+    },
+    "P8815-2@10.12.228": {
+      "prod_nbr": "P8815-2",
+      "version": "10.12.228"
+    },
+    "P8815-2@11.11.192": {
+      "prod_nbr": "P8815-2",
+      "version": "11.11.192"
     }
   },
   "cassettes": {
@@ -42,7 +63,8 @@
         "M1075-L@12.9.57"
       ],
       "bd62f9e0260fff3b": [
-        "D2210-VE@11.11.192"
+        "D2210-VE@11.11.192",
+        "P8815-2@11.11.192"
       ]
     },
     "device_configuration_item_does_not_exist": {
@@ -52,7 +74,8 @@
         "M1075-L@12.9.57"
       ],
       "64b55e7f584408ba": [
-        "D2210-VE@11.11.192"
+        "D2210-VE@11.11.192",
+        "P8815-2@11.11.192"
       ]
     },
     "device_configuration_validation_error": {
@@ -62,7 +85,8 @@
         "M1075-L@12.9.57"
       ],
       "84b93d64e379c441": [
-        "D2210-VE@11.11.192"
+        "D2210-VE@11.11.192",
+        "P8815-2@11.11.192"
       ]
     },
     "remote_object_storage_1_beta_crud": {
@@ -70,20 +94,52 @@
         "D2210-VE@11.11.192",
         "D2210-VE@12.9.57",
         "D4200-VE@12.9.57",
-        "M1075-L@12.9.57"
+        "M1075-L@12.9.57",
+        "P8815-2@11.11.192"
       ]
     },
-    "siren_and_light_2_alpha_maintenance_mode": {
+    "siren_and_light_2_alpha_maintenance_mode_not_supported": {
       "0896e34abdde4ea2": [
         "D4200-VE@12.9.57"
+      ]
+    },
+    "system_ready_1_system_ready": {
+      "233e7589ba2e9ea3": [
+        "D2210-VE@12.9.57",
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57"
+      ],
+      "7fed7d2a2a468ee3": [
+        "P8815-2@11.11.192"
+      ],
+      "83e4ab44257704cc": [
+        "P8815-2@10.12.228"
       ]
     }
   },
   "skipped": {
+    "device_configuration_item_already_exists": [
+      "P8815-2@10.12.228"
+    ],
+    "device_configuration_item_does_not_exist": [
+      "P8815-2@10.12.228"
+    ],
+    "device_configuration_validation_error": [
+      "P8815-2@10.12.228"
+    ],
+    "remote_object_storage_1_beta_crud": [
+      "P8815-2@10.12.228"
+    ],
     "siren_and_light_2_alpha_maintenance_mode": [
       "D2210-VE@11.11.192",
       "D2210-VE@12.9.57",
       "M1075-L@12.9.57"
+    ],
+    "siren_and_light_2_alpha_maintenance_mode_not_supported": [
+      "D2210-VE@12.9.57",
+      "M1075-L@12.9.57",
+      "P8815-2@10.12.228",
+      "P8815-2@11.11.192"
     ]
   }
 }
