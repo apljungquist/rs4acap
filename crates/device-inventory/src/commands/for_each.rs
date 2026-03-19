@@ -5,7 +5,7 @@ use crate::{db::Database, env::envs};
 #[derive(Clone, Debug, clap::Parser)]
 pub struct ForEachCommand {
     /// The alias of the devices to target
-    #[arg(long)]
+    #[arg(short, long)]
     alias: Option<String>,
     /// Program to run
     program: String,

@@ -5,7 +5,7 @@ use crate::db::Database;
 #[derive(Clone, Debug, clap::Parser)]
 pub struct RemoveCommand {
     /// The alias of the device to remove
-    #[arg(long)]
+    #[arg(short, long)]
     alias: String,
 }
 

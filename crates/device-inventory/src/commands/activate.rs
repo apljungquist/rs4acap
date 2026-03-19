@@ -6,7 +6,7 @@ use crate::db::Database;
 #[derive(Clone, Debug, clap::Parser)]
 pub struct ActivateCommand {
     /// The alias of the device to activate.
-    #[arg(long)]
+    #[arg(short, long)]
     pub(crate) alias: Option<String>,
 }
 
