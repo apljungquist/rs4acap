@@ -26,12 +26,18 @@ struct Response<'a> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum ErrorKind {
+    /// Internal error
+    InternalError = 0,
+    /// Resource not found
+    ResourceNotFound = 1,
     /// Item does not exist
     NotFound = 2,
     /// Validation error
     ValidationError = 5,
     /// Item already exists
     AlreadyExists = 6,
+    /// Bad content type
+    BadContentType = 11,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -43,6 +49,14 @@ pub struct Error {
 impl Error {
     pub fn kind(&self) -> Option<ErrorKind> {
         match self.code {
+            0 => {
+                debug_assert!(self.message.starts_with("Internal error"));
+                Some(ErrorKind::InternalError)
+            }
+            1 => {
+                debug_assert!(self.message.starts_with("Resource not found:"));
+                Some(ErrorKind::ResourceNotFound)
+            }
             2 => {
                 debug_assert!(self.message.starts_with("Item does not exist:"));
                 Some(ErrorKind::NotFound)
@@ -54,6 +68,10 @@ impl Error {
             6 => {
                 debug_assert!(self.message.starts_with("Item already exists:"));
                 Some(ErrorKind::AlreadyExists)
+            }
+            11 => {
+                debug_assert!(self.message.starts_with("Bad content type:"));
+                Some(ErrorKind::BadContentType)
             }
             _ => None,
         }

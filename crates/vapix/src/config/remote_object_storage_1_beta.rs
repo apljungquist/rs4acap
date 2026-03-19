@@ -145,7 +145,7 @@ impl RestHttp2 for CreateDestinationRequest {
     fn to_request(self) -> Request {
         // PANICS:
         // The `unwrap` will never panic because `self.data` can always be serialized to JSON.
-        Request::new(Method::POST, BASE_PATH.to_string())
+        Request::json(Method::POST, BASE_PATH.to_string())
             .body(serde_json::to_string_pretty(&json!({"data":self.data})).unwrap())
     }
 }
@@ -163,7 +163,7 @@ impl RestHttp2 for ListDestinationsRequest {
     type ResponseData = Vec<DestinationData>;
 
     fn to_request(self) -> Request {
-        Request::new(Method::GET, BASE_PATH.to_string())
+        Request::no_content(Method::GET, BASE_PATH.to_string())
     }
 }
 
@@ -199,7 +199,7 @@ impl RestHttp2 for UpdateDestinationRequest {
         // PANICS:
         // The `unwrap` will never panic because `self.data` is a `serde_json::Value` which can
         // always be serialized to JSON.
-        Request::new(
+        Request::json(
             Method::PATCH,
             format!("{BASE_PATH}/{}/{}", self.id.into_string(), self.property),
         )
@@ -222,7 +222,7 @@ impl RestHttp2 for DeleteDestinationRequest {
     type ResponseData = ();
 
     fn to_request(self) -> Request {
-        Request::new(
+        Request::no_content(
             Method::DELETE,
             format!("{BASE_PATH}/{}", self.id.into_string()),
         )

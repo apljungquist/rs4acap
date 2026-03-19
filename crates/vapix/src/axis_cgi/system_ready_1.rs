@@ -4,7 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::json_rpc_http::JsonRpcHttp;
+use crate::json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless};
 
 fn deserialize_english_boolean<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
@@ -28,6 +28,8 @@ where
     }
 }
 
+// TODO: Consider parsing `uptime` as an unsigned integer
+// TODO: Consider parsing `bootid` as a UUID
 #[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -42,7 +44,13 @@ pub struct SystemreadyData {
         serialize_with = "serialize_english_boolean"
     )]
     pub systemready: bool,
-    // TODO: Extract uptime and boot id
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uptime: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bootid: Option<String>,
+    /// New in 1.5
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub passphrasepolicy: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -80,6 +88,10 @@ impl SystemReadyRequest {
 impl JsonRpcHttp for SystemReadyRequest {
     type Data = SystemreadyData;
     const PATH: &'static str = "axis-cgi/systemready.cgi";
+}
+
+impl JsonRpcHttpLossless for SystemReadyRequest {
+    type Data = SystemreadyData;
 }
 
 pub fn system_ready() -> SystemReadyRequest {

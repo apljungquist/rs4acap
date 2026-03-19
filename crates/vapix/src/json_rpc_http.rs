@@ -4,10 +4,11 @@ use std::{convert::Infallible, future::Future};
 
 use anyhow::Context;
 use log::trace;
-use reqwest::StatusCode;
+use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    cassette::{Cassette, Request},
     http::Error,
     json_rpc::{parse_data, parse_data_lossless},
     Client,
@@ -70,19 +71,19 @@ pub trait JsonRpcHttpLossless: JsonRpcHttp {
     fn send_lossless(
         self,
         client: &Client,
+        cassette: Option<&mut Cassette>,
     ) -> impl Future<Output = anyhow::Result<<Self as JsonRpcHttpLossless>::Data>> + Send {
         async move {
-            let response = client.post(Self::PATH)?.json(&self).send().await?;
-            let status = response.status();
-            let text = response.text().await;
-
-            if cfg!(debug_assertions) {
-                if let Ok(text) = text.as_deref() {
-                    trace!("Received {status}: {text}");
-                }
-            }
-
-            from_response_lossless(status, text)
+            let body = serde_json::to_string_pretty(&self)?;
+            let response = Request::json(Method::POST, Self::PATH.to_string())
+                .body(body)
+                .send::<Infallible>(client, cassette)
+                .await
+                .map_err(|e| match e {
+                    Error::Request(e) | Error::Transport(e) | Error::Decode(e) => e,
+                    Error::Service(e) => match e {},
+                })?;
+            from_response_lossless(response.status, response.body)
         }
     }
 }

@@ -1,0 +1,9 @@
+500 Internal Server Error
+
+{
+  "status": "error",
+  "error": {
+    "code": 0,
+    "message": "Internal error"
+  }
+}

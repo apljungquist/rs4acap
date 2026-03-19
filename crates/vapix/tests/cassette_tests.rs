@@ -10,12 +10,13 @@ use std::{
 use anyhow::Context;
 use libtest_mimic::{Arguments, Trial};
 use log::LevelFilter;
+use regex::Regex;
 use rs4a_vapix::{
     apis,
     basic_device_info_1::UnrestrictedProperties,
     cassette::{Cassette, Mode},
     http,
-    json_rpc_http::JsonRpcHttp,
+    json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless},
     remote_object_storage_1_beta::{
         AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
         DestinationId, ListDestinationsRequest, UpdateDestinationRequest,
@@ -27,13 +28,9 @@ use rs4a_vapix::{
     },
     Client, ClientBuilder, Scheme,
 };
+use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use url::{Host, Url};
-
-// Responses may vary due to time, initial state of the device, test order, etc.
-// Manually determining when cassettes should be updated is tedious and error prone.
-// Furthermore, if cassettes are addressed by their content, it cache hits will suffer.
-// TODO: Automatically deal with non-reproducible responses.
 
 // When a test fails, it may leave resources intact that will cause future runs to fail.
 // This must be cleaned up manually by either removing them individually or resetting the device.
@@ -48,9 +45,40 @@ use url::{Host, Url};
 // - Provide a diff tool
 // TODO: Make it easier to compare cassettes.
 
+// For most APIs it does not make sense to support minor versions other than the latest.
+// The main exceptions are APIs needed for device re-init and upgrade.
+// TODO: Clean up superseded cassettes automatically.
+
+// If a test is removed, the cassettes must be removed manually.
+// TODO: Clean up obsolete shelves automatically.
+
+// Some responses cannot be triggered with a well-behaved client.
+// Examples include:
+// - Bad content type (e.g. by omitting the content-type header on AXIS OS 11)
+// - Resource not found (e.g. by requesting siren and light on P8815)
+// TODO: Figure out how to test unhappy paths.
+
+// On AXIS OS without the device config API, the response status is 404, which parses into a
+// decoding error.
+// TODO: Consider making the lack of the API more explicit
+
 #[derive(Clone, Debug)]
 struct Prelude {
     props: UnrestrictedProperties,
+}
+
+impl Prelude {
+    pub(crate) fn supports_device_config(&self) -> bool {
+        self.version_matches(">=11")
+    }
+}
+
+impl Prelude {
+    fn version_matches(&self, req: &str) -> bool {
+        let v = Version::parse(self.props.version.as_str()).unwrap();
+        let req = VersionReq::parse(req).unwrap();
+        req.matches(&v)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -193,12 +221,43 @@ impl Library {
     }
 }
 
+fn normalize_responses(dir: &Path, substitutions: &[(&str, &str)]) -> anyhow::Result<()> {
+    let patterns: Vec<(Regex, &str)> = substitutions
+        .iter()
+        .map(|(pattern, replacement)| {
+            let re =
+                Regex::new(pattern).with_context(|| format!("Invalid regex pattern: {pattern}"))?;
+            Ok((re, *replacement))
+        })
+        .collect::<anyhow::Result<_>>()?;
+
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        let name = entry.file_name();
+        if !name.to_string_lossy().ends_with("-response") {
+            continue;
+        }
+        let content = fs::read_to_string(&path)?;
+        let mut normalized = content.clone();
+        for (re, replacement) in &patterns {
+            normalized = re.replace_all(&normalized, *replacement).into_owned();
+        }
+        if normalized != content {
+            fs::write(&path, normalized)?;
+        }
+    }
+
+    Ok(())
+}
+
 fn finalize_recording(
     library_dir: &Path,
     test_name: &str,
     staging_dir: &Path,
     device_key: &str,
     device_info: &DeviceInfo,
+    substitutions: &[(&str, &str)],
 ) -> anyhow::Result<()> {
     // If the staging dir is empty or doesn't exist, the test was skipped
     let is_empty = match fs::read_dir(staging_dir) {
@@ -224,6 +283,7 @@ fn finalize_recording(
         return Ok(());
     }
 
+    normalize_responses(staging_dir, substitutions)?;
     let hash = content_hash_of_dir(staging_dir)?;
     let dest_dir = library_dir.join(test_name).join(&hash);
 
@@ -271,8 +331,10 @@ fn finalize_recording(
 }
 
 type TestFn = fn(Client, Cassette, Option<Prelude>) -> Pin<Box<dyn Future<Output = ()> + Send>>;
+type Substitutions = &'static [(&'static str, &'static str)];
+type TestEntry = (&'static str, TestFn, Substitutions);
 
-const TESTS: &[(&str, TestFn)] = &[
+const TESTS: &[TestEntry] = &[
     (
         "device_configuration_item_does_not_exist",
         |client, cassette, prelude| {
@@ -280,6 +342,7 @@ const TESTS: &[(&str, TestFn)] = &[
                 client, cassette, prelude,
             ))
         },
+        &[],
     ),
     (
         "device_configuration_validation_error",
@@ -288,6 +351,7 @@ const TESTS: &[(&str, TestFn)] = &[
                 client, cassette, prelude,
             ))
         },
+        &[],
     ),
     (
         "device_configuration_item_already_exists",
@@ -296,24 +360,37 @@ const TESTS: &[(&str, TestFn)] = &[
                 client, cassette, prelude,
             ))
         },
+        &[],
     ),
     (
         "remote_object_storage_1_beta_crud",
         |client, cassette, prelude| {
             Box::pin(remote_object_storage_1_beta_crud(client, cassette, prelude))
         },
+        &[],
     ),
     (
-        "siren_and_light_2_alpha_maintenance_mode",
+        "siren_and_light_2_alpha_maintenance_mode_not_supported",
         |client, cassette, prelude| {
-            Box::pin(siren_and_light_2_alpha_maintenance_mode(
+            Box::pin(siren_and_light_2_alpha_maintenance_mode_not_supported(
                 client, cassette, prelude,
             ))
         },
+        &[],
     ),
-    ("never", |client, cassette, prelude| {
-        Box::pin(never(client, cassette, prelude))
-    }),
+    (
+        "system_ready_1_system_ready",
+        |client, cassette, prelude| {
+            Box::pin(system_ready_1_system_ready(client, cassette, prelude))
+        },
+        &[
+            (r#""uptime": "\d+""#, r#""uptime": "0""#),
+            (
+                r#""bootid": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}""#,
+                r#""bootid": "00000000-0000-0000-0000-000000000000""#,
+            ),
+        ],
+    ),
 ];
 
 fn record_trials(library: &Library) -> Vec<Trial> {
@@ -347,7 +424,7 @@ fn record_trials(library: &Library) -> Vec<Trial> {
 
     TESTS
         .iter()
-        .map(|&(test_name, test_fn)| {
+        .map(|&(test_name, test_fn, substitutions)| {
             library.clean_staging(test_name);
             let staging_dir = library.staging_dir(test_name);
             let cassette = Cassette::new(staging_dir.clone(), Mode::Write);
@@ -371,6 +448,7 @@ fn record_trials(library: &Library) -> Vec<Trial> {
                     &staging_dir,
                     &device_key,
                     &device_info,
+                    substitutions,
                 )?;
                 Ok(())
             })
@@ -385,7 +463,7 @@ fn playback_trials(library: &Library) -> Vec<Trial> {
 
     TESTS
         .iter()
-        .flat_map(|&(test_name, test_fn)| {
+        .flat_map(|&(test_name, test_fn, _substitutions)| {
             let cassette_dirs = library.cassettes_for_test(test_name);
             let client = client.clone();
             let manifest = &manifest;
@@ -427,6 +505,45 @@ fn playback_trials(library: &Library) -> Vec<Trial> {
         .collect()
 }
 
+fn cleanup_unreferenced_cassettes(library: &Library) {
+    let manifest_path = library.dir().join("manifest.json");
+    let manifest = Manifest::load(&manifest_path).unwrap();
+
+    let referenced: BTreeMap<&str, BTreeSet<&str>> = manifest
+        .cassettes
+        .iter()
+        .map(|(test, hashes)| (test.as_str(), hashes.keys().map(|h| h.as_str()).collect()))
+        .collect();
+
+    for entry in fs::read_dir(library.dir()).unwrap().flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let test_name = entry.file_name();
+        let test_name_str = test_name.to_string_lossy();
+        let referenced_hashes = referenced.get(test_name_str.as_ref());
+
+        for sub_entry in fs::read_dir(&path).unwrap().flatten() {
+            let sub_path = sub_entry.path();
+            if !sub_path.is_dir() {
+                continue;
+            }
+            let name = sub_entry.file_name();
+            let name_str = name.to_string_lossy();
+            if name_str.starts_with('.') {
+                continue;
+            }
+            let is_referenced =
+                referenced_hashes.map_or(false, |hashes| hashes.contains(name_str.as_ref()));
+            if !is_referenced {
+                println!("Removing unreferenced cassette: {sub_path:?}");
+                fs::remove_dir_all(&sub_path).unwrap();
+            }
+        }
+    }
+}
+
 fn main() {
     let _ = env_logger::Builder::new()
         .filter_level(LevelFilter::Warn)
@@ -437,7 +554,8 @@ fn main() {
     let mut args = Arguments::from_args();
     let library = Library::new().unwrap();
 
-    let trials = match env_flag("UPDATE_CASSETTES") {
+    let update = env_flag("UPDATE_CASSETTES");
+    let trials = match update {
         true => record_trials(&library),
         false => playback_trials(&library),
     };
@@ -447,14 +565,24 @@ fn main() {
         args.test_threads = Some(1);
     }
 
-    libtest_mimic::run(&args, trials).exit();
+    let conclusion = libtest_mimic::run(&args, trials);
+    if update {
+        cleanup_unreferenced_cassettes(&library);
+    }
+    conclusion.exit();
 }
 
 async fn device_configuration_item_does_not_exist(
     client: Client,
     cassette: Cassette,
-    _prelude: Option<Prelude>,
+    prelude: Option<Prelude>,
 ) {
+    if let Some(prelude) = prelude {
+        if !prelude.supports_device_config() {
+            return;
+        }
+    }
+
     let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
@@ -474,8 +602,14 @@ async fn device_configuration_item_does_not_exist(
 async fn device_configuration_validation_error(
     client: Client,
     cassette: Cassette,
-    _prelude: Option<Prelude>,
+    prelude: Option<Prelude>,
 ) {
+    if let Some(prelude) = prelude {
+        if !prelude.supports_device_config() {
+            return;
+        }
+    }
+
     let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
@@ -502,8 +636,14 @@ async fn device_configuration_validation_error(
 async fn device_configuration_item_already_exists(
     client: Client,
     cassette: Cassette,
-    _prelude: Option<Prelude>,
+    prelude: Option<Prelude>,
 ) {
+    if let Some(prelude) = prelude {
+        if !prelude.supports_device_config() {
+            return;
+        }
+    }
+
     let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
@@ -553,8 +693,14 @@ async fn device_configuration_item_already_exists(
 async fn remote_object_storage_1_beta_crud(
     client: Client,
     cassette: Cassette,
-    _prelude: Option<Prelude>,
+    prelude: Option<Prelude>,
 ) {
+    if let Some(prelude) = prelude {
+        if !prelude.supports_device_config() {
+            return;
+        }
+    }
+
     let mut cassette = Some(cassette);
 
     let id = DestinationId::new("my_destination_id".to_string());
@@ -581,6 +727,7 @@ async fn remote_object_storage_1_beta_crud(
         .await
         .unwrap();
     assert!(all.iter().any(|d| d.id == created.id));
+    assert_eq!(all.len(), 1);
 
     // On at least one occasion when recording, this returned an item does not exist error.
     // TODO: Consider retrying the request if the destination is not yet available.
@@ -624,44 +771,63 @@ async fn remote_object_storage_1_beta_crud(
     assert!(!all.iter().any(|d| d.id == created.id));
 }
 
-async fn siren_and_light_2_alpha_maintenance_mode(
+async fn siren_and_light_2_alpha_maintenance_mode_not_supported(
+    client: Client,
+    cassette: Cassette,
+    prelude: Option<Prelude>,
+) {
+    // TODO: Use the config discovery API to get capabilities and make this more robust.
+    if let Some(prelude) = prelude {
+        if !prelude.supports_device_config() {
+            return;
+        }
+        if !prelude.version_matches(">=12.5.0") {
+            return;
+        }
+        if ["M1075-L", "D2210-VE"].contains(&prelude.props.prod_nbr.as_str()) {
+            return;
+        }
+    }
+
+    let mut cassette = Some(cassette);
+
+    GetMaintenanceModeRequest::new()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
+
+    let error = StopMaintenanceModeRequest::new()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap_err();
+
+    let http::Error::Service(error) = error else {
+        panic!("Expected Service error but got {error:?}");
+    };
+
+    assert_eq!(error.kind(), Some(ErrorKind::InternalError));
+
+    let error = StartMaintenanceModeRequest::new()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap_err();
+
+    let http::Error::Service(error) = error else {
+        panic!("Expected Service error but got {error:?}");
+    };
+
+    assert_eq!(error.kind(), Some(ErrorKind::InternalError));
+}
+
+async fn system_ready_1_system_ready(
     client: Client,
     cassette: Cassette,
     _prelude: Option<Prelude>,
 ) {
     let mut cassette = Some(cassette);
-
-    let running = GetMaintenanceModeRequest::new()
-        .send(&client, cassette.as_mut())
-        .await
-        .unwrap()
-        .running;
-    assert_eq!(running, Some(true));
-
-    StopMaintenanceModeRequest::new()
-        .send(&client, cassette.as_mut())
+    let data = apis::system_ready_1::system_ready()
+        .send_lossless(&client, cassette.as_mut())
         .await
         .unwrap();
-
-    let running = GetMaintenanceModeRequest::new()
-        .send(&client, cassette.as_mut())
-        .await
-        .unwrap()
-        .running;
-    assert_eq!(running, Some(false));
-
-    StartMaintenanceModeRequest::new()
-        .send(&client, cassette.as_mut())
-        .await
-        .unwrap();
-
-    let running = GetMaintenanceModeRequest::new()
-        .send(&client, cassette.as_mut())
-        .await
-        .unwrap()
-        .running;
-    assert_eq!(running, Some(true));
+    assert!(data.systemready);
 }
-
-// Placeholder for tests that skip recording based on the prelude
-async fn never(_client: Client, _cassette: Cassette, _prelude: Option<Prelude>) {}

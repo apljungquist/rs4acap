@@ -105,7 +105,7 @@ async fn basic_device_info_get_all_properties_returns_ok() {
         return;
     };
     apis::basic_device_info_1::get_all_properties()
-        .send_lossless(&client)
+        .send_lossless(&client, None)
         .await
         .unwrap();
 }
@@ -116,7 +116,7 @@ async fn basic_device_info_get_all_unrestricted_properties_returns_ok() {
         return;
     };
     apis::basic_device_info_1::get_all_unrestricted_properties()
-        .send_lossless(&client)
+        .send_lossless(&client, None)
         .await
         .unwrap();
 }
