@@ -40,7 +40,7 @@ Activate an existing device
 Usage: device-inventory activate [OPTIONS]
 
 Options:
-      --alias <ALIAS>  The alias of the device to activate
+  -a, --alias <ALIAS>  The alias of the device to activate
   -h, --help           Print help
 + device-inventory help add
 Add a device
@@ -85,7 +85,7 @@ Arguments:
   [ARGUMENTS]...  Arguments to pass to the program
 
 Options:
-      --alias <ALIAS>  The alias of the devices to target
+  -a, --alias <ALIAS>  The alias of the devices to target
   -h, --help           Print help
 + device-inventory help import
 Import devices
@@ -166,5 +166,5 @@ Remove a device
 Usage: device-inventory remove --alias <ALIAS>
 
 Options:
-      --alias <ALIAS>  The alias of the device to remove
+  -a, --alias <ALIAS>  The alias of the device to remove
   -h, --help           Print help
