@@ -38,7 +38,7 @@ impl ClientBuilder {
     }
 
     pub fn from_dut() -> anyhow::Result<Option<Self>> {
-        let Some(device) = rs4a_dut::Device::from_anywhere()? else {
+        let Some(device) = rs4a_dut::Device::from_env()? else {
             return Ok(None);
         };
         let rs4a_dut::Device {

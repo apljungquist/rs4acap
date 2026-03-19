@@ -1,11 +1,8 @@
-use std::{env, fs, path::PathBuf};
+use std::env;
 
-use anyhow::{anyhow, Context};
 use url::Host;
 
-const FILENAME: &str = "dut-v0.json";
-
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug)]
 pub struct Device {
     pub host: Host,
     pub username: String,
@@ -16,16 +13,6 @@ pub struct Device {
 }
 
 impl Device {
-    pub fn from_anywhere() -> anyhow::Result<Option<Self>> {
-        if let Some(device) = Self::from_env()? {
-            return Ok(Some(device));
-        }
-        if let Some(device) = Self::from_fs()? {
-            return Ok(Some(device));
-        }
-        Ok(None)
-    }
-
     pub fn from_env() -> anyhow::Result<Option<Self>> {
         let Some(host) = env::var_os("AXIS_DEVICE_IP") else {
             return Ok(None);
@@ -53,23 +40,6 @@ impl Device {
             https_port,
             ssh_port,
         }))
-    }
-
-    fn dir() -> anyhow::Result<PathBuf> {
-        Ok(dirs::data_dir()
-            .context("Could not infer a data directory")?
-            .join("rs4a-dut"))
-    }
-
-    pub fn from_fs() -> anyhow::Result<Option<Self>> {
-        let file = Self::dir()?.join(FILENAME);
-        match fs::read_to_string(&file) {
-            Ok(t) => serde_json::from_str(&t)
-                .context("Failed to deserialize device")
-                .with_context(|| format!("Consider removing {file:?}")),
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-            Err(e) => Err(anyhow!(e)),
-        }
     }
 
     pub fn to_env(&self) -> Vec<(String, Option<String>)> {
@@ -115,23 +85,7 @@ impl Device {
         envs
     }
 
-    pub fn to_fs(&self) -> anyhow::Result<PathBuf> {
-        // TODO: Consider looking in current working directory, etc.
-        let device = serde_json::to_string_pretty(&self).context("Failed to serialize device")?;
-        let dir = Self::dir()?;
-        fs::create_dir_all(&dir).context("Failed to create the data directory")?;
-        let destination = dir.join(FILENAME);
-        match fs::write(&destination, device) {
-            Ok(_) => Ok(destination),
-            Err(e) => Err(anyhow!(e)),
-        }
-    }
-
     pub fn clear_env() -> Vec<&'static str> {
         vec!["AXIS_DEVICE_IP"]
-    }
-
-    pub fn clear_fs() -> anyhow::Result<()> {
-        fs::remove_file(Self::dir()?.join(FILENAME)).context("Failed to remove the data directory")
     }
 }

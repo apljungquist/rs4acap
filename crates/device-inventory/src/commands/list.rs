@@ -190,7 +190,7 @@ impl ListCommand {
 
         let mut devices: HashMap<String, Device> = HashMap::new();
 
-        if let Some(d) = rs4a_dut::Device::from_anywhere()? {
+        if let Some(d) = rs4a_dut::Device::from_env()? {
             let f = active_fingerprint(&d);
             match devices.entry(f) {
                 Entry::Occupied(mut e) => {

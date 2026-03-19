@@ -44,7 +44,6 @@ fn can_export_loans() {
 
     let output = device_inventory_command(now)
         .arg("activate")
-        .args(["--destination", "environment"])
         .stderr(Stdio::inherit())
         .output()
         .unwrap();

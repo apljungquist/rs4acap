@@ -9,6 +9,7 @@ Commit messages ...
 |-------|---------------------|--------------------|
 | a     | rs4a-authentication |                    |
 | di    | device-inventory    | device-inventory   |
+| dut   | rs4a-dut            |                    |
 | fi    | firmware-inventory  |                    |
 | vapix | rs4a-vapix          | v                  |
 | vlt   | rs4a-vlt            |                    |
