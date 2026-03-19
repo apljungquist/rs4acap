@@ -10,7 +10,6 @@ Commands:
   for-each     Run a command with environment variables set for each device
   list         List available devices
   activate     Activate an existing device
-  return       Return any matching borrowed device
   remove       Remove a device
   dump         Print the device-inventory database to stdout
   load         Load the device-inventory database from stdin
@@ -168,42 +167,3 @@ Usage: device-inventory remove --alias <ALIAS>
 Options:
       --alias <ALIAS>  The alias of the device to remove
   -h, --help           Print help
-+ device-inventory help return
-Return any matching borrowed device.
-
-This will also deactivate and remove the devices.
-
-Note: If the device was activated in the environment, you must `eval` the output.
-
-Usage: device-inventory return [OPTIONS]
-
-Options:
-      --alias <ALIAS>
-          Consider only devices with a matching alias.
-          
-          Accepts a glob pattern.
-
-  -a, --architecture <ARCHITECTURE>
-          Consider only devices with a matching architecture
-          
-          [possible values: aarch64, armv7hf, armv7l, mips]
-
-      --firmware <FIRMWARE>
-          Consider only devices with a matching firmware version.
-          
-          Accepts the same version requirement syntax as Cargo, see <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#version-requirement-syntax>
-          
-          Older firmware versions, which don't follow SemVer, are coerced into SemVer.
-
-  -m, --model <MODEL>
-          Consider only devices with a matching model.
-          
-          Accepts a glob pattern.
-
-  -s, --status <STATUS>
-          Consider only devices with a matching status
-          
-          [possible values: connected, on-loan]
-
-  -h, --help
-          Print help (see a summary with '-h')
