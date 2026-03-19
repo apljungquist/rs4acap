@@ -41,18 +41,8 @@ Activate an existing device
 Usage: device-inventory activate [OPTIONS]
 
 Options:
-      --alias <ALIAS>
-          The alias of the device to activate
-
-      --destination <DESTINATION>
-          [default: filesystem]
-
-          Possible values:
-          - filesystem:  Write information to the filesystem
-          - environment: Print information as a shell script that can be sourced
-
-  -h, --help
-          Print help (see a summary with '-h')
+      --alias <ALIAS>  The alias of the device to activate
+  -h, --help           Print help
 + device-inventory help add
 Add a device
 
@@ -74,12 +64,9 @@ Deactivate any active device.
 
 For devices activated using environment variables, the printed commands must be run.
 
-Usage: device-inventory deactivate [OPTIONS]
+Usage: device-inventory deactivate
 
 Options:
-      --dry-run
-          
-
   -h, --help
           Print help (see a summary with '-h')
 + device-inventory help dump

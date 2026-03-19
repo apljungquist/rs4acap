@@ -32,7 +32,7 @@ impl ReturnCommand {
             .map(|loan| (loan_fingerprint(&loan), Device::from_vlt_loan(loan)))
             .collect::<HashMap<_, _>>();
 
-        if let Some(d) = rs4a_dut::Device::from_anywhere()? {
+        if let Some(d) = rs4a_dut::Device::from_env()? {
             if let Some(c) = candidates.get_mut(&active_fingerprint(&d)) {
                 c.replace_dut_device(d);
             }
@@ -76,12 +76,6 @@ impl ReturnCommand {
                 for key in rs4a_dut::Device::clear_env() {
                     println!("unset {key}")
                 }
-            }
-        }
-
-        if let Some(d) = rs4a_dut::Device::from_fs()? {
-            if active_fingerprint(&d) == fingerprint {
-                rs4a_dut::Device::clear_fs()?;
             }
         }
 
