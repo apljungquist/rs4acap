@@ -1,4 +1,4 @@
-//! Facilities for getting the [`AxisConnectSessionSID`] used to authenticate with the VLT.
+//! Facilities for getting the [`SessionCookie`] used to authenticate with the VLT.
 //!
 //! The authentication flow starts with [`AuthenticationFlow::start`].
 
@@ -6,7 +6,7 @@
 // As such it may be prone to breaking in more or less obvious ways.
 // TODO: Consider embedding more self checks (form actions, etc)
 
-use std::{collections::HashMap, fmt::Formatter, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use anyhow::{bail, Context};
 use base32::Alphabet;
@@ -17,6 +17,8 @@ use reqwest::{
     Client,
 };
 use url::Url;
+
+use crate::SessionCookie;
 
 fn match_axis_auth_cookie(html: &str) -> anyhow::Result<String> {
     let re = Regex::new(r#"cookieHandler\.setSessionCookie\(\s*["']axis_auth["']\s*,\s*["'](?<value>[^"']+)["'],\s*(?<needsEncoding>false|true)\)"#).expect("Literal is valid regex");
@@ -228,7 +230,7 @@ impl StateTokenForm {
         Ok(Self { state, token })
     }
 
-    async fn submit(self, client: &Client, jar: &Jar) -> anyhow::Result<AxisConnectSessionSID> {
+    async fn submit(self, client: &Client, jar: &Jar) -> anyhow::Result<SessionCookie> {
         info!("Submitting {} ...", std::any::type_name::<Self>());
 
         let mut form_data = HashMap::new();
@@ -251,7 +253,7 @@ impl StateTokenForm {
         let mut cookies = cookies
             .to_str()?
             .split("; ")
-            .filter_map(AxisConnectSessionSID::from_str);
+            .filter_map(|s| SessionCookie::from_str(s).ok());
         let Some(cookie) = cookies.next() else {
             bail!("No cookie found");
         };
@@ -267,35 +269,6 @@ impl StateTokenForm {
 // seem to figure out how to make that API return success. Replaying successful requests from the
 // browser is one of many things that don't work.
 // TODO: Figure out how the `getAll` API works
-
-const SID_COOKIE_PREFIX: &str = "axis_connect_session_sid=";
-
-/// The cookie that grants access to most VLT APIs
-pub struct AxisConnectSessionSID(pub(crate) String);
-
-impl AxisConnectSessionSID {
-    pub fn try_from_string(s: String) -> anyhow::Result<Self> {
-        if s.starts_with(SID_COOKIE_PREFIX) {
-            Ok(Self(s))
-        } else {
-            bail!("Invalid cookie: {}", s);
-        }
-    }
-
-    fn from_str(s: &str) -> Option<Self> {
-        if s.starts_with(SID_COOKIE_PREFIX) {
-            Some(Self(s.to_string()))
-        } else {
-            None
-        }
-    }
-}
-
-impl std::fmt::Display for AxisConnectSessionSID {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
-}
 
 /// State management for the authentication flow.
 pub struct AuthenticationFlow<T> {
@@ -339,7 +312,7 @@ impl AuthenticationFlow<UsernamePasswordForm> {
 impl AuthenticationFlow<OneTimePasswordForm> {
     // TODO: Consider detecting bad input and allow user to retry
     /// Submit the one-time password.
-    pub async fn submit(self, otp: &str) -> anyhow::Result<AxisConnectSessionSID> {
+    pub async fn submit(self, otp: &str) -> anyhow::Result<SessionCookie> {
         let Self { client, jar, form } = self;
 
         let sid = form

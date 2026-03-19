@@ -32,6 +32,7 @@ thiserror = "2.0.17"
 tokio = "1.0.0"
 url = "2.5.4"
 
+rs4a-authentication = { path = "crates/authentication" }
 rs4a-bin-utils = {path = "crates/bin-utils" }
 rs4a-dut = { version = "0.1", path = "crates/dut" }
 rs4a-vapix = { path = "crates/vapix" }

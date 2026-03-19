@@ -6,7 +6,7 @@ use std::{
 use anyhow::Context;
 use rs4a_authentication::{AuthenticationFlow, SessionCookie};
 
-use crate::{db::Database, db_vlt};
+use crate::db::Database;
 
 #[derive(Clone, Debug, clap::Args)]
 #[group(required = true, multiple = false)]
@@ -43,20 +43,14 @@ fn direct_input_flow() -> anyhow::Result<String> {
 }
 
 impl LoginCommand {
-    pub async fn exec(self, db: Database, offline: bool) -> anyhow::Result<()> {
+    pub async fn exec(self, db: Database) -> anyhow::Result<()> {
         let Self { username, cookie } = self;
         assert_eq!(username.is_none(), cookie);
         let cookie = match username {
             None => SessionCookie::from_str(direct_input_flow()?.as_str())?,
-            Some(username) => {
-                assert!(!offline);
-                username_password_flow(username).await?
-            }
+            Some(username) => username_password_flow(username).await?,
         };
         db.write_cookie(&cookie)?;
-        if !offline {
-            db_vlt::import(&db, offline).await?;
-        }
         Ok(())
     }
 }
