@@ -78,14 +78,15 @@ Options:
 + device-inventory help for-each
 Run a command with environment variables set for each device
 
-Usage: device-inventory for-each <PROGRAM> [ARGUMENTS]...
+Usage: device-inventory for-each [OPTIONS] <PROGRAM> [ARGUMENTS]...
 
 Arguments:
   <PROGRAM>       Program to run
   [ARGUMENTS]...  Arguments to pass to the program
 
 Options:
-  -h, --help  Print help
+      --alias <ALIAS>  The alias of the devices to target
+  -h, --help           Print help
 + device-inventory help import
 Import devices
 

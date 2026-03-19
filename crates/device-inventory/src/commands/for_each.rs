@@ -4,6 +4,9 @@ use crate::{db::Database, env::envs};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct ForEachCommand {
+    /// The alias of the devices to target
+    #[arg(long)]
+    alias: Option<String>,
     /// Program to run
     program: String,
     /// Arguments to pass to the program
@@ -12,8 +15,16 @@ pub struct ForEachCommand {
 
 impl ForEachCommand {
     pub async fn exec(self, db: Database) -> anyhow::Result<()> {
-        let Self { program, arguments } = self;
-        let devices = db.read_devices()?;
+        let Self {
+            alias,
+            program,
+            arguments,
+        } = self;
+        let mut devices = db.read_devices()?;
+        if let Some(pattern) = &alias {
+            let pattern = glob::Pattern::new(pattern)?;
+            devices.retain(|alias, _| pattern.matches(alias));
+        }
 
         let mut sorted_devices: Vec<_> = devices.into_iter().collect();
         sorted_devices.sort_by(|(left, _), (right, _)| left.cmp(right));
