@@ -1,6 +1,6 @@
 //! Utilities for connecting the local database to the VLT
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::Context;
 use rs4a_vlt::{
@@ -29,26 +29,31 @@ pub async fn client(db: &Database, offline: bool) -> anyhow::Result<Option<Clien
     Some(Client::try_new(cookie)).transpose()
 }
 
-/// Add any new devices from the VLT to the local inventory
+/// Sync devices from the VLT to the local inventory
+///
+/// Adds new devices from active loans and removes stale `vlt-*` devices
+/// that no longer correspond to active loans.
 ///
 /// # Panics
 ///
 /// This function will panic if offline is true.
-pub async fn import(db: &Database, offline: bool) -> anyhow::Result<HashMap<String, Device>> {
+pub async fn sync(db: &Database, offline: bool) -> anyhow::Result<HashMap<String, Device>> {
     let client = client(db, offline)
         .await?
         .context("No login session, please run the login command")?;
     let loans = rs4a_vlt::requests::loans().send(&client).await?;
-    store_parsed(db, loans)
+    sync_parsed(db, loans)
 }
 
-fn store_parsed(db: &Database, loans: Vec<Loan>) -> anyhow::Result<HashMap<String, Device>> {
+fn sync_parsed(db: &Database, loans: Vec<Loan>) -> anyhow::Result<HashMap<String, Device>> {
     let mut devices = db.read_devices()?;
+    let mut vlt_aliases: HashSet<String> = HashSet::new();
     for loan in loans.into_iter() {
         let (alias, device) = device_from_loan(loan);
+        vlt_aliases.insert(alias.clone());
         devices.insert(alias, device);
     }
-    // TODO: Remove expired devices
+    devices.retain(|alias, _| !alias.starts_with("vlt-") || vlt_aliases.contains(alias));
     db.write_devices(&devices)?;
     Ok(devices)
 }

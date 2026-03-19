@@ -39,7 +39,7 @@ Commands:
   login        Login to a pool of shared devices
   add          Add a device
   deactivate   Deactivate any active device
-  import       Import devices
+  sync         Sync devices from the VLT to the local inventory
   for-each     Run a command with environment variables set for each device
   list         List available devices
   activate     Activate an existing device
