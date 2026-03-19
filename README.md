@@ -43,7 +43,6 @@ Commands:
   for-each     Run a command with environment variables set for each device
   list         List available devices
   activate     Activate an existing device
-  return       Return any matching borrowed device
   remove       Remove a device
   dump         Print the device-inventory database to stdout
   load         Load the device-inventory database from stdin
