@@ -55,7 +55,7 @@ impl LoginCommand {
         };
         db.write_cookie(&cookie)?;
         if !offline {
-            db_vlt::import(&db, offline).await?;
+            db_vlt::sync(&db, offline).await?;
         }
         Ok(())
     }

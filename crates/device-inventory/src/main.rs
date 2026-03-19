@@ -17,8 +17,8 @@ use rs4a_bin_utils::completions_command::CompletionsCommand;
 use crate::{
     commands::{
         activate::ActivateCommand, add::AddCommand, deactivate::DeactivateCommand,
-        dump::DumpCommand, for_each::ForEachCommand, import::ImportCommand, list::ListCommand,
-        load::LoadCommand, login::LoginCommand, remove::RemoveCommand,
+        dump::DumpCommand, for_each::ForEachCommand, list::ListCommand, load::LoadCommand,
+        login::LoginCommand, remove::RemoveCommand, sync::SyncCommand,
     },
     db::Database,
 };
@@ -46,7 +46,7 @@ impl Cli {
             Commands::Login(cmd) => cmd.exec(db, offline).await?,
             Commands::Add(cmd) => cmd.exec(db).await?,
             Commands::Deactivate(cmd) => cmd.exec().await?,
-            Commands::Import(cmd) => cmd.exec(&db, offline).await?,
+            Commands::Sync(cmd) => cmd.exec(&db, offline).await?,
             Commands::ForEach(cmd) => cmd.exec(db).await?,
             Commands::List(cmd) => cmd.exec(&db, offline).await?,
             Commands::Activate(cmd) => cmd.exec(db).await?,
@@ -69,8 +69,8 @@ enum Commands {
     ///
     /// For devices activated using environment variables, the printed commands must be run.
     Deactivate(DeactivateCommand),
-    /// Import devices
-    Import(ImportCommand),
+    /// Sync devices from the VLT to the local inventory
+    Sync(SyncCommand),
     /// Run a command with environment variables set for each device
     ForEach(ForEachCommand),
     /// List available devices
