@@ -109,6 +109,9 @@ fn can_serialize_action_1_requests() {
         .to_envelope()
         .unwrap());
     assert_snapshot!(apis::action_1::get_action_rules().to_envelope().unwrap());
+    assert_snapshot!(apis::action_1::remove_action_rule(42)
+        .to_envelope()
+        .unwrap());
 }
 
 #[test]

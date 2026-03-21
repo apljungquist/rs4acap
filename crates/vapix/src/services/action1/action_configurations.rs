@@ -9,13 +9,29 @@ use crate::{
 #[serde(rename_all = "PascalCase")]
 pub struct AddActionConfigurationResponse {
     #[serde(rename = "ConfigurationID")]
-    pub configuration_id: u16,
+    pub configuration_id: u32,
 }
 
 pub struct AddActionConfigurationRequest {
     name: Option<String>,
     template_token: String,
     parameters: Parameters,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct InputActionConfiguration {
+    pub name: String,
+    pub template_token: String,
+    pub parameters: Parameters,
+}
+
+impl InputActionConfiguration {
+    pub fn could_create(&self, other: &ActionConfiguration) -> bool {
+        self.template_token == other.template_token
+            && self.name == other.name
+            && self.parameters.parameter == other.parameters.parameter
+    }
 }
 
 // TODO: Consider enabling typed templates to give users early feedback about missing params
@@ -27,6 +43,19 @@ impl AddActionConfigurationRequest {
             parameters: Parameters {
                 parameter: Vec::new(),
             },
+        }
+    }
+
+    pub fn from_input(input: InputActionConfiguration) -> Self {
+        let InputActionConfiguration {
+            name,
+            template_token,
+            parameters,
+        } = input;
+        Self {
+            name: Some(name),
+            template_token,
+            parameters,
         }
     }
 
@@ -105,7 +134,7 @@ pub struct Parameters {
     pub parameter: Vec<Parameter>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Parameter {
     #[serde(rename = "@Name")]
     pub name: String,
@@ -113,6 +142,38 @@ pub struct Parameter {
     #[serde(rename = "@Value")]
     pub value: String,
 }
+
+pub struct RemoveActionConfigurationRequest {
+    configuration_id: u32,
+}
+
+impl RemoveActionConfigurationRequest {
+    pub(crate) fn new(configuration_id: u32) -> Self {
+        Self { configuration_id }
+    }
+}
+
+impl SoapRequest for RemoveActionConfigurationRequest {
+    fn to_envelope(self) -> anyhow::Result<String> {
+        let params = format!(
+            "<ConfigurationID>{}</ConfigurationID>",
+            self.configuration_id
+        );
+        SimpleRequest::<()>::new(
+            "http://www.axis.com/vapix/ws/action1",
+            "RemoveActionConfiguration",
+        )
+        .params(params)
+        .to_envelope()
+    }
+}
+
+impl SoapHttpRequest for RemoveActionConfigurationRequest {
+    type Data = RemoveActionConfigurationResponse;
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RemoveActionConfigurationResponse;
 
 #[cfg(test)]
 mod tests {
@@ -131,5 +192,11 @@ mod tests {
         let text = include_str!("examples/get_action_configurations_200_response.xml");
         let data = parse_soap::<GetActionConfigurationsResponse>(text).unwrap();
         assert_eq!(0, data.action_configurations.action_configuration.len());
+    }
+
+    #[test]
+    fn can_deserialize_remove_action_configuration_response() {
+        let text = include_str!("examples/remove_action_configuration_response.xml");
+        parse_soap::<RemoveActionConfigurationResponse>(text).unwrap();
     }
 }

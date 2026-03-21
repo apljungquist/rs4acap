@@ -2,7 +2,6 @@ use std::{ops::Rem, time::SystemTime};
 
 use log::LevelFilter;
 use rs4a_vapix::{
-    action1::Condition,
     apis,
     json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless},
     remote_object_storage_1_beta::{CreateDestinationRequest, DestinationId, S3Destination},
@@ -55,7 +54,7 @@ async fn action_1_get_action_configurations_returns_ok() {
 }
 
 #[tokio::test]
-async fn action_1_add_and_get_returns_ok() {
+async fn action_1_crud_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
@@ -71,32 +70,38 @@ async fn action_1_add_and_get_returns_ok() {
             .unwrap()
             .configuration_id;
 
-    let action_rule_name = "smoke test rule";
-    let action_rule_id =
-        apis::action_1::add_action_rule(action_rule_name.to_string(), action_configuration_id)
-            .condition(Condition {
-                topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
-                message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#
-                    .to_string(),
-            })
-            .send(&client)
-            .await
-            .unwrap()
-            .id;
-
-    let actions_rules = apis::action_1::get_action_rules()
+    let configurations = apis::action_1::get_action_configurations()
         .send(&client)
         .await
         .unwrap()
-        .action_rules
-        .action_rule;
+        .action_configurations
+        .action_configuration;
 
-    let action_rule = actions_rules
-        .into_iter()
-        .find(|r| r.rule_id == action_rule_id)
+    assert!(
+        configurations
+            .iter()
+            .any(|c| c.configuration_id == u32::from(action_configuration_id)),
+        "configuration should exist after add"
+    );
+
+    apis::action_1::remove_action_configuration(u32::from(action_configuration_id))
+        .send(&client)
+        .await
         .unwrap();
 
-    assert_eq!(action_rule.name, action_rule_name);
+    let configurations = apis::action_1::get_action_configurations()
+        .send(&client)
+        .await
+        .unwrap()
+        .action_configurations
+        .action_configuration;
+
+    assert!(
+        !configurations
+            .iter()
+            .any(|c| c.configuration_id == u32::from(action_configuration_id)),
+        "configuration should not exist after remove"
+    );
 }
 
 #[tokio::test]

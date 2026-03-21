@@ -9,11 +9,11 @@ pub struct AddActionRuleRequest {
     pub name: String,
     pub enabled: bool,
     pub conditions: Conditions,
-    pub primary_action: u16,
+    pub primary_action: u32,
 }
 
 impl AddActionRuleRequest {
-    pub(crate) fn new(name: String, primary_action: u16) -> Self {
+    pub(crate) fn new(name: String, primary_action: u32) -> Self {
         Self {
             name,
             enabled: true,
@@ -85,10 +85,37 @@ impl SoapHttpRequest for AddActionRuleRequest {
 #[serde(rename_all = "PascalCase")]
 pub struct AddActionRuleResponse {
     #[serde(rename = "RuleID")]
-    pub id: u16,
+    pub id: u32,
 }
 
-#[derive(Debug, Deserialize)]
+pub struct GetActionRulesRequest(SimpleRequest<GetActionRulesResponse>);
+
+impl Default for GetActionRulesRequest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl GetActionRulesRequest {
+    pub fn new() -> Self {
+        Self(SimpleRequest::new(
+            "http://www.axis.com/vapix/ws/action1",
+            "GetActionRules",
+        ))
+    }
+}
+
+impl SoapRequest for GetActionRulesRequest {
+    fn to_envelope(self) -> anyhow::Result<String> {
+        self.0.to_envelope()
+    }
+}
+
+impl SoapHttpRequest for GetActionRulesRequest {
+    type Data = GetActionRulesResponse;
+}
+
+#[derive(Debug, Eq, PartialEq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Condition {
     pub topic_expression: String,
@@ -105,13 +132,13 @@ pub struct Conditions {
 #[serde(rename_all = "PascalCase")]
 pub struct ActionRule {
     #[serde(rename = "RuleID")]
-    pub rule_id: u16,
+    pub rule_id: u32,
     pub name: String,
     pub enabled: String,
     // TODO: Consider encoding the observation that conditions and start_event are not both set
     pub conditions: Option<Conditions>,
     pub start_event: Option<Condition>,
-    pub primary_action: u16,
+    pub primary_action: u32,
 }
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -126,12 +153,41 @@ pub struct GetActionRulesResponse {
     pub action_rules: ActionRules,
 }
 
+pub struct RemoveActionRuleRequest {
+    rule_id: u32,
+}
+
+impl RemoveActionRuleRequest {
+    pub(crate) fn new(rule_id: u32) -> Self {
+        Self { rule_id }
+    }
+}
+
+impl SoapRequest for RemoveActionRuleRequest {
+    fn to_envelope(self) -> anyhow::Result<String> {
+        let params = format!("<RuleID>{}</RuleID>", self.rule_id);
+        SimpleRequest::<()>::new("http://www.axis.com/vapix/ws/action1", "RemoveActionRule")
+            .params(params)
+            .to_envelope()
+    }
+}
+
+impl SoapHttpRequest for RemoveActionRuleRequest {
+    type Data = RemoveActionRuleResponse;
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RemoveActionRuleResponse;
+
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
 
     use crate::{
-        services::action1::{action_rules::AddActionRuleResponse, GetActionRulesResponse},
+        services::action1::{
+            action_rules::{AddActionRuleResponse, RemoveActionRuleResponse},
+            GetActionRulesResponse,
+        },
         soap::parse_soap,
     };
 
@@ -176,6 +232,12 @@ mod tests {
                 ],
             }
         "#]].assert_debug_eq(&data.action_rules);
+    }
+
+    #[test]
+    fn can_deserialize_remove_action_rule_response() {
+        let text = include_str!("examples/remove_action_rule_response.xml");
+        parse_soap::<RemoveActionRuleResponse>(text).unwrap();
     }
 
     #[test]

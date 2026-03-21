@@ -1,0 +1,15 @@
+201 Created
+
+{
+  "status": "success",
+  "data": {
+    "azure": {
+      "accountName": "",
+      "container": "my-container",
+      "sas": "*****",
+      "sharedKey": "",
+      "url": "https://s3.eu-north-1.amazonaws.com/"
+    },
+    "id": "rg2_destination_id"
+  }
+}

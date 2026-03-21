@@ -56,6 +56,7 @@ check_generated_files: \
 	snapshots/device-finder-docs \
 	snapshots/device-inventory-docs \
 	snapshots/device-inventory-smoke-test \
+	snapshots/device-manager-docs \
 	snapshots/firmware-inventory-docs
 	git update-index -q --refresh
 	git --no-pager diff --exit-code HEAD -- $^
