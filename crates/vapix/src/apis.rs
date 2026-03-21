@@ -1,3 +1,7 @@
+pub mod applications_config {
+    pub use crate::applications_config::ApplicationConfigRequest;
+}
+
 pub mod action_1 {
     pub use crate::action1::{
         add_action_configuration, add_action_rule, get_action_configurations, get_action_rules,
@@ -43,4 +47,16 @@ pub mod ssh_1 {
 
 pub mod system_ready_1 {
     pub use crate::system_ready_1::system_ready;
+}
+
+pub mod firmware_management_1 {
+    pub use crate::firmware_management_1::FactoryDefaultRequest;
+}
+
+pub mod parameter_management {
+    pub use crate::parameter_management::UpdateRequest;
+}
+
+pub mod pwdgrp {
+    pub use crate::pwdgrp::AddUserRequest;
 }

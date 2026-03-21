@@ -1,0 +1,68 @@
++ unset RUST_LOG
++ unset AXIS_DEVICE_IP
++ unset AXIS_DEVICE_PASS
++ unset AXIS_DEVICE_USER
++ unset AXIS_DEVICE_HTTP_PORT
++ unset AXIS_DEVICE_HTTPS_PORT
++ device-manager help
+Usage: device-manager <COMMAND>
+
+Commands:
+  restore      Restore the device to a clean state (factory default)
+  init         Initialize a device in setup mode
+  reinit       Restore and initialize the device to a known, useful state
+  completions  Generate shell completions
+  help         Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
++ device-manager help completions
+Generate shell completions
+
+Example: `device-manager completions zsh | source /dev/stdin`
+
+Usage: device-manager completions <SHELL>
+
+Arguments:
+  <SHELL>
+          [possible values: bash, elvish, fish, powershell, zsh]
+
+Options:
+  -h, --help
+          Print help (see a summary with '-h')
++ device-manager help init
+Initialize a device in setup mode
+
+Usage: device-manager init [OPTIONS] --host <HOST>
+
+Options:
+      --host <HOST>              Hostname or IP address of the device [env: AXIS_DEVICE_IP=]
+      --http-port <HTTP_PORT>    Override the default port for HTTP [env: AXIS_DEVICE_HTTP_PORT=]
+      --https-port <HTTPS_PORT>  Override the default port for HTTPS [env: AXIS_DEVICE_HTTPS_PORT=]
+  -u, --user <USER>              The username to use for authentication [env: AXIS_DEVICE_USER=] [default: root]
+  -p, --pass <PASS>              The password to use for authentication [env: AXIS_DEVICE_PASS=] [default: pass]
+  -h, --help                     Print help
++ device-manager help reinit
+Restore and initialize the device to a known, useful state
+
+Usage: device-manager reinit [OPTIONS] --host <HOST>
+
+Options:
+      --host <HOST>              Hostname or IP address of the device [env: AXIS_DEVICE_IP=]
+      --http-port <HTTP_PORT>    Override the default port for HTTP [env: AXIS_DEVICE_HTTP_PORT=]
+      --https-port <HTTPS_PORT>  Override the default port for HTTPS [env: AXIS_DEVICE_HTTPS_PORT=]
+  -u, --user <USER>              The username to use for authentication [env: AXIS_DEVICE_USER=] [default: root]
+  -p, --pass <PASS>              The password to use for authentication [env: AXIS_DEVICE_PASS=] [default: pass]
+  -h, --help                     Print help
++ device-manager help restore
+Restore the device to a clean state (factory default)
+
+Usage: device-manager restore [OPTIONS] --host <HOST>
+
+Options:
+      --host <HOST>              Hostname or IP address of the device [env: AXIS_DEVICE_IP=]
+      --http-port <HTTP_PORT>    Override the default port for HTTP [env: AXIS_DEVICE_HTTP_PORT=]
+      --https-port <HTTPS_PORT>  Override the default port for HTTPS [env: AXIS_DEVICE_HTTPS_PORT=]
+  -u, --user <USER>              The username to use for authentication [env: AXIS_DEVICE_USER=] [default: root]
+  -p, --pass <PASS>              The password to use for authentication [env: AXIS_DEVICE_PASS=] [default: pass]
+  -h, --help                     Print help

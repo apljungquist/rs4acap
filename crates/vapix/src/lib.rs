@@ -13,7 +13,10 @@ mod services;
 pub mod soap;
 pub mod soap_http;
 
-pub use axis_cgi::{basic_device_info_1, system_ready_1};
+pub use axis_cgi::{
+    applications_config, basic_device_info_1, firmware_management_1, parameter_management, pwdgrp,
+    system_ready_1,
+};
 pub use client::{Client, ClientBuilder, Scheme};
 pub use config::{
     recording_group_1, remote_object_storage_1, remote_object_storage_1_beta,
