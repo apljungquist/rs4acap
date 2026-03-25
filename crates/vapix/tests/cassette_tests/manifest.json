@@ -56,6 +56,16 @@
     }
   },
   "cassettes": {
+    "basic_device_info_get_all_properties": {
+      "9221716544edac58": [
+        "D4200-VE@12.9.57"
+      ]
+    },
+    "basic_device_info_get_all_unrestricted_properties": {
+      "12a66703ec1ded3a": [
+        "D4200-VE@12.9.57"
+      ]
+    },
     "device_configuration_item_already_exists": {
       "bab20a5db3a0fb5f": [
         "D2210-VE@12.9.57",

@@ -105,42 +105,63 @@ pub enum Architecture {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct SocSerialNumber(u128);
+pub enum SocSerialNumber {
+    Plain(u64),
+    Dashed(u128),
+}
 
 impl Display for SocSerialNumber {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{:08X}-{:08X}-{:08X}-{:08X}",
-            (self.0 >> 96) as u32,
-            (self.0 >> 64) as u32,
-            (self.0 >> 32) as u32,
-            self.0 as u32
-        )
+        match self {
+            Self::Plain(v) => write!(f, "{v:016X}"),
+            Self::Dashed(v) => write!(
+                f,
+                "{:08X}-{:08X}-{:08X}-{:08X}",
+                (*v >> 96) as u32,
+                (*v >> 64) as u32,
+                (*v >> 32) as u32,
+                *v as u32
+            ),
+        }
     }
+}
+
+fn parse_dashed_soc_serial(s: &str) -> anyhow::Result<u128> {
+    let parts: Vec<&str> = s.split('-').collect();
+    if parts.len() != 4 {
+        bail!("Expected 4 segments, got {}", parts.len());
+    }
+    let mut bits: u128 = 0;
+    for (i, part) in parts.iter().enumerate() {
+        if part.len() != 8 {
+            bail!(
+                "Expected each segment to be 8 characters long, but segment {} is {}",
+                i + 1,
+                part.len()
+            );
+        }
+        let segment = u32::from_str_radix(part, 16)?;
+        bits |= (segment as u128) << (96 - i * 32);
+    }
+    Ok(bits)
+}
+
+fn parse_plain_soc_serial(s: &str) -> anyhow::Result<u64> {
+    if s.len() != 16 {
+        bail!("Expected 16 characters long, got {}", s.len());
+    }
+    Ok(u64::from_str_radix(s, 16)?)
 }
 
 impl FromStr for SocSerialNumber {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split('-').collect();
-        if parts.len() != 4 {
-            bail!("Expected 4 segments, got {}", parts.len());
+        if s.contains('-') {
+            Ok(Self::Dashed(parse_dashed_soc_serial(s)?))
+        } else {
+            Ok(Self::Plain(parse_plain_soc_serial(s)?))
         }
-        let mut bits: u128 = 0;
-        for (i, part) in parts.iter().enumerate() {
-            if part.len() != 8 {
-                bail!(
-                    "Expected each segment to be 8 characters long, but segment {} is {}",
-                    i + 1,
-                    part.len()
-                );
-            }
-            let segment = u32::from_str_radix(part, 16)?;
-            bits |= (segment as u128) << (96 - i * 32);
-        }
-        Ok(Self(bits))
     }
 }
 
@@ -173,9 +194,18 @@ pub struct RestrictedProperties {
         serialize_with = "serialize_none_as_empty_string",
         deserialize_with = "deserialize_empty_string_as_none"
     )]
-    pub soc_serial_number: Option<SocSerialNumber>,
+    pub soc_serial_number: Option<String>,
     // TODO: Consider enumerating all known variants
     pub soc: String,
+}
+
+impl RestrictedProperties {
+    pub fn parse_soc_serial_number(&self) -> anyhow::Result<Option<SocSerialNumber>> {
+        self.soc_serial_number
+            .as_deref()
+            .map(SocSerialNumber::from_str)
+            .transpose()
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -234,8 +264,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn soc_serial_number_from_to_string_roundtrip() {
+    fn soc_serial_number_dashed_from_to_string_roundtrip() {
         let expected = "00000000-00000000-032CDEEE-01349999";
+        let actual = SocSerialNumber::from_str(expected).unwrap().to_string();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn soc_serial_number_plain_from_to_string_roundtrip() {
+        let expected = "032CDEEE01349999";
         let actual = SocSerialNumber::from_str(expected).unwrap().to_string();
         assert_eq!(expected, actual);
     }
@@ -254,6 +291,17 @@ mod tests {
         );
         expect!("invalid digit found in string").assert_eq(
             &SocSerialNumber::from_str("00000000-00000000-00000000-0000000G")
+                .unwrap_err()
+                .to_string(),
+        );
+
+        expect!("Expected 16 characters long, got 15").assert_eq(
+            &SocSerialNumber::from_str("000000000000000")
+                .unwrap_err()
+                .to_string(),
+        );
+        expect!("invalid digit found in string").assert_eq(
+            &SocSerialNumber::from_str("000000000000000G")
                 .unwrap_err()
                 .to_string(),
         );

@@ -13,6 +13,7 @@ use log::LevelFilter;
 use regex::Regex;
 use rs4a_vapix::{
     apis,
+    apis::basic_device_info_1,
     basic_device_info_1::UnrestrictedProperties,
     cassette::{Cassette, Mode},
     http,
@@ -31,7 +32,6 @@ use rs4a_vapix::{
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use url::{Host, Url};
-
 // When a test fails, it may leave resources intact that will cause future runs to fail.
 // This must be cleaned up manually by either removing them individually or resetting the device.
 // This is tedious, but hopefully updating cassettes will be rare.
@@ -336,6 +336,40 @@ type TestEntry = (&'static str, TestFn, Substitutions);
 
 const TESTS: &[TestEntry] = &[
     (
+        "basic_device_info_get_all_properties",
+        |client, cassette, prelude| {
+            Box::pin(basic_device_info_get_all_properties(
+                client, cassette, prelude,
+            ))
+        },
+        &[
+            (
+                r#""SocSerialNumber": "[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}""#,
+                r#""SocSerialNumber": "00000000-00000000-01234567-89ABCDEF""#,
+            ),
+            (
+                r#""SocSerialNumber": "[0-9A-F]{16}""#,
+                r#""SocSerialNumber": "0123456789ABCDEF""#,
+            ),
+            (
+                r#""SerialNumber": "[0-9A-F]{12}""#,
+                r#""SerialNumber": "0123456789AB""#,
+            ),
+        ],
+    ),
+    (
+        "basic_device_info_get_all_unrestricted_properties",
+        |client, cassette, prelude| {
+            Box::pin(basic_device_info_get_all_unrestricted_properties(
+                client, cassette, prelude,
+            ))
+        },
+        &[(
+            r#""SerialNumber": "[0-9A-F]{12}""#,
+            r#""SerialNumber": "0123456789AB""#,
+        )],
+    ),
+    (
         "device_configuration_item_does_not_exist",
         |client, cassette, prelude| {
             Box::pin(device_configuration_item_does_not_exist(
@@ -570,6 +604,33 @@ fn main() {
         cleanup_unreferenced_cassettes(&library);
     }
     conclusion.exit();
+}
+
+async fn basic_device_info_get_all_properties(
+    client: Client,
+    cassette: Cassette,
+    _: Option<Prelude>,
+) {
+    let mut cassette = Some(cassette);
+    let property_list = basic_device_info_1::get_all_properties()
+        .send_lossless(&client, cassette.as_mut())
+        .await
+        .unwrap()
+        .property_list;
+
+    assert!(property_list.restricted.parse_soc_serial_number().is_ok())
+}
+
+async fn basic_device_info_get_all_unrestricted_properties(
+    client: Client,
+    cassette: Cassette,
+    _: Option<Prelude>,
+) {
+    let mut cassette = Some(cassette);
+    basic_device_info_1::get_all_unrestricted_properties()
+        .send_lossless(&client, cassette.as_mut())
+        .await
+        .unwrap();
 }
 
 async fn device_configuration_item_does_not_exist(
