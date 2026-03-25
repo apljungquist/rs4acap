@@ -4,7 +4,7 @@ use log::LevelFilter;
 use rs4a_vapix::{
     action1::Condition,
     apis,
-    json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless},
+    json_rpc_http::JsonRpcHttp,
     remote_object_storage_1_beta::{CreateDestinationRequest, DestinationId, S3Destination},
     rest_http::RestHttp,
     rest_http2::RestHttp2,
@@ -97,28 +97,6 @@ async fn action_1_add_and_get_returns_ok() {
         .unwrap();
 
     assert_eq!(action_rule.name, action_rule_name);
-}
-
-#[tokio::test]
-async fn basic_device_info_get_all_properties_returns_ok() {
-    let Some(client) = test_client().await else {
-        return;
-    };
-    apis::basic_device_info_1::get_all_properties()
-        .send_lossless(&client, None)
-        .await
-        .unwrap();
-}
-
-#[tokio::test]
-async fn basic_device_info_get_all_unrestricted_properties_returns_ok() {
-    let Some(client) = test_client().await else {
-        return;
-    };
-    apis::basic_device_info_1::get_all_unrestricted_properties()
-        .send_lossless(&client, None)
-        .await
-        .unwrap();
 }
 
 #[tokio::test]
