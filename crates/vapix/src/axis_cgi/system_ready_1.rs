@@ -2,6 +2,8 @@
 //!
 //! [Systemready API]: https://developer.axis.com/vapix/network-video/systemready-api/
 
+use std::time::Duration;
+
 use serde::{Deserialize, Serialize};
 
 use crate::json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless};
@@ -28,7 +30,6 @@ where
     }
 }
 
-// TODO: Consider parsing `uptime` as an unsigned integer
 // TODO: Consider parsing `bootid` as a UUID
 #[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
@@ -51,6 +52,17 @@ pub struct SystemreadyData {
     /// New in 1.5
     #[serde(skip_serializing_if = "Option::is_none")]
     pub passphrasepolicy: Option<String>,
+}
+
+impl SystemreadyData {
+    // TODO: Consider parsing `uptime` eagerly
+    /// Parse the uptime field as a duration in seconds.
+    pub fn try_uptime(&self) -> Result<Option<Duration>, std::num::ParseIntError> {
+        self.uptime
+            .as_deref()
+            .map(|s| s.parse::<u64>().map(Duration::from_secs))
+            .transpose()
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]

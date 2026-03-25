@@ -7,6 +7,8 @@ _A collection of language agnostic tools that facilitate development for the AXI
 - [Preview](#preview)
   - [device-finder](#device-finder)
   - [device-inventory](#device-inventory)
+  - [device-manager](#device-manager)
+  - [firmware-inventory](#firmware-inventory)
 - [Installation](#installation)
 - [Related projects](#related-projects)
 
@@ -55,6 +57,23 @@ Options:
   -h, --help                   Print help
 ```
 
+### `device-manager`
+
+```console
+$ device-manager help
+Usage: device-manager <COMMAND>
+
+Commands:
+  restore      Restore the device to a clean state (factory default)
+  init         Initialize a device in setup mode
+  reinit       Restore and initialize the device to a known, useful state
+  completions  Generate shell completions
+  help         Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+```
+
 ### `firmware-inventory`
 
 ```console
@@ -82,6 +101,8 @@ The tools in this project can be installed using Cargo:
 ```shell
 cargo install --locked --git https://github.com/apljungquist/rs4a.git device-finder
 cargo install --locked --git https://github.com/apljungquist/rs4a.git device-inventory
+cargo install --locked --git https://github.com/apljungquist/rs4a.git device-manager
+cargo install --locked --git https://github.com/apljungquist/rs4a.git firmware-inventory
 ```
 
 If you want to install them another way, open an issue and I may be able to help.
