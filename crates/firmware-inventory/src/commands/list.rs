@@ -1,5 +1,5 @@
 use anyhow::bail;
-use semver::{Version, VersionReq};
+use semver::VersionReq;
 
 use crate::db::Database;
 
@@ -11,15 +11,6 @@ pub struct ListCommand {
     version: Option<VersionReq>,
 }
 
-fn version_from_underscore(s: &str) -> Option<Version> {
-    let dotted = s.replace('_', ".");
-    let mut parts = dotted.splitn(4, '.');
-    let major = parts.next()?.parse().ok()?;
-    let minor = parts.next()?.parse().ok()?;
-    let patch = parts.next()?.parse().ok()?;
-    Some(Version::new(major, minor, patch))
-}
-
 impl ListCommand {
     pub fn exec(self, db: &Database) -> anyhow::Result<()> {
         let Self {
@@ -29,37 +20,33 @@ impl ListCommand {
 
         let index = db.read_index()?;
         let matching: Vec<_> = index
-            .keys()
-            .filter(|p| product.as_ref().map_or(true, |pat| pat.matches(p)))
+            .products()
+            .filter(|(name, _)| {
+                product
+                    .as_ref()
+                    .map_or(true, |pat| pat.matches(name.as_str()))
+            })
             .collect();
 
         if matching.is_empty() {
             bail!("No indexed products found. Run update first.");
         }
 
-        for product in &matching {
-            let versions = &index[product.as_str()];
-            let mut entries: Vec<_> = versions
+        for (product_name, product_entry) in &matching {
+            let mut versions: Vec<_> = product_entry
+                .versions
                 .iter()
-                .filter_map(|v| {
-                    let semver = version_from_underscore(v)?;
-                    if let Some(req) = &req {
-                        if !req.matches(&semver) {
-                            return None;
-                        }
-                    }
-                    Some((v.as_str(), semver))
-                })
+                .filter(|v| req.as_ref().map_or(true, |req| v.matches_req(req)))
                 .collect();
-            entries.sort_by(|(_, a), (_, b)| b.cmp(a));
+            versions.sort_unstable_by(|a, b| b.cmp(a));
 
-            for (version_str, semver) in entries {
-                let cached = if db.firmware_path(product, version_str).exists() {
+            for version in versions {
+                let cached = if db.firmware_path(product_name, version).exists() {
                     " [cached]"
                 } else {
                     ""
                 };
-                println!("{product} {semver}{cached}");
+                println!("{product_name} {version}{cached}");
             }
         }
 

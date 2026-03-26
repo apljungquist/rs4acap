@@ -1,14 +1,79 @@
-use anyhow::{bail, Context};
-use log::info;
+use std::time::Duration;
 
-use crate::{authenticated_client, db::Database, scrape};
+use anyhow::{bail, Context};
+use log::{info, warn};
+use tokio::time::sleep;
+
+use crate::{
+    authenticated_client,
+    db::{Database, Index, ProductEntry, ProductName},
+    scrape,
+    scrape::DirectoryEntry,
+    version::FirmwareVersion,
+};
 
 const MPQT_BASE_URL: &str = "https://www.axis.com/ftp/pub/axis/software/MPQT/";
+const REQUEST_INTERVAL: Duration = Duration::from_secs(1);
 
 #[derive(Clone, Debug, clap::Args)]
 pub struct UpdateCommand {
     /// Glob pattern to match product names
     product: glob::Pattern,
+}
+
+fn needs_update(scraped: &DirectoryEntry, index: &Index) -> bool {
+    let name = ProductName::new(scraped.name.clone());
+    match (scraped.last_modified, index.get(&name)) {
+        (Some(scraped_ts), Some(existing)) => match existing.last_modified {
+            Some(indexed_ts) => scraped_ts > indexed_ts,
+            None => true,
+        },
+        _ => true,
+    }
+}
+
+async fn fetch_versions(
+    client: &reqwest::Client,
+    index: &mut Index,
+    products: &[DirectoryEntry],
+) -> anyhow::Result<()> {
+    for scraped in products {
+        let name = ProductName::new(scraped.name.clone());
+
+        sleep(REQUEST_INTERVAL).await;
+
+        let url = format!("{MPQT_BASE_URL}{name}/");
+        info!("Fetching versions for {name}");
+
+        let html = client
+            .get(&url)
+            .send()
+            .await?
+            .error_for_status()?
+            .text()
+            .await?;
+        let dirs = scrape::parse_directory_listing(&html);
+        let versions: Vec<FirmwareVersion> = dirs
+            .into_iter()
+            .filter(|e| e.name != "latest")
+            .filter_map(|e| {
+                let version = FirmwareVersion::from_dir_name(&e.name);
+                if version.is_none() {
+                    warn!("Failed to parse version {name}/{}", e.name);
+                }
+                version
+            })
+            .collect();
+        info!("Found {} version(s) for {name}", versions.len());
+        index.insert(
+            name,
+            ProductEntry {
+                last_modified: scraped.last_modified,
+                versions,
+            },
+        );
+    }
+    Ok(())
 }
 
 impl UpdateCommand {
@@ -35,37 +100,45 @@ impl UpdateCommand {
             .await?;
         let all_products = scrape::parse_directory_listing(&html);
 
+        let mut index = db.read_index()?;
+
         let matching: Vec<_> = all_products
             .into_iter()
-            .filter(|p| product.matches(p))
+            .filter(|p| product.matches(&p.name))
             .collect();
 
         if matching.is_empty() {
             bail!("No products matched the pattern {product:?}");
         }
 
-        info!("Found {} matching product(s)", matching.len());
+        let (stale, up_to_date): (Vec<_>, Vec<_>) =
+            matching.into_iter().partition(|p| needs_update(p, &index));
 
-        let mut index = db.read_index()?;
+        info!(
+            "{} product(s) to update, {} already up-to-date",
+            stale.len(),
+            up_to_date.len()
+        );
 
-        for product in &matching {
-            let url = format!("{MPQT_BASE_URL}{product}/");
-            info!("Fetching versions for {product}");
-            let html = client
-                .get(&url)
-                .send()
-                .await?
-                .error_for_status()?
-                .text()
-                .await?;
-            let versions = scrape::parse_directory_listing(&html);
-            info!("Found {} version(s) for {product}", versions.len());
-            index.insert(product.clone(), versions);
-        }
+        let result = tokio::select! {
+            r = fetch_versions(&client, &mut index, &stale) => r,
+            _ = tokio::signal::ctrl_c() => {
+                warn!("Interrupted");
+                Err(anyhow::anyhow!("Interrupted by Ctrl+C"))
+            }
+        };
 
         db.write_index(&index)?;
-        info!("Index updated");
 
-        Ok(())
+        match result {
+            Ok(()) => {
+                info!("Index updated");
+                Ok(())
+            }
+            Err(e) => {
+                warn!("Saved partial index before exiting");
+                Err(e)
+            }
+        }
     }
 }

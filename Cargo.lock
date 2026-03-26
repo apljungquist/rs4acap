@@ -758,6 +758,7 @@ name = "firmware-inventory"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "clap",
  "dirs",
  "glob",
@@ -766,8 +767,8 @@ dependencies = [
  "reqwest",
  "rs4a-authentication",
  "rs4a-bin-utils",
- "rs4a-vlt",
  "semver",
+ "serde",
  "serde_json",
  "tokio",
 ]
@@ -2209,6 +2210,7 @@ dependencies = [
  "libc",
  "mio",
  "pin-project-lite",
+ "signal-hook-registry",
  "socket2",
  "tokio-macros",
  "windows-sys 0.52.0",

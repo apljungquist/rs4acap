@@ -2,7 +2,7 @@ use std::fs;
 
 use anyhow::{bail, Context};
 use log::info;
-use semver::{Version, VersionReq};
+use semver::VersionReq;
 
 use crate::{authenticated_client, db::Database};
 
@@ -16,19 +16,6 @@ pub struct GetCommand {
     version: VersionReq,
 }
 
-fn version_from_underscore(s: &str) -> Option<Version> {
-    let dotted = s.replace('_', ".");
-    coerce_firmware_version(&dotted).ok()
-}
-
-fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
-    let mut parts = s.splitn(4, '.');
-    let major = parts.next().unwrap_or_default().parse()?;
-    let minor = parts.next().unwrap_or_default().parse()?;
-    let patch = parts.next().unwrap_or_default().parse()?;
-    Ok(Version::new(major, minor, patch))
-}
-
 impl GetCommand {
     pub async fn exec(self, db: &Database, offline: bool) -> anyhow::Result<()> {
         let Self {
@@ -37,7 +24,11 @@ impl GetCommand {
         } = self;
 
         let index = db.read_index()?;
-        let matching: Vec<_> = index.keys().filter(|p| product.matches(p)).collect();
+        let matching: Vec<_> = index
+            .products()
+            .filter(|(name, _)| product.matches(name.as_str()))
+            .map(|(name, _)| name)
+            .collect();
 
         match matching.len() {
             0 => bail!(
@@ -50,25 +41,18 @@ impl GetCommand {
         }
 
         let product = matching[0];
-        let versions = &index[product];
+        let entry = index.get(product).unwrap();
 
-        let best = versions
+        let version = entry
+            .versions
             .iter()
-            .filter_map(|v| {
-                let semver = version_from_underscore(v)?;
-                if req.matches(&semver) {
-                    Some((v.clone(), semver))
-                } else {
-                    None
-                }
-            })
-            .max_by(|(_, a), (_, b)| a.cmp(b));
+            .filter(|v| v.matches_req(&req))
+            .max()
+            .context("No versions matched the requirement")?;
 
-        let (version_str, semver) = best.context("No versions matched the requirement")?;
+        info!("Best match: {product} {version}");
 
-        info!("Best match: {product} {semver} ({})", version_str);
-
-        let path = db.firmware_path(product, &version_str);
+        let path = db.firmware_path(product, version);
 
         if path.exists() {
             println!("{}", path.display());
@@ -87,7 +71,8 @@ impl GetCommand {
             .context("No login session, please run the login command")?;
         let client = authenticated_client(cookie)?;
 
-        let url = format!("{MPQT_BASE_URL}{product}/{version_str}/{product}_{version_str}.bin");
+        let dir_name = version.to_dir_name();
+        let url = format!("{MPQT_BASE_URL}{product}/{dir_name}/{product}_{dir_name}.bin");
         info!("Downloading {url}");
 
         let response = client

@@ -3,6 +3,7 @@
 mod commands;
 mod db;
 mod scrape;
+mod version;
 
 use std::path::PathBuf;
 
@@ -12,7 +13,10 @@ use rs4a_authentication::SessionCookie;
 use rs4a_bin_utils::completions_command::CompletionsCommand;
 
 use crate::{
-    commands::{get::GetCommand, list::ListCommand, login::LoginCommand, update::UpdateCommand},
+    commands::{
+        dump::DumpCommand, get::GetCommand, list::ListCommand, load::LoadCommand,
+        login::LoginCommand, update::UpdateCommand,
+    },
     db::Database,
 };
 
@@ -49,6 +53,8 @@ impl Cli {
             Commands::Update(cmd) => cmd.exec(&db, offline).await?,
             Commands::List(cmd) => cmd.exec(&db)?,
             Commands::Get(cmd) => cmd.exec(&db, offline).await?,
+            Commands::Dump(cmd) => cmd.exec(&db)?,
+            Commands::Load(cmd) => cmd.exec(&db)?,
             Commands::Completions(cmd) => cmd.exec::<Self>()?,
         }
         Ok(())
@@ -65,6 +71,10 @@ enum Commands {
     List(ListCommand),
     /// Get firmware matching product and version requirement
     Get(GetCommand),
+    /// Dump the index to stdout as JSON
+    Dump(DumpCommand),
+    /// Load the index from stdin as JSON
+    Load(LoadCommand),
     /// Print a completion file for the given shell.
     ///
     /// Example: `firmware-inventory completions zsh | source /dev/stdin`.
