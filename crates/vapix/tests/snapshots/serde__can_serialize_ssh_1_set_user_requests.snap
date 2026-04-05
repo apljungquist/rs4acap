@@ -1,5 +1,0 @@
----
-source: crates/vapix/tests/serde.rs
-expression: path
----
-config/rest/ssh/v1/users/Dalliard

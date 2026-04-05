@@ -22,7 +22,6 @@ url = { workspace = true }
 [dev-dependencies]
 env_logger = { workspace = true }
 expect-test = { workspace = true }
-insta = { workspace = true }
 libtest-mimic = { workspace = true }
 regex = { workspace = true }
 semver = { workspace = true }

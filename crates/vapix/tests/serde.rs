@@ -1,4 +1,4 @@
-use insta::assert_snapshot;
+use expect_test::expect_file;
 use rs4a_vapix::{
     action1::{AddActionConfigurationResponse, Condition},
     apis,
@@ -72,30 +72,33 @@ fn can_deserialize_system_ready_1_examples() {
 
 #[test]
 fn can_serialize_action_1_requests() {
-    assert_snapshot!(
-        apis::action_1::add_action_configuration("com.axis.action.fixed.ledcontrol")
+    expect_file!["./snapshots/add_action_configuration.xml"].assert_eq(
+        &apis::action_1::add_action_configuration("com.axis.action.fixed.ledcontrol")
             .name("Flash status LED")
             .param("led", "statusled")
             .param("color", "green,none")
             .param("duration", "1")
             .param("interval", "250")
             .to_envelope()
-            .unwrap()
+            .unwrap(),
     );
-    assert_snapshot!(
-        apis::action_1::add_action_rule("My Action Rule".to_string(), 123)
+    expect_file!["./snapshots/add_action_rule.xml"].assert_eq(
+        &apis::action_1::add_action_rule("My Action Rule".to_string(), 123)
             .condition(Condition {
                 topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
                 message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#
-                    .to_string()
+                    .to_string(),
             })
             .to_envelope()
-            .unwrap()
+            .unwrap(),
     );
-    assert_snapshot!(apis::action_1::get_action_configurations()
-        .to_envelope()
-        .unwrap());
-    assert_snapshot!(apis::action_1::get_action_rules().to_envelope().unwrap());
+    expect_file!["./snapshots/get_action_configurations.xml"].assert_eq(
+        &apis::action_1::get_action_configurations()
+            .to_envelope()
+            .unwrap(),
+    );
+    expect_file!["./snapshots/get_action_rules.xml"]
+        .assert_eq(&apis::action_1::get_action_rules().to_envelope().unwrap());
 }
 
 #[test]
@@ -103,8 +106,9 @@ fn can_serialize_ssh_1_add_user_requests() {
     let (path, data) = apis::ssh_1::add_user("Dalliard", "Good morning")
         .to_path_and_data()
         .unwrap();
-    assert_snapshot!(path);
-    assert_snapshot!(serde_json::to_string(&data).unwrap());
+    expect_file!["./snapshots/add_user_path.txt"].assert_eq(&path);
+    expect_file!["./snapshots/add_user_data.json"]
+        .assert_eq(&serde_json::to_string(&data).unwrap());
 }
 
 #[test]
@@ -113,6 +117,7 @@ fn can_serialize_ssh_1_set_user_requests() {
         .comment("When's the day?")
         .to_path_and_data()
         .unwrap();
-    assert_snapshot!(path);
-    assert_snapshot!(serde_json::to_string(&data).unwrap());
+    expect_file!["./snapshots/set_user_path.txt"].assert_eq(&path);
+    expect_file!["./snapshots/set_user_data.json"]
+        .assert_eq(&serde_json::to_string(&data).unwrap());
 }

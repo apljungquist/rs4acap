@@ -1,5 +1,0 @@
----
-source: crates/vapix/tests/serde.rs
-expression: "apis::action_1::get_action_rules().to_envelope().unwrap()"
----
-<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Body><GetActionRules xmlns="http://www.axis.com/vapix/ws/action1"/></soap:Body></soap:Envelope>
