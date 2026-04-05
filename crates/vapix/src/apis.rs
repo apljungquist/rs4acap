@@ -54,7 +54,9 @@ pub mod firmware_management_1 {
 }
 
 pub mod parameter_management {
-    pub use crate::parameter_management::UpdateRequest;
+    pub use crate::parameter_management::{
+        ImageResolution, ListRequest, ParamList, Parameter, Resolution, UpdateRequest,
+    };
 }
 
 pub mod pwdgrp {
