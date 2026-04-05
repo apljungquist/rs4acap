@@ -18,6 +18,7 @@ use rs4a_vapix::{
     cassette::{Cassette, Mode},
     http,
     json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless},
+    parameter_management::{ImageResolution, ListRequest},
     remote_object_storage_1_beta::{
         AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
         DestinationId, ListDestinationsRequest, UpdateDestinationRequest,
@@ -397,6 +398,22 @@ const TESTS: &[TestEntry] = &[
         &[],
     ),
     (
+        "parameter_management_list_error",
+        |client, cassette, prelude| {
+            Box::pin(parameter_management_list_error(client, cassette, prelude))
+        },
+        &[],
+    ),
+    (
+        "parameter_management_list_image_resolution",
+        |client, cassette, prelude| {
+            Box::pin(parameter_management_list_image_resolution(
+                client, cassette, prelude,
+            ))
+        },
+        &[],
+    ),
+    (
         "remote_object_storage_1_beta_crud",
         |client, cassette, prelude| {
             Box::pin(remote_object_storage_1_beta_crud(client, cassette, prelude))
@@ -749,6 +766,47 @@ async fn device_configuration_item_already_exists(
         .send(&client, cassette.as_mut())
         .await
         .unwrap();
+}
+
+async fn parameter_management_list_error(
+    client: Client,
+    cassette: Cassette,
+    prelude: Option<Prelude>,
+) {
+    if let Some(prelude) = prelude {
+        if prelude.props.prod_type.as_str() == "Box Camera" {
+            return;
+        }
+    }
+
+    let mut cassette = Some(cassette);
+    let error = ListRequest::new::<ImageResolution>()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap_err();
+
+    // TODO: Parse the error code and message
+    assert!(error.to_string().contains("-1"));
+}
+
+async fn parameter_management_list_image_resolution(
+    client: Client,
+    cassette: Cassette,
+    prelude: Option<Prelude>,
+) {
+    if let Some(prelude) = prelude {
+        if prelude.props.prod_type.as_str() == "Network Strobe Speaker" {
+            return;
+        }
+    }
+
+    let mut cassette = Some(cassette);
+    let params = ListRequest::new::<ImageResolution>()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
+    let resolutions = params.parse::<ImageResolution>().unwrap().unwrap();
+    assert!(!resolutions.is_empty());
 }
 
 async fn remote_object_storage_1_beta_crud(
