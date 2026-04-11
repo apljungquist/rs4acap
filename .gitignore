@@ -1,4 +1,3 @@
 /.idea/
 /.direnv/
-/crates/vapix/tests/cassette_tests/*/.staging/
 /target/
