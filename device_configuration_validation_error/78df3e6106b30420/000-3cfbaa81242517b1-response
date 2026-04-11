@@ -1,0 +1,9 @@
+400 Bad Request
+
+{
+  "status": "error",
+  "error": {
+    "code": 5,
+    "message": "Validation error: invalid destination configuration: sas cannot be empty if accountname is not set."
+  }
+}

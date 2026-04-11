@@ -1,0 +1,3 @@
+200 OK
+
+{"apiVersion": "1.3", "data": {"propertyList": {"Architecture": "aarch64", "ProdNbr": "D4200-VE", "HardwareID": "9CF", "ProdFullName": "AXIS D4200-VE Network Strobe Speaker", "Version": "12.9.57", "ProdType": "Network Strobe Speaker", "SocSerialNumber": "0123456789ABCDEF", "Soc": "i.MX8MN", "Brand": "AXIS", "WebURL": "https://www.axis.com", "ProdVariant": "", "SerialNumber": "0123456789AB", "ProdShortName": "AXIS D4200-VE", "BuildDate": "Feb 20 2026 18:19"}}}

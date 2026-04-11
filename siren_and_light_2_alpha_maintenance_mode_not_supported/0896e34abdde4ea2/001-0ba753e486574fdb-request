@@ -1,0 +1,6 @@
+POST config/rest/siren-and-light/v2alpha/maintenanceMode/stop
+Content-Type: application/json
+
+{
+  "data": {}
+}

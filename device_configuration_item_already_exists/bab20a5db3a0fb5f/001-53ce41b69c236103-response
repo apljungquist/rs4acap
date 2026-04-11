@@ -1,0 +1,9 @@
+409 Conflict
+
+{
+  "status": "error",
+  "error": {
+    "code": 6,
+    "message": "Item already exists: destination already exists"
+  }
+}
