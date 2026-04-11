@@ -1,7 +1,0 @@
-POST axis-cgi/basicdeviceinfo.cgi
-Content-Type: application/json
-
-{
-  "apiVersion": "1.0",
-  "method": "getAllProperties"
-}

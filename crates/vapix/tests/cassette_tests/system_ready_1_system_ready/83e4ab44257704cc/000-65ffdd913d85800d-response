@@ -1,3 +1,0 @@
-200 OK
-
-{"apiVersion": "1.2", "method": "systemready", "data": {"systemready": "yes", "needsetup": "no"}}
