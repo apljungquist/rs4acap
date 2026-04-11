@@ -14,7 +14,7 @@ use regex::Regex;
 use rs4a_vapix::{
     apis,
     apis::basic_device_info_1,
-    basic_device_info_1::UnrestrictedProperties,
+    basic_device_info_1::{ProductType, UnrestrictedProperties},
     cassette::{Cassette, Mode},
     http,
     json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless},
@@ -644,10 +644,13 @@ async fn basic_device_info_get_all_unrestricted_properties(
     _: Option<Prelude>,
 ) {
     let mut cassette = Some(cassette);
-    basic_device_info_1::get_all_unrestricted_properties()
+    let property_list = basic_device_info_1::get_all_unrestricted_properties()
         .send_lossless(&client, cassette.as_mut())
         .await
-        .unwrap();
+        .unwrap()
+        .property_list;
+
+    property_list.parse_product_type().unwrap();
 }
 
 async fn device_configuration_item_does_not_exist(
@@ -774,8 +777,14 @@ async fn parameter_management_list_error(
     prelude: Option<Prelude>,
 ) {
     if let Some(prelude) = prelude {
-        if prelude.props.prod_type.as_str() == "Box Camera" {
-            return;
+        match prelude.props.parse_product_type().unwrap() {
+            ProductType::BoxCamera => return,
+            ProductType::DomeCamera => return,
+            ProductType::NetworkCamera => return,
+            ProductType::NetworkStrobeSpeaker => {}
+            ProductType::Radar => return,
+            ProductType::PeopleCounter3D => return,
+            _ => {}
         }
     }
 
@@ -795,7 +804,10 @@ async fn parameter_management_list_image_resolution(
     prelude: Option<Prelude>,
 ) {
     if let Some(prelude) = prelude {
-        if prelude.props.prod_type.as_str() == "Network Strobe Speaker" {
+        if matches!(
+            prelude.props.parse_product_type().unwrap(),
+            ProductType::NetworkStrobeSpeaker
+        ) {
             return;
         }
     }

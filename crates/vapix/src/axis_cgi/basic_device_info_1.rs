@@ -7,7 +7,7 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::bail;
+use anyhow::{anyhow, bail, Context};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless};
@@ -35,6 +35,46 @@ where
         Ok(None)
     } else {
         T::from_str(&s).map(Some).map_err(serde::de::Error::custom)
+    }
+}
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum ProductType {
+    BoxCamera,
+    DomeCamera,
+    NetworkCamera,
+    NetworkStrobeSpeaker,
+    PeopleCounter3D,
+    Radar,
+}
+
+impl Display for ProductType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::BoxCamera => write!(f, "Box Camera"),
+            Self::DomeCamera => write!(f, "Dome Camera"),
+            Self::NetworkCamera => write!(f, "Network Camera"),
+            Self::NetworkStrobeSpeaker => write!(f, "Network Strobe Speaker"),
+            Self::PeopleCounter3D => write!(f, "3D People Counter"),
+            Self::Radar => write!(f, "Radar"),
+        }
+    }
+}
+
+impl FromStr for ProductType {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Box Camera" => Ok(Self::BoxCamera),
+            "Dome Camera" => Ok(Self::DomeCamera),
+            "Network Camera" => Ok(Self::NetworkCamera),
+            "Network Strobe Speaker" => Ok(Self::NetworkStrobeSpeaker),
+            "3D People Counter" => Ok(Self::PeopleCounter3D),
+            "Radar" => Ok(Self::Radar),
+            _ => Err(anyhow!("unrecognized product type '{s}'")),
+        }
     }
 }
 
@@ -67,6 +107,12 @@ pub struct UnrestrictedProperties {
     pub version: String,
     #[serde(rename = "WebURL")]
     pub web_url: String,
+}
+
+impl UnrestrictedProperties {
+    pub fn parse_product_type(&self) -> anyhow::Result<ProductType> {
+        self.prod_type.parse().context("invalid product type")
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
