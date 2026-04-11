@@ -405,6 +405,49 @@ const TESTS: &[TestEntry] = &[
         &[],
     ),
     (
+        "parameter_management_list_all",
+        |client, cassette, prelude| {
+            Box::pin(parameter_management_list_all(client, cassette, prelude))
+        },
+        &[
+            // MAC address
+            (
+                r"MACAddress=[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}",
+                "MACAddress=01:23:45:67:89:AB",
+            ),
+            // Serial number
+            (
+                r"SerialNumber=[0-9A-F]{12}",
+                "SerialNumber=0123456789AB",
+            ),
+            // Serial in UPnP FriendlyName
+            (
+                r" - [0-9A-F]{12}",
+                " - 0123456789AB",
+            ),
+            // Hostname derived from MAC
+            (
+                r"axis-[0-9a-f]{12}",
+                "axis-0123456789ab",
+            ),
+            // IPv6 link-local derived from MAC
+            (
+                r"fe80::[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}",
+                "fe80::0123:4567:89ab:cdef",
+            ),
+            // Private IPv4 addresses
+            (
+                r"192\.168\.\d{1,3}\.\d{1,3}",
+                "192.168.0.1",
+            ),
+            // Multicast addresses
+            (
+                r"239\.\d{1,3}\.\d{1,3}\.\d{1,3}",
+                "239.0.0.1",
+            ),
+        ],
+    ),
+    (
         "parameter_management_list_image_resolution",
         |client, cassette, prelude| {
             Box::pin(parameter_management_list_image_resolution(
@@ -796,6 +839,21 @@ async fn parameter_management_list_error(
 
     // TODO: Parse the error code and message
     assert!(error.to_string().contains("-1"));
+}
+
+async fn parameter_management_list_all(
+    client: Client,
+    cassette: Cassette,
+    _prelude: Option<Prelude>,
+) {
+    let mut cassette = Some(cassette);
+    let params = ListRequest::all()
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap();
+    if let Some(resolutions) = params.parse::<ImageResolution>().unwrap() {
+        assert!(!resolutions.is_empty());
+    }
 }
 
 async fn parameter_management_list_image_resolution(

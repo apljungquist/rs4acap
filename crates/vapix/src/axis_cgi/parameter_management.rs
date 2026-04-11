@@ -91,15 +91,19 @@ impl ParamList {
 
 #[derive(Clone, Debug)]
 pub struct ListRequest {
-    group: String,
+    group: Option<String>,
 }
 
 impl ListRequest {
     // TODO: Add support for retrieving groups of parameters.
     pub fn new<T: Parameter>() -> Self {
         Self {
-            group: T::KEY.to_string(),
+            group: Some(T::KEY.to_string()),
         }
+    }
+
+    pub fn all() -> Self {
+        Self { group: None }
     }
 
     pub async fn send(
@@ -107,7 +111,10 @@ impl ListRequest {
         client: &Client,
         cassette: Option<&mut Cassette>,
     ) -> anyhow::Result<ParamList> {
-        let path = format!("{PATH}?action=list&group={}", self.group);
+        let path = match &self.group {
+            Some(group) => format!("{PATH}?action=list&group={group}"),
+            None => format!("{PATH}?action=list"),
+        };
         let response = cassette::Request::no_content(Method::GET, path)
             .send::<std::convert::Infallible>(client, cassette)
             .await
