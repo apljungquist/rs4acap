@@ -121,6 +121,14 @@
         "P8815-2@11.11.192"
       ]
     },
+    "parameter_management_list_all": {
+      "6d755d80d3f1ae8e": [
+        "D4200-VE@12.9.57"
+      ],
+      "bcc2533fcd302c77": [
+        "P3245-LVE@11.11.192"
+      ]
+    },
     "parameter_management_list_error": {
       "6db8761f2ca09be4": [
         "D4200-VE@12.9.57"
