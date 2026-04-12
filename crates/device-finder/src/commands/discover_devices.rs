@@ -150,7 +150,7 @@ async fn probe(host: String, addr: String) -> anyhow::Result<(String, HashMap<St
     let mut details = HashMap::new();
     let client = rs4a_vapix::Client::builder(Host::parse(&addr)?)
         .with_inner(|b| b.danger_accept_invalid_certs(true))
-        .build_with_automatic_scheme()
+        .build()
         .await
         .context("Could not create client")?;
 

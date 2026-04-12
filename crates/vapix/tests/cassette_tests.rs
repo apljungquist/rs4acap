@@ -168,7 +168,7 @@ fn record_trials(library: &Library) -> Vec<Trial> {
             .unwrap()
             .unwrap()
             .with_inner(|b| b.danger_accept_invalid_certs(true))
-            .build_with_automatic_scheme()
+            .build()
             .await
             .unwrap()
     });
@@ -583,7 +583,11 @@ async fn remote_object_storage_1_beta_crud(client: &CassetteClient, prelude: Opt
     // List
     let all = ListDestinationsRequest::new().send(client).await.unwrap();
     assert!(all.iter().any(|d| d.id == created.id));
-    assert_eq!(all.len(), 1);
+    assert_eq!(
+        all.len(),
+        1,
+        "Expected exactly one destination in the list, but found {all:#?}"
+    );
 
     // On at least one occasion when recording, this returned an item does not exist error.
     // TODO: Consider retrying the request if the destination is not yet available.
