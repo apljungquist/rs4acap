@@ -1,32 +1,174 @@
+use std::sync::{Arc, Mutex};
+
 use anyhow::{bail, Context};
-use base64::Engine;
-use log::debug;
+use digest_auth::{AuthContext, HttpMethod, WwwAuthenticateHeader};
+use log::{debug, warn};
 use reqwest::{
-    header::{HeaderMap, AUTHORIZATION},
-    Method,
+    header::{AUTHORIZATION, WWW_AUTHENTICATE},
+    Method, StatusCode,
 };
-use url::{Host, Url};
+use url::{Host, Position, Url};
 
 use crate::{
     apis,
     http::{HttpClient, Request, Response},
 };
 
-fn authorization_headers(username: &str, password: &str) -> HeaderMap {
-    let credentials = format!("{username}:{password}");
-    let auth_header = format!(
-        "Basic {}",
-        base64::engine::general_purpose::STANDARD.encode(credentials)
-    );
-    let mut headers = HeaderMap::new();
-    headers.insert(AUTHORIZATION, auth_header.try_into().unwrap());
-    headers
+#[derive(Clone)]
+struct Secret(String);
+
+impl std::fmt::Debug for Secret {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "***")
+    }
+}
+
+#[derive(Clone, Debug)]
+struct DigestAuth {
+    username: String,
+    password: Secret,
+    challenge: Arc<Mutex<Option<WwwAuthenticateHeader>>>,
+}
+
+impl DigestAuth {
+    fn with_challenge(
+        username: String,
+        password: Secret,
+        challenge: WwwAuthenticateHeader,
+    ) -> Self {
+        Self {
+            username,
+            password,
+            challenge: Arc::new(Mutex::new(Some(challenge))),
+        }
+    }
+
+    fn compute_header(
+        &self,
+        method: &str,
+        path: &str,
+        header: &mut WwwAuthenticateHeader,
+    ) -> Option<String> {
+        let ctx = AuthContext::new_with_method(
+            &self.username,
+            &self.password.0,
+            path,
+            None::<&[u8]>,
+            HttpMethod::from(method),
+        );
+        header.respond(&ctx).ok().map(|a| a.to_header_string())
+    }
+
+    fn respond_to_challenge(
+        &self,
+        response: &reqwest::Response,
+        path: &str,
+        method: &str,
+    ) -> Option<(WwwAuthenticateHeader, String)> {
+        let www_auth = response.headers().get(WWW_AUTHENTICATE)?;
+        let www_auth = match www_auth.to_str() {
+            Ok(s) => s,
+            Err(e) => {
+                debug!("WWW-Authenticate header is not valid UTF-8: {e}");
+                return None;
+            }
+        };
+        let mut header = match digest_auth::parse(www_auth) {
+            Ok(h) => h,
+            Err(e) => {
+                debug!("Failed to parse WWW-Authenticate header: {e}");
+                return None;
+            }
+        };
+        let value = self.compute_header(method, path, &mut header)?;
+        Some((header, value))
+    }
+
+    async fn send(
+        &self,
+        builder: reqwest::RequestBuilder,
+    ) -> Result<reqwest::Response, reqwest::Error> {
+        let Some(cloned) = builder.try_clone() else {
+            debug!("Digest auth skipped: request body is not cloneable");
+            return builder.send().await;
+        };
+        let Ok(probe) = cloned.build() else {
+            debug!("Digest auth skipped: failed to build request for inspection");
+            return builder.send().await;
+        };
+        let method = probe.method().to_string();
+        let path = probe.url()[Position::AfterPort..].to_string();
+
+        let stored_auth_header = self
+            .challenge
+            .lock()
+            .unwrap_or_else(|e| {
+                let mut guard = e.into_inner();
+                *guard = None;
+                guard
+            })
+            .as_mut()
+            .and_then(|h| self.compute_header(&method, &path, h));
+
+        let Some(pilot) = builder.try_clone() else {
+            debug!("Request builder is not cloneable, ignoring any challenges in the response");
+            let builder = match stored_auth_header {
+                None => builder,
+                Some(auth_header) => builder.header(AUTHORIZATION, auth_header),
+            };
+            return builder.send().await;
+        };
+
+        let response = match stored_auth_header {
+            None => pilot.send().await?,
+            Some(auth_header) => pilot.header(AUTHORIZATION, auth_header).send().await?,
+        };
+
+        if response.status() != StatusCode::UNAUTHORIZED {
+            return Ok(response);
+        }
+
+        match self.respond_to_challenge(&response, &path, &method) {
+            None => {
+                *self.challenge.lock().unwrap_or_else(|e| e.into_inner()) = None;
+                Ok(response)
+            }
+            Some((header, value)) => {
+                *self.challenge.lock().unwrap_or_else(|e| e.into_inner()) = Some(header);
+                builder.header(AUTHORIZATION, value).send().await
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+enum Authentication {
+    Basic { username: String, password: Secret },
+    Digest(DigestAuth),
+    Anonymous,
+}
+
+impl Authentication {
+    fn digest(username: String, password: Secret) -> Self {
+        Self::Digest(DigestAuth {
+            username,
+            password,
+            challenge: Arc::new(Mutex::new(None)),
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+struct Credentials {
+    username: String,
+    password: Secret,
 }
 
 pub struct ClientBuilder {
     host: Host,
     plain_port: Option<u16>,
     secure_port: Option<u16>,
+    credentials: Option<Credentials>,
     inner: reqwest::ClientBuilder,
 }
 
@@ -36,6 +178,7 @@ impl ClientBuilder {
             host,
             plain_port: None,
             secure_port: None,
+            credentials: None,
             inner: reqwest::Client::builder(),
         }
     }
@@ -58,13 +201,15 @@ impl ClientBuilder {
             ClientBuilder::new(host)
                 .plain_port(http_port)
                 .secure_port(https_port)
-                .basic_authentication(&username, &password),
+                .username_password(&username, &password),
         ))
     }
 
-    pub fn basic_authentication(mut self, username: &str, password: &str) -> Self {
-        let headers = authorization_headers(username, password);
-        self.inner = self.inner.default_headers(headers);
+    pub fn username_password(mut self, username: &str, password: &str) -> Self {
+        self.credentials = Some(Credentials {
+            username: username.to_string(),
+            password: Secret(password.to_string()),
+        });
         self
     }
 
@@ -86,55 +231,125 @@ impl ClientBuilder {
         self
     }
 
-    pub fn build_with_scheme(self, scheme: Scheme) -> anyhow::Result<Client> {
+    pub fn build_with_scheme(self, scheme: Scheme, digest: bool) -> anyhow::Result<Client> {
         let Self {
             host,
             plain_port,
             secure_port,
+            credentials,
             inner,
         } = self;
         let client = inner.build()?;
-        let client1 = Client {
+        Ok(Client {
+            auth: match credentials {
+                None => Authentication::Anonymous,
+                Some(Credentials { username, password }) => match digest {
+                    true => Authentication::digest(username, password),
+                    false => Authentication::Basic { username, password },
+                },
+            },
             scheme,
-            host: host.clone(),
+            host,
             port: match scheme {
                 Scheme::Secure => secure_port,
                 Scheme::Plain => plain_port,
             },
             client,
-        };
-        Ok(client1)
+        })
     }
 
-    /// Automatically select an appropriate scheme and create a new client.
-    pub async fn build_with_automatic_scheme(self) -> anyhow::Result<Client> {
+    /// Create a new client and automatically set authentication and scheme
+    pub async fn build(self) -> anyhow::Result<Client> {
         let Self {
             host,
             plain_port,
             secure_port,
+            credentials,
             inner,
         } = self;
-        let client = inner.build()?;
-        let mut candidate = Client {
+
+        let mut client = Client {
+            auth: Authentication::Anonymous,
             scheme: Scheme::Secure,
             host,
             port: None,
-            client,
+            client: inner.build()?,
         };
-        for (scheme, port) in [(Scheme::Secure, secure_port), (Scheme::Plain, plain_port)] {
-            candidate.scheme = scheme;
-            candidate.port = port;
+        let () = Self::set_scheme(
+            &mut client,
+            &[(Scheme::Secure, secure_port), (Scheme::Plain, plain_port)],
+        )
+        .await?;
+        if let Some(credentials) = credentials {
+            let () = Self::set_authentication(&mut client, credentials).await?;
+        }
+        Ok(client)
+    }
+
+    async fn set_scheme(
+        candidate: &mut Client,
+        schemes: &[(Scheme, Option<u16>)],
+    ) -> anyhow::Result<()> {
+        for (scheme, port) in schemes {
+            candidate.scheme = *scheme;
+            candidate.port = *port;
             if apis::system_ready_1::system_ready()
                 .timeout(1)
-                .send(&candidate)
+                .send(candidate)
                 .await
                 .inspect_err(|e| debug!("Could not connect using {} because {e:?}", scheme.http()))
                 .is_ok()
             {
-                return Ok(candidate);
+                return Ok(());
             }
         }
-        bail!("Could not connect to either scheme")
+        Err(anyhow::anyhow!("Could not connect to either scheme"))
+    }
+
+    // TODO: Consider handling multiple www_authenticate headers.
+    async fn set_authentication(
+        client: &mut Client,
+        credentials: Credentials,
+    ) -> anyhow::Result<()> {
+        let response = client
+            .post("axis-cgi/basicdeviceinfo.cgi")?
+            .json(&serde_json::json!({
+                "apiVersion": "1.0",
+                "method": "getAllProperties"
+            }))
+            .send()
+            .await
+            .context("Failed to send request to server to check authentication")?;
+
+        if response.status() != StatusCode::UNAUTHORIZED {
+            warn!("Credentials were provided but the server did not require authentication");
+            return Ok(());
+        }
+
+        let Credentials { username, password } = credentials;
+
+        let www_auth = response
+            .headers()
+            .get(WWW_AUTHENTICATE)
+            .and_then(|x| x.to_str().ok())
+            .unwrap_or_default();
+
+        match www_auth.to_lowercase().as_str() {
+            s if s.starts_with("basic ") => {
+                client.auth = Authentication::Basic { username, password };
+            }
+            s if s.starts_with("digest ") => {
+                let header = digest_auth::parse(www_auth)?;
+                client.auth =
+                    Authentication::Digest(DigestAuth::with_challenge(username, password, header));
+            }
+            "" => {
+                bail!("Server requires authentication but no methods were offered")
+            }
+            s => bail!("Authentication method not supported: {s}"),
+        }
+
+        Ok(())
     }
 }
 
@@ -159,6 +374,7 @@ impl Scheme {
 /// The main client through which all HTTP APIs can be used.
 #[derive(Clone)]
 pub struct Client {
+    auth: Authentication,
     scheme: Scheme,
     host: Host,
     port: Option<u16>,
@@ -170,16 +386,17 @@ impl Client {
         ClientBuilder::new(host)
     }
 
-    pub fn get(&self, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
+    pub fn get(&self, path: &str) -> anyhow::Result<RequestBuilder> {
         self.request(Method::GET, path)
     }
 
-    pub fn post(&self, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
+    pub fn post(&self, path: &str) -> anyhow::Result<RequestBuilder> {
         self.request(Method::POST, path)
     }
 
-    pub fn request(&self, method: Method, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
-        Ok(self.client.request(method, self.url().join(path)?))
+    pub fn request(&self, method: Method, path: &str) -> anyhow::Result<RequestBuilder> {
+        let builder = self.client.request(method, self.url().join(path)?);
+        Ok(RequestBuilder::new(self.auth.clone(), builder))
     }
 
     fn url(&self) -> Url {
@@ -196,6 +413,58 @@ impl Client {
     }
 }
 
+pub struct RequestBuilder {
+    auth: Authentication,
+    builder: reqwest::RequestBuilder,
+}
+
+impl RequestBuilder {
+    fn new(auth: Authentication, builder: reqwest::RequestBuilder) -> Self {
+        Self { auth, builder }
+    }
+
+    pub fn query<T: serde::Serialize + ?Sized>(self, query: &T) -> Self {
+        Self {
+            auth: self.auth,
+            builder: self.builder.query(query),
+        }
+    }
+
+    pub fn header(self, key: reqwest::header::HeaderName, value: &str) -> Self {
+        Self {
+            auth: self.auth,
+            builder: self.builder.header(key, value),
+        }
+    }
+
+    pub fn body<T: Into<reqwest::Body>>(self, body: T) -> Self {
+        Self {
+            auth: self.auth,
+            builder: self.builder.body(body),
+        }
+    }
+
+    pub fn json<T: serde::Serialize + ?Sized>(self, json: &T) -> Self {
+        Self {
+            auth: self.auth,
+            builder: self.builder.json(json),
+        }
+    }
+
+    pub async fn send(self) -> Result<reqwest::Response, reqwest::Error> {
+        match self.auth {
+            Authentication::Basic { username, password } => {
+                self.builder
+                    .basic_auth(&username, Some(&password.0))
+                    .send()
+                    .await
+            }
+            Authentication::Digest(digest) => digest.send(self.builder).await,
+            Authentication::Anonymous => self.builder.send().await,
+        }
+    }
+}
+
 impl HttpClient for Client {
     async fn execute(&self, request: Request) -> Result<Response, anyhow::Error> {
         let mut request_builder = self.request(request.method, &request.path)?;
@@ -204,7 +473,7 @@ impl HttpClient for Client {
             request_builder = request_builder.body(body);
         }
         if let Some(content_type) = request.content_type {
-            request_builder = request_builder.header(reqwest::header::CONTENT_TYPE, content_type);
+            request_builder = request_builder.header(reqwest::header::CONTENT_TYPE, &content_type);
         }
         let response = request_builder.send().await.context("failed to send")?;
         Ok(Response {
