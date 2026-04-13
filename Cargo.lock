@@ -1809,6 +1809,7 @@ dependencies = [
  "anyhow",
  "base32",
  "base64",
+ "clap",
  "env_logger",
  "expect-test",
  "libtest-mimic",

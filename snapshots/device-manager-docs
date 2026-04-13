@@ -11,6 +11,7 @@ Commands:
   restore      Restore the device to a clean state (factory default)
   init         Initialize a device in setup mode
   reinit       Restore and initialize the device to a known, useful state
+  upgrade      Upgrade the device firmware
   completions  Generate shell completions
   help         Print this message or the help of the given subcommand(s)
 
@@ -66,3 +67,30 @@ Options:
   -u, --user <USER>              The username to use for authentication [env: AXIS_DEVICE_USER=] [default: root]
   -p, --pass <PASS>              The password to use for authentication [env: AXIS_DEVICE_PASS=] [default: pass]
   -h, --help                     Print help
++ device-manager help upgrade
+Upgrade the device firmware
+
+Usage: device-manager upgrade [OPTIONS] --host <HOST> <FIRMWARE>
+
+Arguments:
+  <FIRMWARE>  Path to the firmware image
+
+Options:
+      --host <HOST>
+          Hostname or IP address of the device [env: AXIS_DEVICE_IP=]
+      --http-port <HTTP_PORT>
+          Override the default port for HTTP [env: AXIS_DEVICE_HTTP_PORT=]
+      --https-port <HTTPS_PORT>
+          Override the default port for HTTPS [env: AXIS_DEVICE_HTTPS_PORT=]
+  -u, --user <USER>
+          The username to use for authentication [env: AXIS_DEVICE_USER=] [default: root]
+  -p, --pass <PASS>
+          The password to use for authentication [env: AXIS_DEVICE_PASS=] [default: pass]
+  -f, --factory-default-mode <FACTORY_DEFAULT_MODE>
+          Factory default mode to apply during upgrade [default: none] [possible values: none, soft, hard]
+  -c, --auto-commit <AUTO_COMMIT>
+          Auto-commit behavior after upgrade [default: default] [possible values: never, boot, started, default]
+  -r, --auto-rollback <AUTO_ROLLBACK>
+          Auto-rollback behavior: "never", "default", or minutes [default: default]
+  -h, --help
+          Print help

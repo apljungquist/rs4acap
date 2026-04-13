@@ -16,6 +16,7 @@ use rs4a_vapix::{
     apis::basic_device_info_1,
     basic_device_info_1::{ProductType, UnrestrictedProperties},
     cassette::{Cassette, Mode},
+    firmware_management_1::UpgradeRequest,
     http,
     json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless},
     parameter_management::{ImageResolution, ListRequest},
@@ -379,6 +380,7 @@ cassette_tests! {
     device_configuration_item_does_not_exist,
     device_configuration_validation_error,
     device_configuration_item_already_exists,
+    firmware_management_1_upgrade_mismatch,
     parameter_management_list_error,
     parameter_management_list_image_resolution,
     remote_object_storage_1_beta_crud,
@@ -720,6 +722,33 @@ async fn device_configuration_item_already_exists(
         .send(&client, cassette.as_mut())
         .await
         .unwrap();
+}
+
+// This normally happens if the firmware is for a different device model.
+// Apparently it also happens with an invalid firmware binary.
+async fn firmware_management_1_upgrade_mismatch(
+    client: Client,
+    cassette: Cassette,
+    _prelude: Option<Prelude>,
+) {
+    let mut cassette = Some(cassette);
+    let firmware = b"DUMMY_FIRMWARE_BYTES".to_vec();
+    let error = UpgradeRequest::new(firmware)
+        .send(&client, cassette.as_mut())
+        .await
+        .unwrap_err();
+
+    // TODO: Propagate as service error.
+    let http::Error::Decode(error) = error else {
+        panic!("Expected Decode error but got {error:?}");
+    };
+
+    let error = format!("{error:?}");
+
+    assert!(
+        error.contains("421"),
+        "Expected error code 421 but got: {error}"
+    );
 }
 
 async fn parameter_management_list_error(

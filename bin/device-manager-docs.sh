@@ -14,3 +14,4 @@ device-manager help completions
 device-manager help init
 device-manager help reinit
 device-manager help restore
+device-manager help upgrade
