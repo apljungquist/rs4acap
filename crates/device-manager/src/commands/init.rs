@@ -16,20 +16,8 @@ pub struct InitCommand {
 
 impl InitCommand {
     pub async fn exec(self) -> anyhow::Result<()> {
-        require_root_user(&self.netloc)?;
         initialize(&self.netloc).await
     }
-}
-
-pub fn require_root_user(netloc: &Netloc) -> anyhow::Result<()> {
-    if netloc.user != "root" {
-        bail!(
-            "The --user must be 'root' (got '{}'); the initial user is always 'root' \
-             because older firmware requires it",
-            netloc.user
-        );
-    }
-    Ok(())
 }
 
 fn parse_firmware_version(s: &str) -> anyhow::Result<Version> {
@@ -40,17 +28,9 @@ fn parse_firmware_version(s: &str) -> anyhow::Result<Version> {
     Ok(Version::new(major, minor, patch))
 }
 
-async fn apply_setup_profile(client: &rs4a_vapix::Client) -> anyhow::Result<()> {
-    let data = basic_device_info_1::get_all_unrestricted_properties()
-        .send(client)
-        .await
-        .context("Failed to query firmware version")?;
-    let version = parse_firmware_version(&data.property_list.version)
-        .context("Failed to parse firmware version")?;
-    debug!("Detected firmware version: {version}");
-
+async fn apply_setup_profile(client: &rs4a_vapix::Client, version: &Version) -> anyhow::Result<()> {
     let allows_unsigned_toggle =
-        version >= Version::new(11, 2, 0) && version < Version::new(13, 0, 0);
+        *version >= Version::new(11, 2, 0) && *version < Version::new(13, 0, 0);
 
     if allows_unsigned_toggle {
         info!("Allowing unsigned ACAP applications...");
@@ -75,15 +55,58 @@ pub async fn initialize(netloc: &Netloc) -> anyhow::Result<()> {
         bail!("Expected device to be in setup mode, but needsetup is false");
     }
 
-    info!("Adding root user...");
-    AddUserRequest::new(
-        "root",
-        &netloc.pass,
-        pwdgrp::Group::Root,
-        pwdgrp::Role::AdminOperatorViewerPtz,
-    )
-    .send(&client)
-    .await?;
+    let data = basic_device_info_1::get_all_unrestricted_properties()
+        .send(&client)
+        .await
+        .context("Failed to query firmware version")?;
+    let version = parse_firmware_version(&data.property_list.version)
+        .context("Failed to parse firmware version")?;
+    debug!("Detected firmware version: {version}");
+
+    let needs_root_trampoline =
+        version < Version::new(11, 0, 0) && netloc.user != "root";
+
+    if needs_root_trampoline {
+        // Older firmware requires the first user to be "root".
+        // Create root, authenticate, then create the target user.
+        info!("Adding root user (trampoline for firmware < 11)...");
+        AddUserRequest::new(
+            "root",
+            &netloc.pass,
+            pwdgrp::Group::Root,
+            pwdgrp::Role::AdminOperatorViewerPtz,
+        )
+        .send(&client)
+        .await?;
+
+        let client = netloc.connect_as("root", &netloc.pass).await?;
+
+        info!("Adding user '{}'...", netloc.user);
+        AddUserRequest::new(
+            &netloc.user,
+            &netloc.pass,
+            pwdgrp::Group::Users,
+            pwdgrp::Role::AdminOperatorViewerPtz,
+        )
+        .send(&client)
+        .await?;
+    } else {
+        let group = if netloc.user == "root" {
+            pwdgrp::Group::Root
+        } else {
+            pwdgrp::Group::Users
+        };
+
+        info!("Adding user '{}'...", netloc.user);
+        AddUserRequest::new(
+            &netloc.user,
+            &netloc.pass,
+            group,
+            pwdgrp::Role::AdminOperatorViewerPtz,
+        )
+        .send(&client)
+        .await?;
+    }
 
     // Device no longer needs setup, authentication is required
     let client = netloc.connect().await?;
@@ -100,7 +123,7 @@ pub async fn initialize(netloc: &Netloc) -> anyhow::Result<()> {
         Err(e) => warn!("Failed to remove known_hosts entry: {e:?}"),
     }
 
-    apply_setup_profile(&client).await?;
+    apply_setup_profile(&client, &version).await?;
 
     info!("Device initialized");
     Ok(())

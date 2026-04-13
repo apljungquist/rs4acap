@@ -30,10 +30,14 @@ pub struct Netloc {
 
 impl Netloc {
     pub async fn connect(&self) -> anyhow::Result<rs4a_vapix::Client> {
+        self.connect_as(&self.user, &self.pass).await
+    }
+
+    pub async fn connect_as(&self, user: &str, pass: &str) -> anyhow::Result<rs4a_vapix::Client> {
         rs4a_vapix::ClientBuilder::new(self.host.clone())
             .plain_port(self.http_port)
             .secure_port(self.https_port)
-            .basic_authentication(&self.user, &self.pass)
+            .basic_authentication(user, pass)
             .with_inner(|b| b.danger_accept_invalid_certs(true))
             .build_with_automatic_scheme()
             .await
