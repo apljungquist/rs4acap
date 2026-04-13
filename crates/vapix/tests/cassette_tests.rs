@@ -335,114 +335,65 @@ type TestFn = fn(Client, Cassette, Option<Prelude>) -> Pin<Box<dyn Future<Output
 type Substitutions = &'static [(&'static str, &'static str)];
 type TestEntry = (&'static str, TestFn, Substitutions);
 
-const TESTS: &[TestEntry] = &[
-    (
-        "basic_device_info_get_all_properties",
-        |client, cassette, prelude| {
-            Box::pin(basic_device_info_get_all_properties(
-                client, cassette, prelude,
-            ))
-        },
-        &[
-            (
-                r#""SocSerialNumber": "[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}""#,
-                r#""SocSerialNumber": "00000000-00000000-01234567-89ABCDEF""#,
-            ),
-            (
-                r#""SocSerialNumber": "[0-9A-F]{16}""#,
-                r#""SocSerialNumber": "0123456789ABCDEF""#,
-            ),
-            (
-                r#""SerialNumber": "[0-9A-F]{12}""#,
-                r#""SerialNumber": "0123456789AB""#,
-            ),
-        ],
-    ),
-    (
-        "basic_device_info_get_all_unrestricted_properties",
-        |client, cassette, prelude| {
-            Box::pin(basic_device_info_get_all_unrestricted_properties(
-                client, cassette, prelude,
-            ))
-        },
-        &[(
+macro_rules! cassette_tests {
+    (@entry $name:ident => [$($sub:expr),* $(,)?]) => {
+        (
+            stringify!($name),
+            (|client, cassette, prelude| {
+                Box::pin($name(client, cassette, prelude))
+            }) as TestFn,
+            &[$($sub),*] as Substitutions,
+        )
+    };
+    (@entry $name:ident) => {
+        cassette_tests!(@entry $name => [])
+    };
+    ($($name:ident $(=> [$($sub:expr),* $(,)?])?),* $(,)?) => {
+        const TESTS: &[TestEntry] = &[
+            $(cassette_tests!(@entry $name $(=> [$($sub),*])?),)*
+        ];
+    };
+}
+
+cassette_tests! {
+    basic_device_info_get_all_properties => [
+        (
+            r#""SocSerialNumber": "[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}""#,
+            r#""SocSerialNumber": "00000000-00000000-01234567-89ABCDEF""#,
+        ),
+        (
+            r#""SocSerialNumber": "[0-9A-F]{16}""#,
+            r#""SocSerialNumber": "0123456789ABCDEF""#,
+        ),
+        (
             r#""SerialNumber": "[0-9A-F]{12}""#,
             r#""SerialNumber": "0123456789AB""#,
-        )],
-    ),
-    (
-        "device_configuration_item_does_not_exist",
-        |client, cassette, prelude| {
-            Box::pin(device_configuration_item_does_not_exist(
-                client, cassette, prelude,
-            ))
-        },
-        &[],
-    ),
-    (
-        "device_configuration_validation_error",
-        |client, cassette, prelude| {
-            Box::pin(device_configuration_validation_error(
-                client, cassette, prelude,
-            ))
-        },
-        &[],
-    ),
-    (
-        "device_configuration_item_already_exists",
-        |client, cassette, prelude| {
-            Box::pin(device_configuration_item_already_exists(
-                client, cassette, prelude,
-            ))
-        },
-        &[],
-    ),
-    (
-        "parameter_management_list_error",
-        |client, cassette, prelude| {
-            Box::pin(parameter_management_list_error(client, cassette, prelude))
-        },
-        &[],
-    ),
-    (
-        "parameter_management_list_image_resolution",
-        |client, cassette, prelude| {
-            Box::pin(parameter_management_list_image_resolution(
-                client, cassette, prelude,
-            ))
-        },
-        &[],
-    ),
-    (
-        "remote_object_storage_1_beta_crud",
-        |client, cassette, prelude| {
-            Box::pin(remote_object_storage_1_beta_crud(client, cassette, prelude))
-        },
-        &[],
-    ),
-    (
-        "siren_and_light_2_alpha_maintenance_mode_not_supported",
-        |client, cassette, prelude| {
-            Box::pin(siren_and_light_2_alpha_maintenance_mode_not_supported(
-                client, cassette, prelude,
-            ))
-        },
-        &[],
-    ),
-    (
-        "system_ready_1_system_ready",
-        |client, cassette, prelude| {
-            Box::pin(system_ready_1_system_ready(client, cassette, prelude))
-        },
-        &[
-            (r#""uptime": "\d+""#, r#""uptime": "0""#),
-            (
-                r#""bootid": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}""#,
-                r#""bootid": "00000000-0000-0000-0000-000000000000""#,
-            ),
-        ],
-    ),
-];
+        ),
+    ],
+    basic_device_info_get_all_unrestricted_properties => [
+        (
+            r#""SerialNumber": "[0-9A-F]{12}""#,
+            r#""SerialNumber": "0123456789AB""#,
+        ),
+    ],
+    device_configuration_item_does_not_exist,
+    device_configuration_validation_error,
+    device_configuration_item_already_exists,
+    parameter_management_list_error,
+    parameter_management_list_image_resolution,
+    remote_object_storage_1_beta_crud,
+    siren_and_light_2_alpha_maintenance_mode_not_supported,
+    system_ready_1_system_ready => [
+        (
+            r#""uptime": "\d+""#,
+            r#""uptime": "0""#
+        ),
+        (
+            r#""bootid": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}""#,
+            r#""bootid": "00000000-0000-0000-0000-000000000000""#,
+        ),
+    ],
+}
 
 fn record_trials(library: &Library) -> Vec<Trial> {
     let rt = tokio::runtime::Builder::new_current_thread()
