@@ -31,7 +31,7 @@ use rs4a_vapix::{
     },
     Client, ClientBuilder, Scheme,
 };
-use semver::{Version, VersionReq};
+use semver::VersionReq;
 use serde::{Deserialize, Serialize};
 use url::{Host, Url};
 // When a test fails, it may leave resources intact that will cause future runs to fail.
@@ -77,7 +77,7 @@ impl Prelude {
 
 impl Prelude {
     fn version_matches(&self, req: &str) -> bool {
-        let v = Version::parse(self.props.version.as_str()).unwrap();
+        let v = self.props.parse_version().unwrap();
         let req = VersionReq::parse(req).unwrap();
         req.matches(&v)
     }
@@ -604,6 +604,7 @@ async fn basic_device_info_get_all_unrestricted_properties(
         .property_list;
 
     property_list.parse_product_type().unwrap();
+    property_list.parse_version().unwrap();
 }
 
 async fn device_configuration_item_does_not_exist(

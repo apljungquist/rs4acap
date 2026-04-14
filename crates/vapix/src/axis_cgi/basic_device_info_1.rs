@@ -8,6 +8,7 @@ use std::{
 };
 
 use anyhow::{anyhow, bail, Context};
+use semver::Version;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless};
@@ -112,6 +113,12 @@ pub struct UnrestrictedProperties {
 impl UnrestrictedProperties {
     pub fn parse_product_type(&self) -> anyhow::Result<ProductType> {
         self.prod_type.parse().context("invalid product type")
+    }
+
+    // AXIS OS versions less than 10 do not always follow semver.
+    // TODO: Parse firmware versions <10
+    pub fn parse_version(&self) -> anyhow::Result<Version> {
+        Version::parse(self.version.as_str()).context("invalid version")
     }
 }
 
