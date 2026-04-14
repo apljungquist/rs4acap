@@ -1,0 +1,7 @@
+{
+  "apiVersion": "1.8",
+  "method": "upgrade",
+  "data": {
+    "firmwareVersion": "12.9.57"
+  }
+}

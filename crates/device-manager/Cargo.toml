@@ -9,8 +9,8 @@ anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 log = { workspace = true }
 semver = { workspace = true }
-tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "fs"] }
 url = { workspace = true }
 
 rs4a-bin-utils = { workspace = true }
-rs4a-vapix = { workspace = true }
+rs4a-vapix = { workspace = true, features = ["clap"] }

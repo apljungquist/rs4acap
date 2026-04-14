@@ -67,6 +67,7 @@ Commands:
   restore      Restore the device to a clean state (factory default)
   init         Initialize a device in setup mode
   reinit       Restore and initialize the device to a known, useful state
+  upgrade      Upgrade the device firmware
   completions  Generate shell completions
   help         Print this message or the help of the given subcommand(s)
 

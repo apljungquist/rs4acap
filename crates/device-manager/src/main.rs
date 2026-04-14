@@ -1,13 +1,16 @@
 #![forbid(unsafe_code)]
 
 mod commands;
+mod restart_detector;
 mod ssh_keygen;
 
 use clap::{Parser, Subcommand};
 use rs4a_bin_utils::completions_command::CompletionsCommand;
 use url::Host;
 
-use crate::commands::{init::InitCommand, reinit::ReinitCommand, restore::RestoreCommand};
+use crate::commands::{
+    init::InitCommand, reinit::ReinitCommand, restore::RestoreCommand, upgrade::UpgradeCommand,
+};
 
 #[derive(Clone, Debug, clap::Args)]
 pub struct Netloc {
@@ -61,6 +64,7 @@ impl Cli {
             Commands::Restore(cmd) => cmd.exec().await?,
             Commands::Init(cmd) => cmd.exec().await?,
             Commands::Reinit(cmd) => cmd.exec().await?,
+            Commands::Upgrade(cmd) => cmd.exec().await?,
             Commands::Completions(cmd) => cmd.exec::<Self>()?,
         }
         Ok(())
@@ -75,6 +79,8 @@ enum Commands {
     Init(InitCommand),
     /// Restore and initialize the device to a known, useful state
     Reinit(ReinitCommand),
+    /// Upgrade the device firmware
+    Upgrade(UpgradeCommand),
     /// Generate shell completions
     ///
     /// Example: `device-manager completions zsh | source /dev/stdin`

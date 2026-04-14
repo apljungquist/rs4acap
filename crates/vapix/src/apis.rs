@@ -50,7 +50,7 @@ pub mod system_ready_1 {
 }
 
 pub mod firmware_management_1 {
-    pub use crate::firmware_management_1::FactoryDefaultRequest;
+    pub use crate::firmware_management_1::{FactoryDefaultRequest, UpgradeRequest};
 }
 
 pub mod parameter_management {

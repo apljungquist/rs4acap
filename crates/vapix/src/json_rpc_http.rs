@@ -14,7 +14,7 @@ use crate::{
     Client,
 };
 
-fn from_response<T>(status: StatusCode, text: reqwest::Result<String>) -> anyhow::Result<T>
+pub fn from_response<T>(status: StatusCode, text: reqwest::Result<String>) -> anyhow::Result<T>
 where
     T: for<'a> Deserialize<'a>,
 {
@@ -22,7 +22,10 @@ where
     parse_data(&text).with_context(|| format!("Could not parse data, status was {status}"))
 }
 
-fn from_response_lossless<T>(status: StatusCode, text: reqwest::Result<String>) -> anyhow::Result<T>
+pub fn from_response_lossless<T>(
+    status: StatusCode,
+    text: reqwest::Result<String>,
+) -> anyhow::Result<T>
 where
     T: for<'a> Deserialize<'a> + Serialize,
 {

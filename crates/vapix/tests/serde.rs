@@ -3,6 +3,7 @@ use rs4a_vapix::{
     action1::{AddActionConfigurationResponse, Condition},
     apis,
     basic_device_info_1::{AllPropertiesData, AllUnrestrictedPropertiesData, Architecture},
+    firmware_management_1::UpgradeData,
     json_rpc::{parse_data, parse_data_lossless},
     rest,
     rest_http::RestHttp,
@@ -33,6 +34,16 @@ fn can_deserialize_basic_device_info_1_examples() {
         "../src/axis_cgi/basic_device_info_1/get_all_unrestricted_properties_2004_error_1_0.json"
     );
     parse_data_lossless::<AllUnrestrictedPropertiesData>(text).unwrap_err();
+    // TODO: Expose error code
+}
+
+#[test]
+fn can_deserialize_firmware_management_1_examples() {
+    let text = include_str!("../src/axis_cgi/firmware_management_1/upgrade_1_0.json");
+    let UpgradeData { .. } = parse_data_lossless::<UpgradeData>(text).unwrap();
+
+    let text = include_str!("../src/axis_cgi/firmware_management_1/upgrade_409_error_1_0.json");
+    parse_data_lossless::<UpgradeData>(text).unwrap_err();
     // TODO: Expose error code
 }
 

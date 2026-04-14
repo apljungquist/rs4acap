@@ -17,7 +17,7 @@ use crate::{http::Error, Client};
 pub struct Request {
     method: Method,
     path: String,
-    body: Option<String>,
+    body: Option<Vec<u8>>,
     content_type: Option<String>,
 }
 
@@ -31,6 +31,15 @@ impl Request {
         }
     }
 
+    pub fn multipart_form_data(method: Method, path: String, boundary: &str) -> Self {
+        Self {
+            method,
+            path,
+            body: None,
+            content_type: Some(format!("multipart/form-data; boundary={boundary}")),
+        }
+    }
+
     pub fn no_content(method: Method, path: String) -> Self {
         Self {
             method,
@@ -41,6 +50,11 @@ impl Request {
     }
 
     pub fn body(mut self, body: String) -> Self {
+        self.body = Some(body.into_bytes());
+        self
+    }
+
+    pub fn body_bytes(mut self, body: Vec<u8>) -> Self {
         self.body = Some(body);
         self
     }
@@ -58,7 +72,7 @@ impl Request {
             content.push_str(&format!("Content-Type: {content_type}\n"));
         }
         if let Some(body) = body {
-            content.push_str(&format!("\n{body}"));
+            content.push_str(&format!("\n{}", String::from_utf8_lossy(body)));
         }
         let () =
             fs::write(file, content).with_context(|| format!("Could not write file {file:?}"))?;
@@ -82,7 +96,9 @@ impl Request {
         method.hash(&mut hasher);
         path.hash(&mut hasher);
         if let Some(body) = body {
-            body.hash(&mut hasher);
+            // Hash as str to stay compatible with cassettes recorded when body was String.
+            hasher.write(body);
+            hasher.write_u8(0xff);
         }
         content_type.hash(&mut hasher);
         hasher.finish()
