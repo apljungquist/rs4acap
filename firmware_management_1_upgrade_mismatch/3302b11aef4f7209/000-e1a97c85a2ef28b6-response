@@ -1,0 +1,10 @@
+200 OK
+
+{
+  "apiVersion": "1.8",
+  "method": "upgrade",
+  "error": {
+    "code": 421,
+    "message": "Firmware image does not match this device."
+  }
+}
