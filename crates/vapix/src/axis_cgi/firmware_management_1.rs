@@ -8,13 +8,12 @@ use std::{
 };
 
 use anyhow::Context;
-use log::trace;
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     http::{Error, HttpClient, Request},
-    json_rpc_http::{from_response, from_response_lossless, JsonRpcHttp, JsonRpcHttpLossless},
+    json_rpc_http,
 };
 
 const PATH: &str = "axis-cgi/firmwaremanagement.cgi";
@@ -65,15 +64,13 @@ impl FactoryDefaultRequest {
             },
         }
     }
-}
 
-impl JsonRpcHttp for FactoryDefaultRequest {
-    type Data = FactoryDefaultData;
-    const PATH: &'static str = PATH;
-}
-
-impl JsonRpcHttpLossless for FactoryDefaultRequest {
-    type Data = FactoryDefaultData;
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<FactoryDefaultData, Error<Infallible>> {
+        json_rpc_http::send_request(client, PATH, &self).await
+    }
 }
 
 #[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
@@ -197,7 +194,10 @@ impl UpgradeRequest {
         body
     }
 
-    pub async fn send(self, client: &impl HttpClient) -> Result<UpgradeData, Error<Infallible>> {
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<UpgradeData, Error<Infallible>> {
         let boundary = "----FormBoundaryS6untlhO8j7poXo";
 
         let json = serde_json::to_string(&self.json)
@@ -215,17 +215,7 @@ impl UpgradeRequest {
 
         let text = response.body;
 
-        if cfg!(debug_assertions) {
-            if let Ok(text) = text.as_deref() {
-                trace!("Received {status}: {text}");
-            }
-        }
-
-        match cfg!(debug_assertions) {
-            true => from_response_lossless(status, text),
-            false => from_response(status, text),
-        }
-        .map_err(Error::Decode)
+        json_rpc_http::from_response(status, text).map_err(Error::Decode)
     }
 }
 

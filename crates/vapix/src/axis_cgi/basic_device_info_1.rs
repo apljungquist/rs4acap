@@ -3,6 +3,7 @@
 //! [Basic device information]: https://developer.axis.com/vapix/network-video/basic-device-information/
 
 use std::{
+    convert::Infallible,
     fmt::{Display, Formatter},
     str::FromStr,
 };
@@ -11,7 +12,10 @@ use anyhow::{anyhow, bail, Context};
 use semver::Version;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless};
+use crate::{
+    http::{Error, HttpClient},
+    json_rpc_http,
+};
 
 fn serialize_none_as_empty_string<T, S>(value: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -138,13 +142,15 @@ impl Default for GetAllUnrestrictedPropertiesRequest {
     }
 }
 
-impl JsonRpcHttp for GetAllUnrestrictedPropertiesRequest {
-    type Data = AllUnrestrictedPropertiesData;
-    const PATH: &'static str = "axis-cgi/basicdeviceinfo.cgi";
-}
+const PATH: &str = "axis-cgi/basicdeviceinfo.cgi";
 
-impl JsonRpcHttpLossless for GetAllUnrestrictedPropertiesRequest {
-    type Data = AllUnrestrictedPropertiesData;
+impl GetAllUnrestrictedPropertiesRequest {
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<AllUnrestrictedPropertiesData, Error<Infallible>> {
+        json_rpc_http::send_request(client, PATH, &self).await
+    }
 }
 
 #[non_exhaustive]
@@ -293,13 +299,13 @@ impl Default for GetAllPropertiesRequest {
     }
 }
 
-impl JsonRpcHttp for GetAllPropertiesRequest {
-    type Data = AllPropertiesData;
-    const PATH: &'static str = "axis-cgi/basicdeviceinfo.cgi";
-}
-
-impl JsonRpcHttpLossless for GetAllPropertiesRequest {
-    type Data = AllPropertiesData;
+impl GetAllPropertiesRequest {
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<AllPropertiesData, Error<Infallible>> {
+        json_rpc_http::send_request(client, PATH, &self).await
+    }
 }
 
 pub fn get_all_properties() -> GetAllPropertiesRequest {

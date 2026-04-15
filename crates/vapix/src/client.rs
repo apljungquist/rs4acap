@@ -10,7 +10,6 @@ use url::{Host, Url};
 use crate::{
     apis,
     http::{HttpClient, Request, Response},
-    json_rpc_http::JsonRpcHttp,
 };
 
 fn authorization_headers(username: &str, password: &str) -> HeaderMap {

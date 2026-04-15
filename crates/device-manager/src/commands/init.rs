@@ -1,8 +1,8 @@
 use anyhow::{bail, Context};
 use log::{debug, info, warn};
 use rs4a_vapix::{
-    applications_config, basic_device_info_1, json_rpc_http::JsonRpcHttp, parameter_management,
-    pwdgrp, pwdgrp::AddUserRequest, system_ready_1,
+    applications_config, basic_device_info_1, parameter_management, pwdgrp, pwdgrp::AddUserRequest,
+    system_ready_1,
 };
 use semver::Version;
 
