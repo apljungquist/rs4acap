@@ -3,7 +3,10 @@
 use reqwest::Method;
 use serde_json::json;
 
-use crate::{http::Request, rest_http2::RestHttp2};
+use crate::{
+    http::{Error, HttpClient, Request},
+    rest, rest_http,
+};
 
 const BASE_PATH: &str = "config/rest/siren-and-light/v2alpha";
 
@@ -36,13 +39,16 @@ impl GetMaintenanceModeRequest {
     pub fn new() -> Self {
         Self
     }
-}
 
-impl RestHttp2 for GetMaintenanceModeRequest {
-    type ResponseData = MaintenanceModeData;
-
-    fn to_request(self) -> Request {
+    pub fn into_request(self) -> Request {
         Request::no_content(Method::GET, format!("{BASE_PATH}/maintenanceMode"))
+    }
+
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<MaintenanceModeData, Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
     }
 }
 
@@ -57,16 +63,19 @@ impl StartMaintenanceModeRequest {
             data: StartMaintenanceModeData::default(),
         }
     }
-}
 
-impl RestHttp2 for StartMaintenanceModeRequest {
-    type ResponseData = EmptyData;
-
-    fn to_request(self) -> Request {
+    pub fn into_request(self) -> Request {
         // PANICS:
         // The `unwrap` will never panic because `self.data` can always be serialized to JSON.
         Request::json(Method::POST, format!("{BASE_PATH}/maintenanceMode/start"))
             .body(serde_json::to_string_pretty(&json!({"data": self.data})).unwrap())
+    }
+
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<EmptyData, Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
     }
 }
 
@@ -77,15 +86,18 @@ impl StopMaintenanceModeRequest {
     pub fn new() -> Self {
         Self
     }
-}
 
-impl RestHttp2 for StopMaintenanceModeRequest {
-    type ResponseData = EmptyData;
-
-    fn to_request(self) -> Request {
+    pub fn into_request(self) -> Request {
         // PANICS:
         // The `unwrap` will never panic because the body is a static JSON value.
         Request::json(Method::POST, format!("{BASE_PATH}/maintenanceMode/stop"))
             .body(serde_json::to_string_pretty(&json!({"data": {}})).unwrap())
+    }
+
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<EmptyData, Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
     }
 }

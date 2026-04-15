@@ -5,8 +5,6 @@ use rs4a_vapix::{
     action1::Condition,
     apis,
     remote_object_storage_1_beta::{CreateDestinationRequest, DestinationId, S3Destination},
-    rest_http::RestHttp,
-    rest_http2::RestHttp2,
     soap_http::SoapHttpRequest,
     Client, ClientBuilder,
 };

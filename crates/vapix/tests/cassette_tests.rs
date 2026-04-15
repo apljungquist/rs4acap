@@ -24,7 +24,6 @@ use rs4a_vapix::{
         DestinationId, ListDestinationsRequest, UpdateDestinationRequest,
     },
     rest::ErrorKind,
-    rest_http2::RestHttp2,
     siren_and_light_2_alpha::{
         GetMaintenanceModeRequest, StartMaintenanceModeRequest, StopMaintenanceModeRequest,
     },

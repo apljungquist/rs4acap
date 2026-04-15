@@ -6,7 +6,6 @@ use rs4a_vapix::{
     firmware_management_1::UpgradeData,
     json_rpc::{parse_data, parse_data_lossless},
     rest,
-    rest_http::RestHttp,
     soap::parse_soap,
     soap_http::SoapRequest,
     ssh_1::{AddUserResponse, SetUserResponse},
@@ -114,21 +113,18 @@ fn can_serialize_action_1_requests() {
 
 #[test]
 fn can_serialize_ssh_1_add_user_requests() {
-    let (path, data) = apis::ssh_1::add_user("Dalliard", "Good morning")
-        .to_path_and_data()
-        .unwrap();
-    expect_file!["./snapshots/add_user_path.txt"].assert_eq(&path);
+    let request = apis::ssh_1::add_user("Dalliard", "Good morning").into_request();
+    expect_file!["./snapshots/add_user_path.txt"].assert_eq(&request.path);
     expect_file!["./snapshots/add_user_data.json"]
-        .assert_eq(&serde_json::to_string(&data).unwrap());
+        .assert_eq(&String::from_utf8(request.body.unwrap()).unwrap());
 }
 
 #[test]
 fn can_serialize_ssh_1_set_user_requests() {
-    let (path, data) = apis::ssh_1::set_user("Dalliard")
+    let request = apis::ssh_1::set_user("Dalliard")
         .comment("When's the day?")
-        .to_path_and_data()
-        .unwrap();
-    expect_file!["./snapshots/set_user_path.txt"].assert_eq(&path);
+        .into_request();
+    expect_file!["./snapshots/set_user_path.txt"].assert_eq(&request.path);
     expect_file!["./snapshots/set_user_data.json"]
-        .assert_eq(&serde_json::to_string(&data).unwrap());
+        .assert_eq(&String::from_utf8(request.body.unwrap()).unwrap());
 }

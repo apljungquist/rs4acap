@@ -1,1 +1,7 @@
-{"comment":null,"password":"Good morning","username":"Dalliard"}
+{
+  "data": {
+    "comment": null,
+    "password": "Good morning",
+    "username": "Dalliard"
+  }
+}

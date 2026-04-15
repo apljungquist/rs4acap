@@ -8,7 +8,6 @@ pub mod json_rpc;
 pub(crate) mod json_rpc_http;
 pub mod rest;
 pub mod rest_http;
-pub mod rest_http2;
 mod services;
 pub mod soap;
 pub mod soap_http;
