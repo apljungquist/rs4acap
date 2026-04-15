@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use expect_test::expect_file;
 use rs4a_vapix::{
     action1::{AddActionConfigurationResponse, Condition},
@@ -49,6 +51,16 @@ fn can_deserialize_system_ready_1_examples() {
     let text = include_str!("../src/axis_cgi/system_ready_1/system_ready_200.json");
     let data = parse_data::<SystemreadyData>(text).unwrap();
     assert!(!data.needsetup);
+}
+
+#[test]
+fn can_deserialize_system_ready_1_preview_mode() {
+    let text = include_str!("serde/system_ready_1_preview_mode.json");
+    let data = parse_data::<SystemreadyData>(text).unwrap();
+    assert_eq!(
+        data.parse_preview_mode().unwrap(),
+        Some(Duration::from_secs(7200))
+    );
 }
 
 #[test]

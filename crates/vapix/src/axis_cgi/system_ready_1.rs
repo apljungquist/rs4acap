@@ -52,6 +52,8 @@ pub struct SystemreadyData {
     pub uptime: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bootid: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub previewmode: Option<String>,
     /// New in 1.5
     #[serde(skip_serializing_if = "Option::is_none")]
     pub passphrasepolicy: Option<String>,
@@ -64,6 +66,17 @@ impl SystemreadyData {
         self.uptime
             .as_deref()
             .map(|s| s.parse::<u64>().map(Duration::from_secs))
+            .transpose()
+    }
+
+    pub fn parse_preview_mode(&self) -> Result<Option<Duration>, std::num::ParseIntError> {
+        self.previewmode
+            .as_deref()
+            .map(|s| {
+                s.parse::<u64>()
+                    .map(Duration::from_secs)
+                    .map_err(Into::into)
+            })
             .transpose()
     }
 }
