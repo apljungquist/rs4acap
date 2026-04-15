@@ -86,11 +86,11 @@ Options:
           The username to use for authentication [env: AXIS_DEVICE_USER=] [default: root]
   -p, --pass <PASS>
           The password to use for authentication [env: AXIS_DEVICE_PASS=] [default: pass]
-  -f, --factory-default-mode <FACTORY_DEFAULT_MODE>
-          Factory default mode to apply during upgrade [default: none] [possible values: none, soft, hard]
+  -m, --factory-default-mode <FACTORY_DEFAULT_MODE>
+          Factory default mode to apply during upgrade [possible values: soft, hard]
   -c, --auto-commit <AUTO_COMMIT>
-          Auto-commit behavior after upgrade [default: default] [possible values: never, boot, started, default]
+          Auto-commit behavior after upgrade [possible values: never, boot, started]
   -r, --auto-rollback <AUTO_ROLLBACK>
-          Auto-rollback behavior: "never", "default", or minutes [default: default]
+          Auto-rollback behavior: "never", or minutes
   -h, --help
           Print help

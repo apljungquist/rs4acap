@@ -12,7 +12,6 @@ use crate::{restart_detector::RestartDetector, Netloc};
 fn parse_auto_rollback(s: &str) -> anyhow::Result<AutoRollback> {
     match s {
         "never" => Ok(AutoRollback::Never),
-        "default" => Ok(AutoRollback::Default),
         other => {
             let minutes: u32 = other.parse().with_context(|| {
                 format!("expected 'never', 'default', or a number of minutes, got '{other}'")
@@ -29,19 +28,23 @@ pub struct UpgradeCommand {
     /// Path to the firmware image
     firmware: PathBuf,
     /// Factory default mode to apply during upgrade
-    #[arg(long, short, default_value_t = FactoryDefaultMode::None)]
-    factory_default_mode: FactoryDefaultMode,
+    #[arg(long, short = 'm')]
+    factory_default_mode: Option<FactoryDefaultMode>,
     /// Auto-commit behavior after upgrade
-    #[arg(long, short='c', default_value_t = AutoCommit::Default)]
-    auto_commit: AutoCommit,
-    /// Auto-rollback behavior: "never", "default", or minutes
-    #[arg(long, short = 'r', default_value = "default")]
-    auto_rollback: String,
+    #[arg(long, short = 'c')]
+    auto_commit: Option<AutoCommit>,
+    /// Auto-rollback behavior: "never", or minutes
+    #[arg(long, short = 'r')]
+    auto_rollback: Option<String>,
 }
 
 impl UpgradeCommand {
     pub async fn exec(self) -> anyhow::Result<()> {
-        let auto_rollback = parse_auto_rollback(&self.auto_rollback)?;
+        let auto_rollback = self
+            .auto_rollback
+            .as_deref()
+            .map(parse_auto_rollback)
+            .transpose()?;
 
         info!("Reading firmware from {:?}", self.firmware);
         let firmware = tokio::fs::read(&self.firmware)
@@ -54,12 +57,17 @@ impl UpgradeCommand {
         let restart_detector = RestartDetector::try_new(&client).await?;
 
         info!("Sending upgrade request");
-        let data = UpgradeRequest::new(firmware)
-            .factory_default_mode(self.factory_default_mode)
-            .auto_commit(self.auto_commit)
-            .auto_rollback(auto_rollback)
-            .send(&client)
-            .await?;
+        let mut request = UpgradeRequest::new(firmware);
+        if let Some(mode) = self.factory_default_mode {
+            request = request.factory_default_mode(mode);
+        }
+        if let Some(auto_commit) = self.auto_commit {
+            request = request.auto_commit(auto_commit);
+        }
+        if let Some(auto_rollback) = auto_rollback {
+            request = request.auto_rollback(auto_rollback);
+        }
+        let data = request.send(&client).await?;
 
         info!(
             "Upgrade accepted, firmware version: {}",

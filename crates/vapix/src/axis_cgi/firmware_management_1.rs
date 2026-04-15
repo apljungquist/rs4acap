@@ -22,7 +22,6 @@ const PATH: &str = "axis-cgi/firmwaremanagement.cgi";
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum FactoryDefaultMode {
-    None,
     Soft,
     Hard,
 }
@@ -30,7 +29,6 @@ pub enum FactoryDefaultMode {
 impl Display for FactoryDefaultMode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::None => write!(f, "none"),
             Self::Soft => write!(f, "soft"),
             Self::Hard => write!(f, "hard"),
         }
@@ -55,14 +53,19 @@ pub struct FactoryDefaultRequest {
 }
 
 impl FactoryDefaultRequest {
-    pub fn new(mode: FactoryDefaultMode) -> Self {
+    pub fn new() -> Self {
         Self {
             api_version: "1.0",
             method: "factoryDefault",
             params: FactoryDefaultParams {
-                factory_default_mode: mode,
+                factory_default_mode: FactoryDefaultMode::Soft,
             },
         }
+    }
+
+    pub fn hard(mut self) -> Self {
+        self.params.factory_default_mode = FactoryDefaultMode::Hard;
+        self
     }
 
     pub async fn send(
@@ -73,6 +76,12 @@ impl FactoryDefaultRequest {
     }
 }
 
+impl Default for FactoryDefaultRequest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -80,7 +89,6 @@ pub enum AutoCommit {
     Never,
     Boot,
     Started,
-    Default,
 }
 
 impl Display for AutoCommit {
@@ -89,7 +97,6 @@ impl Display for AutoCommit {
             Self::Never => write!(f, "never"),
             Self::Boot => write!(f, "boot"),
             Self::Started => write!(f, "started"),
-            Self::Default => write!(f, "default"),
         }
     }
 }
@@ -98,7 +105,6 @@ impl Display for AutoCommit {
 pub enum AutoRollback {
     Never,
     Minutes(u32),
-    Default,
 }
 
 impl Serialize for AutoRollback {
@@ -106,7 +112,6 @@ impl Serialize for AutoRollback {
         match self {
             Self::Never => serializer.serialize_str("never"),
             Self::Minutes(m) => serializer.serialize_str(&m.to_string()),
-            Self::Default => serializer.serialize_str("default"),
         }
     }
 }
@@ -228,8 +233,8 @@ mod tests {
     #[test]
     fn upgrade_request_json_envelope() {
         let request = UpgradeRequest::new(Vec::new())
-            .factory_default_mode(FactoryDefaultMode::None)
-            .auto_commit(AutoCommit::Default)
+            .factory_default_mode(FactoryDefaultMode::Soft)
+            .auto_commit(AutoCommit::Never)
             .auto_rollback(AutoRollback::Minutes(15));
         let json = serde_json::to_string_pretty(&request.json).unwrap();
         expect![[r#"
@@ -237,8 +242,8 @@ mod tests {
               "apiVersion": "1.0",
               "method": "upgrade",
               "params": {
-                "factoryDefaultMode": "none",
-                "autoCommit": "default",
+                "factoryDefaultMode": "soft",
+                "autoCommit": "never",
                 "autoRollback": "15"
               }
             }"#]]
