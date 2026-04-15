@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 
 use reqwest::{Method, StatusCode};
 
-use crate::{cassette::Request, http::Error, Client};
+use crate::http::{Error, HttpClient, Request};
 
 const PATH: &str = "axis-cgi/pwdgrp.cgi";
 
@@ -79,9 +79,15 @@ impl AddUserRequest {
         )
     }
 
-    pub async fn send(self, client: &Client) -> Result<(), Error<std::convert::Infallible>> {
+    pub async fn send(
+        self,
+        client: &impl HttpClient,
+    ) -> Result<(), Error<std::convert::Infallible>> {
         let expected = format!("Created account {}.", self.username);
-        let response = self.into_request().send(client, None).await?;
+        let response = client
+            .execute(self.into_request())
+            .await
+            .map_err(Error::Transport)?;
         let body = response.body.map_err(|e| Error::Transport(e.into()))?;
         if response.status == StatusCode::OK {
             let html_body = extract_body(&body).unwrap_or("");

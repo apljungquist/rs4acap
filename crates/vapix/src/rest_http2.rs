@@ -5,11 +5,9 @@ use std::future::Future;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cassette::{Cassette, Request, Response},
-    http::Error,
+    http::{Error, HttpClient, Request, Response},
     rest,
     rest_http::from_response_lossless,
-    Client,
 };
 
 // As a user of the request builders, I find having to import the correct trait annoying.
@@ -22,11 +20,13 @@ pub trait RestHttp2: Send + Sized {
 
     fn send(
         self,
-        client: &Client,
-        cassette: Option<&mut Cassette>,
+        client: &(impl HttpClient + Sync),
     ) -> impl Future<Output = Result<Self::ResponseData, Error<rest::Error>>> + Send {
         async move {
-            let Response { status, body } = self.to_request().send(client, cassette).await?;
+            let Response { status, body } = client
+                .execute(self.to_request())
+                .await
+                .map_err(Error::Transport)?;
             from_response_lossless(status, body)
         }
     }

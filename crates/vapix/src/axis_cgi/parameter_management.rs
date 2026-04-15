@@ -8,7 +8,7 @@ use anyhow::{bail, Context};
 use reqwest::{Method, StatusCode};
 
 use crate::{
-    cassette::{self, Cassette},
+    http::{HttpClient, Request},
     Client,
 };
 
@@ -102,14 +102,10 @@ impl ListRequest {
         }
     }
 
-    pub async fn send(
-        self,
-        client: &Client,
-        cassette: Option<&mut Cassette>,
-    ) -> anyhow::Result<ParamList> {
+    pub async fn send(self, client: &impl HttpClient) -> anyhow::Result<ParamList> {
         let path = format!("{PATH}?action=list&group={}", self.group);
-        let response = cassette::Request::no_content(Method::GET, path)
-            .send::<std::convert::Infallible>(client, cassette)
+        let response = client
+            .execute(Request::no_content(Method::GET, path))
             .await
             .context("sending param.cgi request")?;
 

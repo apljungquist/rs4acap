@@ -4,11 +4,7 @@
 
 use reqwest::{Method, StatusCode};
 
-use crate::{
-    cassette::{Cassette, Request},
-    http::Error,
-    Client,
-};
+use crate::http::{Error, HttpClient, Request};
 
 const PATH: &str = "axis-cgi/applications/config.cgi";
 
@@ -64,10 +60,12 @@ impl ApplicationConfigRequest {
     // TODO: Add support for get requests
     pub async fn send(
         self,
-        client: &Client,
-        cassette: Option<&mut Cassette>,
+        client: &impl HttpClient,
     ) -> Result<(), Error<std::convert::Infallible>> {
-        let response = self.into_request().send(client, cassette).await?;
+        let response = client
+            .execute(self.into_request())
+            .await
+            .map_err(Error::Transport)?;
         let body = response.body.map_err(|e| Error::Transport(e.into()))?;
         if response.status == StatusCode::OK && body.trim().starts_with(r#"<reply result="ok">"#) {
             Ok(())

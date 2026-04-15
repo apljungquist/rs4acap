@@ -1,4 +1,4 @@
-use anyhow::bail;
+use anyhow::{bail, Context};
 use base64::Engine;
 use log::debug;
 use reqwest::{
@@ -7,7 +7,11 @@ use reqwest::{
 };
 use url::{Host, Url};
 
-use crate::{apis, json_rpc_http::JsonRpcHttp};
+use crate::{
+    apis,
+    http::{HttpClient, Request, Response},
+    json_rpc_http::JsonRpcHttp,
+};
 
 fn authorization_headers(username: &str, password: &str) -> HeaderMap {
     let credentials = format!("{username}:{password}");
@@ -190,5 +194,23 @@ impl Client {
             Url::parse(&format!("{scheme}://{host}"))
         }
         .expect("Restricted types are known to combine into a valid URL")
+    }
+}
+
+impl HttpClient for Client {
+    async fn execute(&self, request: Request) -> Result<Response, anyhow::Error> {
+        let mut request_builder = self.request(request.method, &request.path)?;
+        if let Some(body) = request.body {
+            debug_assert!(request.content_type.is_some());
+            request_builder = request_builder.body(body);
+        }
+        if let Some(content_type) = request.content_type {
+            request_builder = request_builder.header(reqwest::header::CONTENT_TYPE, content_type);
+        }
+        let response = request_builder.send().await.context("failed to send")?;
+        Ok(Response {
+            status: response.status(),
+            body: response.text().await,
+        })
     }
 }
