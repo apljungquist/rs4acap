@@ -162,26 +162,6 @@ async fn recording_group_1_create_returns_ok() {
         .unwrap();
 }
 
-// TODO: Move tests that are not nullipotent out of smoke tests
-#[tokio::test]
-async fn ssh_1_crud_user_returns_ok() {
-    let Some(client) = test_client().await else {
-        return;
-    };
-
-    let username = somewhat_unique_name("smoke_test_ssh_user_");
-    apis::ssh_1::add_user(&username, " ")
-        .comment("First comment")
-        .send(&client)
-        .await
-        .unwrap();
-    apis::ssh_1::set_user(username)
-        .comment("")
-        .send(&client)
-        .await
-        .unwrap();
-}
-
 #[tokio::test]
 async fn system_ready_system_ready_returns_ok() {
     let Some(client) = test_client().await else {

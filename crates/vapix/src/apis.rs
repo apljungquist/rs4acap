@@ -37,7 +37,7 @@ pub mod siren_and_light_2_alpha {
 }
 
 pub mod ssh_1 {
-    pub use crate::config::ssh_1::{add_user, set_user};
+    pub use crate::config::ssh_1::{add_user, delete_user, set_user};
 }
 
 pub mod system_ready_1 {

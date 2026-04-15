@@ -45,6 +45,9 @@ impl AddUserRequest {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum AddUserResponse {
+    /// Returned on AXIS OS 11.11.192.
+    /// The data field is absent from the response.
+    Null(()),
     /// Returned on AXIS OS 11.11.73.
     /// The string is usually empty.
     None(String),
@@ -105,6 +108,23 @@ impl SetUserRequest {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SetUserResponse(());
 
+pub struct DeleteUserRequest {
+    username: String,
+}
+
+impl DeleteUserRequest {
+    pub fn into_request(self) -> Request {
+        Request::no_content(
+            Method::DELETE,
+            format!("config/rest/ssh/v1/users/{}", self.username),
+        )
+    }
+
+    pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<(), Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
+    }
+}
+
 // TODO: Consider creating new types for comment, username, and password.
 
 /// Creates a new user.
@@ -132,6 +152,17 @@ pub fn set_user(username: impl ToString) -> SetUserRequest {
             password: None,
             comment: None,
         },
+        username: username.to_string(),
+    }
+}
+
+/// Deletes an existing user.
+///
+/// # Arguments
+///
+/// - `username` name of the user to delete.
+pub fn delete_user(username: impl ToString) -> DeleteUserRequest {
+    DeleteUserRequest {
         username: username.to_string(),
     }
 }
