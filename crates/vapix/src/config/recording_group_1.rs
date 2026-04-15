@@ -1,15 +1,48 @@
 //! The [Recording group API].
 //!
 //! [Recording group API]: https://developer.axis.com/vapix/device-configuration/recording-group/
+use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 
-use crate::rest_http::RequestBuilder;
+use crate::{
+    http::{Error, HttpClient, Request},
+    rest, rest_http,
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateRecordingGroupResponse {
     pub id: String,
 }
 
-pub fn create_recording_groups() -> RequestBuilder<CreateRecordingGroupResponse> {
-    RequestBuilder::new("config/rest/recording-group/v2beta/recordingGroups")
+#[derive(Debug)]
+pub struct CreateRecordingGroupsRequest {
+    data: Value,
+}
+
+impl CreateRecordingGroupsRequest {
+    pub fn data(mut self, data: Value) -> Self {
+        self.data = data;
+        self
+    }
+
+    pub fn into_request(self) -> Request {
+        let body = serde_json::to_string_pretty(&json!({"data": self.data})).unwrap();
+        Request::json(
+            Method::POST,
+            "config/rest/recording-group/v2beta/recordingGroups".to_string(),
+        )
+        .body(body)
+    }
+
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<CreateRecordingGroupResponse, Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
+    }
+}
+
+pub fn create_recording_groups() -> CreateRecordingGroupsRequest {
+    CreateRecordingGroupsRequest { data: Value::Null }
 }
