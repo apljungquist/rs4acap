@@ -5,7 +5,6 @@ use log::warn;
 use rs4a_vapix::{
     apis,
     basic_device_info_1::{AllProperties, RestrictedProperties, UnrestrictedProperties},
-    json_rpc_http::JsonRpcHttp,
 };
 use rs4a_vlt::requests;
 use tokio::task::JoinSet;

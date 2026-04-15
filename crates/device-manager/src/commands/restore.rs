@@ -3,7 +3,6 @@ use std::time::Duration;
 use log::{debug, info};
 use rs4a_vapix::{
     firmware_management_1::{FactoryDefaultMode, FactoryDefaultRequest},
-    json_rpc_http::JsonRpcHttp,
     system_ready_1,
 };
 use tokio::time::timeout;

@@ -6,8 +6,7 @@ use itertools::Itertools;
 use log::{debug, error, info, warn};
 use mdns::{RecordKind, Response};
 use rs4a_vapix::{
-    apis, basic_device_info_1::UnrestrictedProperties, json_rpc_http::JsonRpcHttp,
-    system_ready_1::SystemreadyData,
+    apis, basic_device_info_1::UnrestrictedProperties, system_ready_1::SystemreadyData,
 };
 use tokio::{
     task::JoinSet,

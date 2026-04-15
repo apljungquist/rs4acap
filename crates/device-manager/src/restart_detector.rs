@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use log::{debug, trace, warn};
-use rs4a_vapix::{json_rpc_http::JsonRpcHttp, system_ready_1, system_ready_1::SystemreadyData};
+use rs4a_vapix::{system_ready_1, system_ready_1::SystemreadyData};
 use tokio::time::sleep;
 
 #[derive(Clone, Copy, Debug)]

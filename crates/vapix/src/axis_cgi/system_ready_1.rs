@@ -2,11 +2,14 @@
 //!
 //! [Systemready API]: https://developer.axis.com/vapix/network-video/systemready-api/
 
-use std::time::Duration;
+use std::{convert::Infallible, time::Duration};
 
 use serde::{Deserialize, Serialize};
 
-use crate::json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless};
+use crate::{
+    http::{Error, HttpClient},
+    json_rpc_http,
+};
 
 fn deserialize_english_boolean<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
@@ -80,6 +83,8 @@ pub struct SystemReadyRequest {
     params: Option<SystemReadyParams>,
 }
 
+const PATH: &str = "axis-cgi/systemready.cgi";
+
 impl Default for SystemReadyRequest {
     fn default() -> Self {
         Self {
@@ -95,15 +100,13 @@ impl SystemReadyRequest {
         self.params.get_or_insert(SystemReadyParams { timeout });
         self
     }
-}
 
-impl JsonRpcHttp for SystemReadyRequest {
-    type Data = SystemreadyData;
-    const PATH: &'static str = "axis-cgi/systemready.cgi";
-}
-
-impl JsonRpcHttpLossless for SystemReadyRequest {
-    type Data = SystemreadyData;
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<SystemreadyData, Error<Infallible>> {
+        json_rpc_http::send_request(client, PATH, &self).await
+    }
 }
 
 pub fn system_ready() -> SystemReadyRequest {

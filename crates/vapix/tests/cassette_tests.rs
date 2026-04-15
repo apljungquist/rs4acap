@@ -18,7 +18,6 @@ use rs4a_vapix::{
     cassette::{Cassette, CassetteClient, Mode},
     firmware_management_1::UpgradeRequest,
     http,
-    json_rpc_http::{JsonRpcHttp, JsonRpcHttpLossless},
     parameter_management::{ImageResolution, ListRequest},
     remote_object_storage_1_beta::{
         AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
@@ -570,7 +569,7 @@ fn main() {
 
 async fn basic_device_info_get_all_properties(client: CassetteClient, _: Option<Prelude>) {
     let property_list = basic_device_info_1::get_all_properties()
-        .send_lossless(&client)
+        .send(&client)
         .await
         .unwrap()
         .property_list;
@@ -583,7 +582,7 @@ async fn basic_device_info_get_all_unrestricted_properties(
     _: Option<Prelude>,
 ) {
     let property_list = basic_device_info_1::get_all_unrestricted_properties()
-        .send_lossless(&client)
+        .send(&client)
         .await
         .unwrap()
         .property_list;
@@ -874,7 +873,7 @@ async fn siren_and_light_2_alpha_maintenance_mode_not_supported(
 
 async fn system_ready_1_system_ready(client: CassetteClient, _prelude: Option<Prelude>) {
     let data = apis::system_ready_1::system_ready()
-        .send_lossless(&client)
+        .send(&client)
         .await
         .unwrap();
     assert!(data.systemready);
