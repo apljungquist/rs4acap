@@ -1,0 +1,8 @@
+PATCH config/rest/ssh/v1/users/dalliard
+Content-Type: application/json
+
+{
+  "data": {
+    "comment": "When's the day?"
+  }
+}

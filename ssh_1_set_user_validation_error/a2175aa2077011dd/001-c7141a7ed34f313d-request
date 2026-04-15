@@ -1,0 +1,8 @@
+PATCH config/rest/ssh/v1/users/cassette_test_validation
+Content-Type: application/json
+
+{
+  "data": {
+    "password": ""
+  }
+}

@@ -1,0 +1,9 @@
+201 Created
+
+{
+  "status": "success",
+  "data": {
+    "comment": "Good morning",
+    "username": "cassette_test_validation"
+  }
+}

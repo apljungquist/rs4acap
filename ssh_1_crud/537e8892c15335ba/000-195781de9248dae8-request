@@ -1,0 +1,10 @@
+POST config/rest/ssh/v1/users
+Content-Type: application/json
+
+{
+  "data": {
+    "comment": "Good morning",
+    "password": "Good morning",
+    "username": "dalliard"
+  }
+}

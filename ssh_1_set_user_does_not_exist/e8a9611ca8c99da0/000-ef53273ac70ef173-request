@@ -1,0 +1,8 @@
+PATCH config/rest/ssh/v1/users/nonexistent_user
+Content-Type: application/json
+
+{
+  "data": {
+    "comment": "should fail"
+  }
+}
