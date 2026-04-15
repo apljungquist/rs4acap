@@ -13,10 +13,8 @@ use reqwest::Method;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cassette::{Cassette, Request},
-    http::Error,
+    http::{Error, HttpClient, Request},
     json_rpc_http::{from_response, from_response_lossless, JsonRpcHttp, JsonRpcHttpLossless},
-    Client,
 };
 
 const PATH: &str = "axis-cgi/firmwaremanagement.cgi";
@@ -199,11 +197,7 @@ impl UpgradeRequest {
         body
     }
 
-    pub async fn send(
-        self,
-        client: &Client,
-        cassette: Option<&mut Cassette>,
-    ) -> Result<UpgradeData, Error<Infallible>> {
+    pub async fn send(self, client: &impl HttpClient) -> Result<UpgradeData, Error<Infallible>> {
         let boundary = "----FormBoundaryS6untlhO8j7poXo";
 
         let json = serde_json::to_string(&self.json)
@@ -212,10 +206,10 @@ impl UpgradeRequest {
 
         let body = Self::build_multipart_body(json.as_bytes(), &self.bin, boundary);
 
-        let response = Request::multipart_form_data(Method::POST, PATH.to_string(), boundary)
-            .body_bytes(body)
-            .send(client, cassette)
-            .await?;
+        let request =
+            Request::multipart_form_data(Method::POST, PATH.to_string(), boundary).body_bytes(body);
+
+        let response = client.execute(request).await.map_err(Error::Transport)?;
 
         let status = response.status;
 

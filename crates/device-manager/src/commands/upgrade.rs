@@ -58,7 +58,7 @@ impl UpgradeCommand {
             .factory_default_mode(self.factory_default_mode)
             .auto_commit(self.auto_commit)
             .auto_rollback(auto_rollback)
-            .send(&client, None)
+            .send(&client)
             .await?;
 
         info!(

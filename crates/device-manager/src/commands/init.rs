@@ -55,7 +55,7 @@ async fn apply_setup_profile(client: &rs4a_vapix::Client) -> anyhow::Result<()> 
     if allows_unsigned_toggle {
         info!("Allowing unsigned ACAP applications...");
         applications_config::ApplicationConfigRequest::allow_unsigned(true)
-            .send(client, None)
+            .send(client)
             .await?;
     } else {
         debug!("Skipping AllowUnsigned (not applicable for firmware {version})");

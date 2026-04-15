@@ -3,7 +3,7 @@
 use reqwest::Method;
 use serde_json::json;
 
-use crate::{cassette::Request, rest_http2::RestHttp2};
+use crate::{http::Request, rest_http2::RestHttp2};
 
 const BASE_PATH: &str = "config/rest/siren-and-light/v2alpha";
 

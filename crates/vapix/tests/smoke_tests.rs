@@ -142,7 +142,7 @@ async fn recording_group_1_create_returns_ok() {
             session_token: None,
         },
     )
-    .send(&client, None)
+    .send(&client)
     .await
     .unwrap()
     .id;

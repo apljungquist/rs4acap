@@ -6,7 +6,7 @@ use reqwest::Method;
 use serde_json::json;
 use url::Url;
 
-use crate::{cassette::Request, rest_http2::RestHttp2};
+use crate::{http::Request, rest_http2::RestHttp2};
 
 const BASE_PATH: &str = "config/rest/remote-object-storage/v1beta/destinations";
 

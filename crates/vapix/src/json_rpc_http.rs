@@ -8,8 +8,7 @@ use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cassette::{Cassette, Request},
-    http::Error,
+    http::{Error, HttpClient, Request},
     json_rpc::{parse_data, parse_data_lossless},
     Client,
 };
@@ -73,19 +72,12 @@ pub trait JsonRpcHttpLossless: JsonRpcHttp {
 
     fn send_lossless(
         self,
-        client: &Client,
-        cassette: Option<&mut Cassette>,
+        client: &(impl HttpClient + Sync),
     ) -> impl Future<Output = anyhow::Result<<Self as JsonRpcHttpLossless>::Data>> + Send {
         async move {
             let body = serde_json::to_string_pretty(&self)?;
-            let response = Request::json(Method::POST, Self::PATH.to_string())
-                .body(body)
-                .send::<Infallible>(client, cassette)
-                .await
-                .map_err(|e| match e {
-                    Error::Request(e) | Error::Transport(e) | Error::Decode(e) => e,
-                    Error::Service(e) => match e {},
-                })?;
+            let request = Request::json(Method::POST, Self::PATH.to_string()).body(body);
+            let response = client.execute(request).await?;
             from_response_lossless(response.status, response.body)
         }
     }
