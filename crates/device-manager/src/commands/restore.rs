@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use log::{debug, info};
-use rs4a_vapix::{
-    firmware_management_1::{FactoryDefaultMode, FactoryDefaultRequest},
-    system_ready_1,
-};
+use rs4a_vapix::{firmware_management_1::FactoryDefaultRequest, system_ready_1};
 use tokio::time::timeout;
 
 use crate::{restart_detector::RestartDetector, Netloc};
@@ -35,9 +32,7 @@ pub async fn restore(netloc: &Netloc) -> anyhow::Result<()> {
     let restart_detector = RestartDetector::try_new(&client).await?;
 
     info!("Sending factory default request");
-    FactoryDefaultRequest::new(FactoryDefaultMode::Soft)
-        .send(&client)
-        .await?;
+    FactoryDefaultRequest::new().send(&client).await?;
 
     info!("Waiting for restart");
     let () = timeout(Duration::from_secs(120), restart_detector.wait()).await?;
