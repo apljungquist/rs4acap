@@ -377,6 +377,9 @@ cassette_tests! {
     parameter_management_list_image_resolution,
     remote_object_storage_1_beta_crud,
     siren_and_light_2_alpha_maintenance_mode_not_supported,
+    ssh_1_crud,
+    ssh_1_set_user_does_not_exist,
+    ssh_1_set_user_validation_error,
     system_ready_1_system_ready => [
         (
             r#""uptime": "\d+""#,
@@ -868,6 +871,88 @@ async fn siren_and_light_2_alpha_maintenance_mode_not_supported(
     };
 
     assert_eq!(error.kind(), Some(ErrorKind::InternalError));
+}
+
+async fn ssh_1_crud(client: CassetteClient, prelude: Option<Prelude>) {
+    if let Some(prelude) = &prelude {
+        if !prelude.supports_device_config() {
+            return;
+        }
+    }
+
+    let username = "dalliard";
+
+    apis::ssh_1::add_user(username, "Good morning")
+        .comment("Good morning")
+        .send(&client)
+        .await
+        .unwrap();
+
+    apis::ssh_1::set_user(username)
+        .comment("When's the day?")
+        .send(&client)
+        .await
+        .unwrap();
+
+    apis::ssh_1::delete_user(username)
+        .send(&client)
+        .await
+        .unwrap();
+}
+
+async fn ssh_1_set_user_does_not_exist(client: CassetteClient, prelude: Option<Prelude>) {
+    if let Some(prelude) = &prelude {
+        if !prelude.supports_device_config() {
+            return;
+        }
+    }
+
+    let error = apis::ssh_1::set_user("nonexistent_user")
+        .comment("should fail")
+        .send(&client)
+        .await
+        .unwrap_err();
+
+    let http::Error::Service(error) = error else {
+        panic!("Expected Service error but got {error:?}");
+    };
+
+    assert_eq!(error.kind().unwrap(), ErrorKind::NotFound);
+}
+
+async fn ssh_1_set_user_validation_error(client: CassetteClient, prelude: Option<Prelude>) {
+    if let Some(prelude) = &prelude {
+        if !prelude.supports_device_config() {
+            return;
+        }
+    }
+
+    let username = "cassette_test_validation";
+
+    apis::ssh_1::add_user(username, "Good morning")
+        .comment("Good morning")
+        .send(&client)
+        .await
+        .unwrap();
+
+    // Empty string violates the minimum length of 1
+    let error = apis::ssh_1::set_user(username)
+        .password("")
+        .send(&client)
+        .await
+        .unwrap_err();
+
+    let http::Error::Service(error) = error else {
+        panic!("Expected Service error but got {error:?}");
+    };
+
+    assert_eq!(error.kind().unwrap(), ErrorKind::ValidationError);
+
+    // Clean up
+    apis::ssh_1::delete_user(username)
+        .send(&client)
+        .await
+        .unwrap();
 }
 
 async fn system_ready_1_system_ready(client: CassetteClient, _prelude: Option<Prelude>) {
