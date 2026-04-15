@@ -49,6 +49,15 @@ impl Request {
         }
     }
 
+    pub fn application_soap_xml(method: Method, path: String) -> Self {
+        Self {
+            method,
+            path,
+            body: None,
+            content_type: Some("application/soap+xml; charset=utf-8".to_string()),
+        }
+    }
+
     pub fn multipart_form_data(method: Method, path: String, boundary: &str) -> Self {
         Self {
             method,
