@@ -6,8 +6,12 @@
 //! [v2]: https://developer.axis.com/vapix/device-configuration/ssh-management/
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
-use crate::rest_http::RestHttp;
+use crate::{
+    http::{Error, HttpClient, Request},
+    rest, rest_http,
+};
 
 #[derive(Serialize)]
 pub struct AddUserRequest {
@@ -24,19 +28,21 @@ impl AddUserRequest {
         self.comment = Some(comment.to_string());
         self
     }
-}
 
-impl RestHttp for AddUserRequest {
-    type RequestData = AddUserRequest;
-    type ResponseData = AddUserResponse;
-    const METHOD: Method = Method::POST;
+    pub fn into_request(self) -> Request {
+        let body = serde_json::to_string_pretty(&json!({"data": self})).unwrap();
+        Request::json(Method::POST, "config/rest/ssh/v1/users".to_string()).body(body)
+    }
 
-    fn to_path_and_data(self) -> anyhow::Result<(String, Self::RequestData)> {
-        Ok(("config/rest/ssh/v1/users".to_string(), self))
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<AddUserResponse, Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum AddUserResponse {
     /// Returned on AXIS OS 11.11.73.
@@ -77,23 +83,26 @@ impl SetUserRequest {
         self.properties.comment = Some(comment.to_string());
         self
     }
-}
 
-impl RestHttp for SetUserRequest {
-    type RequestData = SetUserProperties;
-    type ResponseData = SetUserResponse;
-    const METHOD: Method = Method::PATCH;
-
-    fn to_path_and_data(self) -> anyhow::Result<(String, Self::RequestData)> {
+    pub fn into_request(self) -> Request {
         let Self {
+            properties,
             username,
-            properties: data,
         } = self;
-        Ok((format!("config/rest/ssh/v1/users/{username}"), data))
+        let path = format!("config/rest/ssh/v1/users/{username}");
+        let body = serde_json::to_string_pretty(&json!({"data": properties})).unwrap();
+        Request::json(Method::PATCH, path).body(body)
+    }
+
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<SetUserResponse, Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct SetUserResponse(());
 
 // TODO: Consider creating new types for comment, username, and password.

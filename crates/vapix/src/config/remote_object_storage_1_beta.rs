@@ -6,7 +6,10 @@ use reqwest::Method;
 use serde_json::json;
 use url::Url;
 
-use crate::{http::Request, rest_http2::RestHttp2};
+use crate::{
+    http::{Error, HttpClient, Request},
+    rest, rest_http,
+};
 
 const BASE_PATH: &str = "config/rest/remote-object-storage/v1beta/destinations";
 
@@ -113,9 +116,7 @@ impl CreateDestinationRequest {
         self.data.description = Some(description);
         self
     }
-}
 
-impl CreateDestinationRequest {
     pub fn azure(id: DestinationId, azure: AzureDestination) -> Self {
         Self {
             data: CreateDestinationData {
@@ -137,16 +138,19 @@ impl CreateDestinationRequest {
             },
         }
     }
-}
 
-impl RestHttp2 for CreateDestinationRequest {
-    type ResponseData = DestinationData;
-
-    fn to_request(self) -> Request {
+    pub fn into_request(self) -> Request {
         // PANICS:
         // The `unwrap` will never panic because `self.data` can always be serialized to JSON.
         Request::json(Method::POST, BASE_PATH.to_string())
             .body(serde_json::to_string_pretty(&json!({"data":self.data})).unwrap())
+    }
+
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<DestinationData, Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
     }
 }
 
@@ -157,13 +161,16 @@ impl ListDestinationsRequest {
     pub fn new() -> Self {
         Self
     }
-}
 
-impl RestHttp2 for ListDestinationsRequest {
-    type ResponseData = Vec<DestinationData>;
-
-    fn to_request(self) -> Request {
+    pub fn into_request(self) -> Request {
         Request::no_content(Method::GET, BASE_PATH.to_string())
+    }
+
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<Vec<DestinationData>, Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
     }
 }
 
@@ -190,12 +197,8 @@ impl UpdateDestinationRequest {
             data: serde_json::Value::String(description),
         }
     }
-}
 
-impl RestHttp2 for UpdateDestinationRequest {
-    type ResponseData = ();
-
-    fn to_request(self) -> Request {
+    pub fn into_request(self) -> Request {
         // PANICS:
         // The `unwrap` will never panic because `self.data` is a `serde_json::Value` which can
         // always be serialized to JSON.
@@ -204,6 +207,10 @@ impl RestHttp2 for UpdateDestinationRequest {
             format!("{BASE_PATH}/{}/{}", self.id.into_string(), self.property),
         )
         .body(serde_json::to_string_pretty(&json!({"data":self.data})).unwrap())
+    }
+
+    pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<(), Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
     }
 }
 
@@ -216,15 +223,15 @@ impl DeleteDestinationRequest {
     pub fn new(id: DestinationId) -> Self {
         Self { id }
     }
-}
 
-impl RestHttp2 for DeleteDestinationRequest {
-    type ResponseData = ();
-
-    fn to_request(self) -> Request {
+    pub fn into_request(self) -> Request {
         Request::no_content(
             Method::DELETE,
             format!("{BASE_PATH}/{}", self.id.into_string()),
         )
+    }
+
+    pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<(), Error<rest::Error>> {
+        rest_http::send_request(client, self.into_request()).await
     }
 }
