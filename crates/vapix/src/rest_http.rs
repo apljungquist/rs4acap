@@ -1,12 +1,9 @@
 //! Utilities for working with REST-style configuration APIs over HTTP.
 
-use std::marker::PhantomData;
-
 use anyhow::Context;
 use log::trace;
-use reqwest::{Method, StatusCode};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 
 use crate::{
     http::{Error, HttpClient, Request},
@@ -42,37 +39,4 @@ where
 {
     let response = client.execute(request).await.map_err(Error::Transport)?;
     from_response(response.status, response.body)
-}
-
-pub struct RequestBuilder<T> {
-    path: &'static str,
-    data: Value,
-    _phantom: PhantomData<T>,
-}
-
-impl<T> RequestBuilder<T> {
-    pub fn new(path: &'static str) -> Self {
-        Self {
-            path,
-            data: Value::Null,
-            _phantom: PhantomData,
-        }
-    }
-
-    pub fn data(mut self, data: Value) -> Self {
-        self.data = data;
-        self
-    }
-}
-
-impl<T> RequestBuilder<T>
-where
-    T: for<'a> Deserialize<'a> + Serialize + Send,
-{
-    pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<T, Error<rest::Error>> {
-        let body = serde_json::to_string_pretty(&json!({"data": self.data}))
-            .map_err(|e| Error::Request(e.into()))?;
-        let request = Request::json(Method::POST, self.path.to_string()).body(body);
-        send_request(client, request).await
-    }
 }
