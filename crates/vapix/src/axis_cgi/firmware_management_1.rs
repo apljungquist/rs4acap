@@ -211,8 +211,7 @@ impl UpgradeRequest {
 
         let body = Self::build_multipart_body(json.as_bytes(), &self.bin, boundary);
 
-        let request =
-            Request::multipart_form_data(Method::POST, PATH.to_string(), boundary).body_bytes(body);
+        let request = Request::new(Method::POST, PATH.to_string()).multipart(body, boundary);
 
         let response = client.execute(request).await.map_err(Error::Transport)?;
 

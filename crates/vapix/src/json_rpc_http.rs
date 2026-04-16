@@ -29,7 +29,7 @@ where
     Resp: for<'a> Deserialize<'a> + Serialize,
 {
     let body = serde_json::to_string_pretty(request).map_err(|e| Error::Request(e.into()))?;
-    let request = Request::json(Method::POST, path.to_string()).body(body);
+    let request = Request::new(Method::POST, path.to_string()).json(body);
     let response = client.execute(request).await.map_err(Error::Transport)?;
     from_response(response.status, response.body).map_err(Error::Decode)
 }

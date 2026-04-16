@@ -83,8 +83,7 @@ impl AddActionConfigurationRequest {
         client: &(impl HttpClient + Sync),
     ) -> Result<AddActionConfigurationResponse, Error<Infallible>> {
         let envelope = self.try_into_envelope().map_err(Error::Request)?;
-        let request =
-            Request::application_soap_xml(reqwest::Method::POST, PATH.to_string()).body(envelope);
+        let request = Request::new(reqwest::Method::POST, PATH.to_string()).soap(envelope);
         soap_http::send_request(client, request).await
     }
 }
@@ -139,8 +138,8 @@ impl GetActionConfigurationsRequest {
         self,
         client: &(impl HttpClient + Sync),
     ) -> Result<GetActionConfigurationsResponse, Error<Infallible>> {
-        let request = Request::application_soap_xml(reqwest::Method::POST, PATH.to_string())
-            .body(self.into_envelope());
+        let request =
+            Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
         soap_http::send_request(client, request).await
     }
 }

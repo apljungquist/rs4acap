@@ -70,7 +70,7 @@ impl AddUserRequest {
     fn into_request(self) -> Request {
         let group = self.group.to_string();
         let role = self.role.to_string();
-        Request::no_content(
+        Request::new(
             Method::GET,
             format!(
                 "{PATH}?action=add&user={}&pwd={}&grp={}&sgrp={}",

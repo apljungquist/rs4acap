@@ -52,7 +52,7 @@ impl ApplicationConfigRequest {
             None => format!("{PATH}?action=set&name={name}"),
             Some(value) => format!("{PATH}?action=set&name={name}&value={value}"),
         };
-        Request::no_content(Method::GET, path)
+        Request::new(Method::GET, path)
     }
 
     // TODO: Implement lossless self-checks
