@@ -18,7 +18,7 @@ use rs4a_vapix::{
     cassette::{Cassette, CassetteClient, Mode},
     firmware_management_1::UpgradeRequest,
     http,
-    parameter_management::{ImageResolution, ListRequest},
+    parameter_management::{ImageResolution, ListRequest, NetworkSshEnabled, UpdateRequest},
     remote_object_storage_1_beta::{
         AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
         DestinationId, ListDestinationsRequest, UpdateDestinationRequest,
@@ -375,6 +375,7 @@ cassette_tests! {
     firmware_management_1_upgrade_mismatch,
     parameter_management_list_error,
     parameter_management_list_image_resolution,
+    parameter_management_update_network_ssh_enabled,
     remote_object_storage_1_beta_crud,
     siren_and_light_2_alpha_maintenance_mode_not_supported,
     ssh_1_crud,
@@ -760,6 +761,42 @@ async fn parameter_management_list_image_resolution(
         .unwrap();
     let resolutions = params.parse::<ImageResolution>().unwrap().unwrap();
     assert!(!resolutions.is_empty());
+}
+
+async fn parameter_management_update_network_ssh_enabled(
+    client: CassetteClient,
+    _prelude: Option<Prelude>,
+) {
+    let read = || {
+        let client = &client;
+        async move {
+            ListRequest::new::<NetworkSshEnabled>()
+                .send(client)
+                .await
+                .unwrap()
+                .parse::<NetworkSshEnabled>()
+                .unwrap()
+                .unwrap()
+        }
+    };
+
+    let initial = read().await;
+
+    UpdateRequest::default()
+        .network_ssh_enabled(!initial)
+        .send(&client)
+        .await
+        .unwrap();
+
+    assert_eq!(read().await, !initial);
+
+    UpdateRequest::default()
+        .network_ssh_enabled(initial)
+        .send(&client)
+        .await
+        .unwrap();
+
+    assert_eq!(read().await, initial);
 }
 
 async fn remote_object_storage_1_beta_crud(client: CassetteClient, prelude: Option<Prelude>) {
