@@ -40,34 +40,7 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn json(method: Method, path: String) -> Self {
-        Self {
-            method,
-            path,
-            body: None,
-            content_type: Some("application/json".to_string()),
-        }
-    }
-
-    pub fn application_soap_xml(method: Method, path: String) -> Self {
-        Self {
-            method,
-            path,
-            body: None,
-            content_type: Some("application/soap+xml; charset=utf-8".to_string()),
-        }
-    }
-
-    pub fn multipart_form_data(method: Method, path: String, boundary: &str) -> Self {
-        Self {
-            method,
-            path,
-            body: None,
-            content_type: Some(format!("multipart/form-data; boundary={boundary}")),
-        }
-    }
-
-    pub fn no_content(method: Method, path: String) -> Self {
+    pub fn new(method: Method, path: String) -> Self {
         Self {
             method,
             path,
@@ -76,12 +49,20 @@ impl Request {
         }
     }
 
-    pub fn body(mut self, body: String) -> Self {
+    pub fn json(mut self, body: String) -> Self {
+        self.content_type = Some("application/json".to_string());
         self.body = Some(body.into_bytes());
         self
     }
 
-    pub fn body_bytes(mut self, body: Vec<u8>) -> Self {
+    pub fn soap(mut self, body: String) -> Self {
+        self.content_type = Some("application/soap+xml; charset=utf-8".to_string());
+        self.body = Some(body.into_bytes());
+        self
+    }
+
+    pub fn multipart(mut self, body: Vec<u8>, boundary: &str) -> Self {
+        self.content_type = Some(format!("multipart/form-data; boundary={boundary}"));
         self.body = Some(body);
         self
     }

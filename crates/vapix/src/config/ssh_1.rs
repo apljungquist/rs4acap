@@ -31,7 +31,7 @@ impl AddUserRequest {
 
     pub fn into_request(self) -> Request {
         let body = serde_json::to_string_pretty(&json!({"data": self})).unwrap();
-        Request::json(Method::POST, "config/rest/ssh/v1/users".to_string()).body(body)
+        Request::new(Method::POST, "config/rest/ssh/v1/users".to_string()).json(body)
     }
 
     pub async fn send(
@@ -94,7 +94,7 @@ impl SetUserRequest {
         } = self;
         let path = format!("config/rest/ssh/v1/users/{username}");
         let body = serde_json::to_string_pretty(&json!({"data": properties})).unwrap();
-        Request::json(Method::PATCH, path).body(body)
+        Request::new(Method::PATCH, path).json(body)
     }
 
     pub async fn send(
@@ -114,7 +114,7 @@ pub struct DeleteUserRequest {
 
 impl DeleteUserRequest {
     pub fn into_request(self) -> Request {
-        Request::no_content(
+        Request::new(
             Method::DELETE,
             format!("config/rest/ssh/v1/users/{}", self.username),
         )

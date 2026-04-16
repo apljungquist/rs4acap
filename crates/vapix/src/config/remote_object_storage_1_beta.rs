@@ -142,8 +142,8 @@ impl CreateDestinationRequest {
     pub fn into_request(self) -> Request {
         // PANICS:
         // The `unwrap` will never panic because `self.data` can always be serialized to JSON.
-        Request::json(Method::POST, BASE_PATH.to_string())
-            .body(serde_json::to_string_pretty(&json!({"data":self.data})).unwrap())
+        Request::new(Method::POST, BASE_PATH.to_string())
+            .json(serde_json::to_string_pretty(&json!({"data":self.data})).unwrap())
     }
 
     pub async fn send(
@@ -163,7 +163,7 @@ impl ListDestinationsRequest {
     }
 
     pub fn into_request(self) -> Request {
-        Request::no_content(Method::GET, BASE_PATH.to_string())
+        Request::new(Method::GET, BASE_PATH.to_string())
     }
 
     pub async fn send(
@@ -202,11 +202,11 @@ impl UpdateDestinationRequest {
         // PANICS:
         // The `unwrap` will never panic because `self.data` is a `serde_json::Value` which can
         // always be serialized to JSON.
-        Request::json(
+        Request::new(
             Method::PATCH,
             format!("{BASE_PATH}/{}/{}", self.id.into_string(), self.property),
         )
-        .body(serde_json::to_string_pretty(&json!({"data":self.data})).unwrap())
+        .json(serde_json::to_string_pretty(&json!({"data":self.data})).unwrap())
     }
 
     pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<(), Error<rest::Error>> {
@@ -225,7 +225,7 @@ impl DeleteDestinationRequest {
     }
 
     pub fn into_request(self) -> Request {
-        Request::no_content(
+        Request::new(
             Method::DELETE,
             format!("{BASE_PATH}/{}", self.id.into_string()),
         )

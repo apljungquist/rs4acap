@@ -68,11 +68,11 @@ impl CreateRecordingGroupsRequest {
 
     pub fn into_request(self) -> Request {
         let body = serde_json::to_string_pretty(&json!({"data": self.data})).unwrap();
-        Request::json(
+        Request::new(
             Method::POST,
             "config/rest/recording-group/v2beta/recordingGroups".to_string(),
         )
-        .body(body)
+        .json(body)
     }
 
     pub async fn send(

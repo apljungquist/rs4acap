@@ -41,7 +41,7 @@ impl GetMaintenanceModeRequest {
     }
 
     pub fn into_request(self) -> Request {
-        Request::no_content(Method::GET, format!("{BASE_PATH}/maintenanceMode"))
+        Request::new(Method::GET, format!("{BASE_PATH}/maintenanceMode"))
     }
 
     pub async fn send(
@@ -67,8 +67,8 @@ impl StartMaintenanceModeRequest {
     pub fn into_request(self) -> Request {
         // PANICS:
         // The `unwrap` will never panic because `self.data` can always be serialized to JSON.
-        Request::json(Method::POST, format!("{BASE_PATH}/maintenanceMode/start"))
-            .body(serde_json::to_string_pretty(&json!({"data": self.data})).unwrap())
+        Request::new(Method::POST, format!("{BASE_PATH}/maintenanceMode/start"))
+            .json(serde_json::to_string_pretty(&json!({"data": self.data})).unwrap())
     }
 
     pub async fn send(
@@ -90,8 +90,8 @@ impl StopMaintenanceModeRequest {
     pub fn into_request(self) -> Request {
         // PANICS:
         // The `unwrap` will never panic because the body is a static JSON value.
-        Request::json(Method::POST, format!("{BASE_PATH}/maintenanceMode/stop"))
-            .body(serde_json::to_string_pretty(&json!({"data": {}})).unwrap())
+        Request::new(Method::POST, format!("{BASE_PATH}/maintenanceMode/stop"))
+            .json(serde_json::to_string_pretty(&json!({"data": {}})).unwrap())
     }
 
     pub async fn send(

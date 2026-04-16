@@ -105,7 +105,7 @@ impl ListRequest {
     pub async fn send(self, client: &impl HttpClient) -> anyhow::Result<ParamList> {
         let path = format!("{PATH}?action=list&group={}", self.group);
         let response = client
-            .execute(Request::no_content(Method::GET, path))
+            .execute(Request::new(Method::GET, path))
             .await
             .context("sending param.cgi request")?;
 

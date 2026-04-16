@@ -82,8 +82,8 @@ impl AddActionRuleRequest {
         self,
         client: &(impl HttpClient + Sync),
     ) -> Result<AddActionRuleResponse, Error<Infallible>> {
-        let request = Request::application_soap_xml(reqwest::Method::POST, PATH.to_string())
-            .body(self.into_envelope());
+        let request =
+            Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
         soap_http::send_request(client, request).await
     }
 }
@@ -145,8 +145,8 @@ impl GetActionRulesRequest {
         self,
         client: &(impl HttpClient + Sync),
     ) -> Result<GetActionRulesResponse, Error<Infallible>> {
-        let request = Request::application_soap_xml(reqwest::Method::POST, PATH.to_string())
-            .body(self.into_envelope());
+        let request =
+            Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
         soap_http::send_request(client, request).await
     }
 }
