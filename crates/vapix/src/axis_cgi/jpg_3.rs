@@ -32,6 +32,7 @@ impl Request {
 }
 
 impl Request {
+    // TODO: Migrate to `HttpClient` when cassette tests support binary responses.
     pub async fn send(self, client: &Client) -> anyhow::Result<Vec<u8>> {
         let Self {
             resolution,

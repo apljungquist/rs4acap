@@ -5,12 +5,9 @@
 use std::{collections::HashMap, fmt, fmt::Debug};
 
 use anyhow::{bail, Context};
-use reqwest::{Method, StatusCode};
+use reqwest::Method;
 
-use crate::{
-    http::{HttpClient, Request},
-    Client,
-};
+use crate::http::{HttpClient, Request};
 
 const PATH: &str = "axis-cgi/param.cgi";
 
@@ -18,6 +15,14 @@ fn bool2str(b: bool) -> &'static str {
     match b {
         true => "yes",
         false => "no",
+    }
+}
+
+fn str2bool(s: &str) -> anyhow::Result<bool> {
+    match s {
+        "yes" => Ok(true),
+        "no" => Ok(false),
+        other => bail!("expected 'yes' or 'no', got '{other}'"),
     }
 }
 
@@ -73,6 +78,17 @@ impl Parameter for ImageResolution {
     }
 }
 
+pub struct NetworkSshEnabled;
+
+impl Parameter for NetworkSshEnabled {
+    type Value = bool;
+    const KEY: &'static str = "root.Network.SSH.Enabled";
+    fn parse(raw: &str) -> anyhow::Result<bool> {
+        str2bool(raw)
+    }
+}
+
+// TODO: Implement lossless checking
 /// The response from a parameter list request.
 #[derive(Clone, Debug)]
 pub struct ParamList(HashMap<String, String>);
@@ -134,24 +150,26 @@ impl UpdateRequest {
         self
     }
 
-    pub async fn send(self, client: &Client) -> anyhow::Result<()> {
-        let mut query: Vec<(&str, &str)> = vec![("action", "update")];
+    pub async fn send(self, client: &(impl HttpClient + Sync)) -> anyhow::Result<()> {
+        let mut path = format!("{PATH}?action=update");
         for (k, v) in &self.parameters {
-            query.push((k, v));
+            path.push('&');
+            path.push_str(k);
+            path.push('=');
+            path.push_str(v);
         }
-        let response = client.get(PATH)?.query(&query).send().await?;
-        let status = response.status();
-        let text = response
-            .text()
+        let response = client
+            .execute(Request::new(Method::GET, path))
             .await
-            .with_context(|| format!("status code: {status}"))?;
+            .context("sending param.cgi update request")?;
+        let text = response.body.context("reading param.cgi update response")?;
 
-        if status == StatusCode::OK && text.trim() == "OK" {
+        if response.status.is_success() && text.trim() == "OK" {
             Ok(())
         } else if let Some(e) = text.trim().strip_prefix("# Error: ") {
             bail!("{e}")
         } else {
-            bail!("Unexpected response: {status} {text}")
+            bail!("Unexpected response: {} {text}", response.status)
         }
     }
 }
