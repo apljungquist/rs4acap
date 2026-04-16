@@ -1,0 +1,1 @@
+GET axis-cgi/param.cgi?action=update&root.Network.SSH.Enabled=yes

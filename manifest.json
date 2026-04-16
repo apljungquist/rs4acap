@@ -151,6 +151,14 @@
         "M1075-L@12.9.57"
       ]
     },
+    "parameter_management_update_network_ssh_enabled": {
+      "08d34de4f68545ed": [
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57",
+        "P8815-2@10.12.228",
+        "P8815-2@11.11.192"
+      ]
+    },
     "remote_object_storage_1_beta_crud": {
       "010bbab858ce3543": [
         "D2210-VE@11.11.192",
