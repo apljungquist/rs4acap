@@ -11,8 +11,48 @@ use crate::{
 };
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateRecordingGroupResponse {
     pub id: String,
+    pub container_format: String,
+    pub description: String,
+    pub destinations: Vec<Destination>,
+    pub max_retention_time: u64,
+    pub nice_name: String,
+    pub post_duration: u64,
+    pub pre_duration: u64,
+    pub segment_duration: SegmentDuration,
+    pub segment_size: SegmentSize,
+    pub span_duration: u64,
+    pub stream_options: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Destination {
+    pub remote_object_storage: RemoteObjectStorage,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoteObjectStorage {
+    pub id: String,
+    #[serde(default)]
+    pub prefix: String,
+    #[serde(default)]
+    pub postfix: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SegmentDuration {
+    pub max: u64,
+    pub target: u64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SegmentSize {
+    pub max: u64,
+    pub target: u64,
 }
 
 #[derive(Debug)]
