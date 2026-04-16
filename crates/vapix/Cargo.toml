@@ -25,7 +25,7 @@ url = { workspace = true }
 env_logger = { workspace = true }
 expect-test = { workspace = true }
 libtest-mimic = { workspace = true }
-regex = { workspace = true }
+rs4a-cassette-testing = { workspace = true }
 tokio = { workspace = true, features = ["macros"] }
 
 [features]

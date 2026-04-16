@@ -1795,6 +1795,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "rs4a-cassette-testing"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "log",
+ "regex",
+ "reqwest",
+ "rs4a-vapix",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "rs4a-dut"
 version = "0.1.0"
 dependencies = [
@@ -1815,8 +1828,8 @@ dependencies = [
  "libtest-mimic",
  "log",
  "quick-xml",
- "regex",
  "reqwest",
+ "rs4a-cassette-testing",
  "rs4a-dut",
  "semver",
  "serde",
