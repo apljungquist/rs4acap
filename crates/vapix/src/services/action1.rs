@@ -4,14 +4,15 @@
 mod action_configurations;
 mod action_rules;
 
-pub use action_configurations::{AddActionConfigurationResponse, GetActionConfigurationsResponse};
-pub use action_rules::{AddActionRuleResponse, Condition, GetActionRulesResponse};
+pub use action_configurations::{
+    AddActionConfigurationResponse, GetActionConfigurationsRequest, GetActionConfigurationsResponse,
+};
+pub use action_rules::{
+    AddActionRuleResponse, Condition, GetActionRulesRequest, GetActionRulesResponse,
+};
 
-use crate::{
-    action1::{
-        action_configurations::AddActionConfigurationRequest, action_rules::AddActionRuleRequest,
-    },
-    soap::SimpleRequest,
+use crate::action1::{
+    action_configurations::AddActionConfigurationRequest, action_rules::AddActionRuleRequest,
 };
 
 pub fn add_action_configuration(template_token: &str) -> AddActionConfigurationRequest {
@@ -22,13 +23,10 @@ pub fn add_action_rule(name: String, primary_action: u16) -> AddActionRuleReques
     AddActionRuleRequest::new(name, primary_action)
 }
 
-pub fn get_action_configurations() -> SimpleRequest<GetActionConfigurationsResponse> {
-    SimpleRequest::new(
-        "http://www.axis.com/vapix/ws/action1",
-        "GetActionConfigurations",
-    )
+pub fn get_action_configurations() -> GetActionConfigurationsRequest {
+    GetActionConfigurationsRequest
 }
 
-pub fn get_action_rules() -> SimpleRequest<GetActionRulesResponse> {
-    SimpleRequest::new("http://www.axis.com/vapix/ws/action1", "GetActionRules")
+pub fn get_action_rules() -> GetActionRulesRequest {
+    GetActionRulesRequest
 }

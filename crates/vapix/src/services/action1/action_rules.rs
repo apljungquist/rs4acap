@@ -1,9 +1,15 @@
+use std::convert::Infallible;
+
 use serde::Deserialize;
 
 use crate::{
-    soap::SimpleRequest,
-    soap_http::{SoapHttpRequest, SoapRequest},
+    http::{Error, HttpClient, Request},
+    soap, soap_http,
 };
+
+const PATH: &str = "vapix/services";
+
+const NAMESPACE: &str = "http://www.axis.com/vapix/ws/action1";
 
 pub struct AddActionRuleRequest {
     pub name: String,
@@ -33,10 +39,8 @@ impl AddActionRuleRequest {
         self.conditions.condition.push(condition);
         self
     }
-}
 
-impl SoapRequest for AddActionRuleRequest {
-    fn to_envelope(self) -> anyhow::Result<String> {
+    pub fn into_envelope(self) -> String {
         let Self {
             name,
             enabled,
@@ -71,14 +75,17 @@ impl SoapRequest for AddActionRuleRequest {
         params.push_str(&primary_action.to_string());
         params.push_str(r#"</PrimaryAction>"#);
         params.push_str(r#"</NewActionRule>"#);
-        SimpleRequest::<()>::new("http://www.axis.com/vapix/ws/action1", "AddActionRule")
-            .params(params)
-            .to_envelope()
+        soap::envelope(NAMESPACE, "AddActionRule", Some(&params))
     }
-}
 
-impl SoapHttpRequest for AddActionRuleRequest {
-    type Data = AddActionRuleResponse;
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<AddActionRuleResponse, Error<Infallible>> {
+        let request = Request::application_soap_xml(reqwest::Method::POST, PATH.to_string())
+            .body(self.into_envelope());
+        soap_http::send_request(client, request).await
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -124,6 +131,24 @@ pub struct ActionRules {
 #[serde(rename_all = "PascalCase")]
 pub struct GetActionRulesResponse {
     pub action_rules: ActionRules,
+}
+
+#[derive(Debug)]
+pub struct GetActionRulesRequest;
+
+impl GetActionRulesRequest {
+    pub fn into_envelope(self) -> String {
+        soap::envelope(NAMESPACE, "GetActionRules", None)
+    }
+
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<GetActionRulesResponse, Error<Infallible>> {
+        let request = Request::application_soap_xml(reqwest::Method::POST, PATH.to_string())
+            .body(self.into_envelope());
+        soap_http::send_request(client, request).await
+    }
 }
 
 #[cfg(test)]

@@ -1,9 +1,15 @@
+use std::convert::Infallible;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    soap::SimpleRequest,
-    soap_http::{SoapHttpRequest, SoapRequest},
+    http::{Error, HttpClient, Request},
+    soap, soap_http,
 };
+
+const PATH: &str = "vapix/services";
+
+const NAMESPACE: &str = "http://www.axis.com/vapix/ws/action1";
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -42,10 +48,8 @@ impl AddActionConfigurationRequest {
         });
         self
     }
-}
 
-impl SoapRequest for AddActionConfigurationRequest {
-    fn to_envelope(self) -> anyhow::Result<String> {
+    fn build_params(self) -> anyhow::Result<String> {
         let Self {
             name,
             template_token,
@@ -63,17 +67,26 @@ impl SoapRequest for AddActionConfigurationRequest {
         params.push_str(r#"</TemplateToken>"#);
         params.push_str(&quick_xml::se::to_string(&parameters)?);
         params.push_str(r#"</NewActionConfiguration>"#);
-        SimpleRequest::<()>::new(
-            "http://www.axis.com/vapix/ws/action1",
-            "AddActionConfiguration",
-        )
-        .params(params)
-        .to_envelope()
+        Ok(params)
     }
-}
 
-impl SoapHttpRequest for AddActionConfigurationRequest {
-    type Data = AddActionConfigurationResponse;
+    pub fn try_into_envelope(self) -> anyhow::Result<String> {
+        Ok(soap::envelope(
+            NAMESPACE,
+            "AddActionConfiguration",
+            Some(&self.build_params()?),
+        ))
+    }
+
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<AddActionConfigurationResponse, Error<Infallible>> {
+        let envelope = self.try_into_envelope().map_err(Error::Request)?;
+        let request =
+            Request::application_soap_xml(reqwest::Method::POST, PATH.to_string()).body(envelope);
+        soap_http::send_request(client, request).await
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -112,6 +125,24 @@ pub struct Parameter {
 
     #[serde(rename = "@Value")]
     pub value: String,
+}
+
+#[derive(Debug)]
+pub struct GetActionConfigurationsRequest;
+
+impl GetActionConfigurationsRequest {
+    pub fn into_envelope(self) -> String {
+        soap::envelope(NAMESPACE, "GetActionConfigurations", None)
+    }
+
+    pub async fn send(
+        self,
+        client: &(impl HttpClient + Sync),
+    ) -> Result<GetActionConfigurationsResponse, Error<Infallible>> {
+        let request = Request::application_soap_xml(reqwest::Method::POST, PATH.to_string())
+            .body(self.into_envelope());
+        soap_http::send_request(client, request).await
+    }
 }
 
 #[cfg(test)]

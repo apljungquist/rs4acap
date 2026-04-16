@@ -5,7 +5,6 @@ use rs4a_vapix::{
     action1::Condition,
     apis,
     remote_object_storage_1_beta::{CreateDestinationRequest, DestinationId, S3Destination},
-    soap_http::SoapHttpRequest,
     Client, ClientBuilder,
 };
 use serde_json::json;

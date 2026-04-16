@@ -8,7 +8,6 @@ use rs4a_vapix::{
     firmware_management_1::UpgradeData,
     json_rpc::{parse_data, parse_data_lossless},
     soap::parse_soap,
-    soap_http::SoapRequest,
     system_ready_1::SystemreadyData,
 };
 
@@ -72,7 +71,7 @@ fn can_serialize_action_1_requests() {
             .param("color", "green,none")
             .param("duration", "1")
             .param("interval", "250")
-            .to_envelope()
+            .try_into_envelope()
             .unwrap(),
     );
     expect_file!["./snapshots/add_action_rule.xml"].assert_eq(
@@ -82,14 +81,10 @@ fn can_serialize_action_1_requests() {
                 message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#
                     .to_string(),
             })
-            .to_envelope()
-            .unwrap(),
+            .into_envelope(),
     );
-    expect_file!["./snapshots/get_action_configurations.xml"].assert_eq(
-        &apis::action_1::get_action_configurations()
-            .to_envelope()
-            .unwrap(),
-    );
+    expect_file!["./snapshots/get_action_configurations.xml"]
+        .assert_eq(&apis::action_1::get_action_configurations().into_envelope());
     expect_file!["./snapshots/get_action_rules.xml"]
-        .assert_eq(&apis::action_1::get_action_rules().to_envelope().unwrap());
+        .assert_eq(&apis::action_1::get_action_rules().into_envelope());
 }
