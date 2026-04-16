@@ -35,6 +35,7 @@ rs4a-authentication = { path = "crates/authentication" }
 rs4a-bin-utils = {path = "crates/bin-utils" }
 rs4a-dut = { version = "0.1", path = "crates/dut" }
 rs4a-vapix = { path = "crates/vapix" }
+rs4a-cassette-testing = { path = "crates/cassette-testing" }
 rs4a-vlt = { path = "crates/vlt" }
 
 [workspace.package]

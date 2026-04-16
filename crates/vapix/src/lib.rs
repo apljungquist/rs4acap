@@ -1,6 +1,5 @@
 pub mod apis;
 mod axis_cgi;
-pub mod cassette;
 mod client;
 mod config;
 pub mod http;
