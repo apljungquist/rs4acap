@@ -1,4 +1,5 @@
 //! A collection of APIs that can be found under the `/axis-cgi/` path.
+pub mod api_discovery_1;
 pub mod applications_config;
 pub mod basic_device_info_1;
 pub mod firmware_management_1;

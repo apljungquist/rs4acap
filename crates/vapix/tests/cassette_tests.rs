@@ -4,6 +4,7 @@ use libtest_mimic::{Arguments, Trial};
 use log::{warn, LevelFilter};
 use rs4a_cassette_testing::{Cassette, CassetteClient, DeviceInfo, Library};
 use rs4a_vapix::{
+    api_discovery_1::Api,
     apis,
     apis::basic_device_info_1,
     basic_device_info_1::{ProductType, UnrestrictedProperties},
@@ -22,7 +23,6 @@ use rs4a_vapix::{
 };
 use semver::VersionReq;
 use url::Url;
-
 // When a test fails, it may leave resources intact that will cause future runs to fail.
 // This must be cleaned up manually by either removing them individually or resetting the device.
 // This is tedious, but hopefully updating cassettes will be rare.
@@ -109,6 +109,8 @@ macro_rules! cassette_tests {
 }
 
 cassette_tests! {
+    api_discovery_1_get_api_list,
+    api_discovery_1_get_supported_versions,
     basic_device_info_get_all_properties => [
         (
             r#""SocSerialNumber": "[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}""#,
@@ -266,6 +268,32 @@ fn main() {
         library.cleanup_unreferenced().unwrap();
     }
     conclusion.exit();
+}
+
+async fn api_discovery_1_get_api_list(client: &CassetteClient, _: Option<Prelude>) {
+    use rs4a_vapix::api_discovery_1::GetApiListRequest;
+
+    let data = GetApiListRequest::default().send(client).await.unwrap();
+    let Api { .. } = data
+        .api_list
+        .iter()
+        .find(|a| a.id == "api-discovery" && a.parse_version().unwrap().major == 1)
+        .expect("api-discovery should be in its own list");
+
+    for api in &data.api_list {
+        api.parse_version().unwrap();
+        api.parse_status().unwrap();
+    }
+}
+
+async fn api_discovery_1_get_supported_versions(client: &CassetteClient, _: Option<Prelude>) {
+    use rs4a_vapix::api_discovery_1::GetSupportedVersionsRequest;
+
+    let data = GetSupportedVersionsRequest::default()
+        .send(client)
+        .await
+        .unwrap();
+    assert!(!data.api_versions.is_empty());
 }
 
 async fn basic_device_info_get_all_properties(client: &CassetteClient, _: Option<Prelude>) {

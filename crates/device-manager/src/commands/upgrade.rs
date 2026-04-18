@@ -14,7 +14,7 @@ fn parse_auto_rollback(s: &str) -> anyhow::Result<AutoRollback> {
         "never" => Ok(AutoRollback::Never),
         other => {
             let minutes: u32 = other.parse().with_context(|| {
-                format!("expected 'never', 'default', or a number of minutes, got '{other}'")
+                format!("expected 'never' or a number of minutes, got '{other}'")
             })?;
             Ok(AutoRollback::Minutes(minutes))
         }
