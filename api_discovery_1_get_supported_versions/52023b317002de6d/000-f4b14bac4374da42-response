@@ -1,0 +1,3 @@
+200 OK
+
+{"method": "getSupportedVersions", "data": {"apiVersions": ["1.1"]}}

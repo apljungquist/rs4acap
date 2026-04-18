@@ -1,0 +1,6 @@
+POST axis-cgi/apidiscovery.cgi
+Content-Type: application/json
+
+{
+  "method": "getSupportedVersions"
+}

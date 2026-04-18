@@ -59,6 +59,10 @@
       "prod_nbr": "M1075-L",
       "version": "12.9.57"
     },
+    "M3066-V@10.12.323": {
+      "prod_nbr": "M3066-V",
+      "version": "10.12.323"
+    },
     "P3245-LVE@11.11.192": {
       "prod_nbr": "P3245-LVE",
       "version": "11.11.192"
@@ -73,7 +77,28 @@
     }
   },
   "cassettes": {
+    "api_discovery_1_get_api_list": {
+      "50abde5d377a332d": [
+        "M3066-V@10.12.323"
+      ],
+      "a22cb944593bfa88": [
+        "M1075-L@12.9.57"
+      ],
+      "febaa2d7df10a75b": [
+        "P3245-LVE@11.11.192"
+      ]
+    },
+    "api_discovery_1_get_supported_versions": {
+      "52023b317002de6d": [
+        "M1075-L@12.9.57",
+        "M3066-V@10.12.323",
+        "P3245-LVE@11.11.192"
+      ]
+    },
     "basic_device_info_get_all_properties": {
+      "669de485b78317fb": [
+        "M3066-V@10.12.323"
+      ],
       "9221716544edac58": [
         "D4200-VE@12.9.57"
       ],
@@ -84,6 +109,9 @@
     "basic_device_info_get_all_unrestricted_properties": {
       "12a66703ec1ded3a": [
         "D4200-VE@12.9.57"
+      ],
+      "3269e6a95a82a6f2": [
+        "M3066-V@10.12.323"
       ],
       "f247415a8f274df1": [
         "P3245-LVE@11.11.192"
@@ -128,6 +156,9 @@
     "firmware_management_1_upgrade_mismatch": {
       "3302b11aef4f7209": [
         "M1075-L@12.9.57"
+      ],
+      "35c38d0d5a119af3": [
+        "M3066-V@10.12.323"
       ]
     },
     "parameter_management_list_all": {
@@ -149,12 +180,16 @@
       ],
       "f30082d128055f2d": [
         "M1075-L@12.9.57"
+      ],
+      "f9b3c17339ed6f54": [
+        "M3066-V@10.12.323"
       ]
     },
     "parameter_management_update_network_ssh_enabled": {
       "08d34de4f68545ed": [
         "D4200-VE@12.9.57",
         "M1075-L@12.9.57",
+        "M3066-V@10.12.323",
         "P8815-2@10.12.228",
         "P8815-2@11.11.192"
       ]
@@ -215,28 +250,34 @@
         "P8815-2@11.11.192"
       ],
       "83e4ab44257704cc": [
+        "M3066-V@10.12.323",
         "P8815-2@10.12.228"
       ]
     }
   },
   "skipped": {
     "device_configuration_item_already_exists": [
+      "M3066-V@10.12.323",
       "P8815-2@10.12.228"
     ],
     "device_configuration_item_does_not_exist": [
+      "M3066-V@10.12.323",
       "P8815-2@10.12.228"
     ],
     "device_configuration_validation_error": [
+      "M3066-V@10.12.323",
       "P8815-2@10.12.228"
     ],
     "parameter_management_list_error": [
       "M1075-L@12.9.57",
+      "M3066-V@10.12.323",
       "P3245-LVE@11.11.192"
     ],
     "parameter_management_list_image_resolution": [
       "D4200-VE@12.9.57"
     ],
     "remote_object_storage_1_beta_crud": [
+      "M3066-V@10.12.323",
       "P8815-2@10.12.228"
     ],
     "siren_and_light_2_alpha_maintenance_mode": [
@@ -247,17 +288,21 @@
     "siren_and_light_2_alpha_maintenance_mode_not_supported": [
       "D2210-VE@12.9.57",
       "M1075-L@12.9.57",
+      "M3066-V@10.12.323",
       "P3245-LVE@11.11.192",
       "P8815-2@10.12.228",
       "P8815-2@11.11.192"
     ],
     "ssh_1_crud": [
+      "M3066-V@10.12.323",
       "P8815-2@10.12.228"
     ],
     "ssh_1_set_user_does_not_exist": [
+      "M3066-V@10.12.323",
       "P8815-2@10.12.228"
     ],
     "ssh_1_set_user_validation_error": [
+      "M3066-V@10.12.323",
       "P8815-2@10.12.228"
     ]
   }

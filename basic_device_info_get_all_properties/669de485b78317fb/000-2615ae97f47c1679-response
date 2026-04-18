@@ -1,0 +1,3 @@
+200 OK
+
+{"apiVersion": "1.3", "data": {"propertyList": {"Architecture": "aarch64", "ProdNbr": "M3066-V", "HardwareID": "7AC", "ProdFullName": "AXIS M3066-V Network Camera", "Version": "10.12.323", "ProdType": "Network Camera", "SocSerialNumber": "", "Soc": "Ambarella S5L", "Brand": "AXIS", "WebURL": "http://www.axis.com", "ProdVariant": "", "SerialNumber": "0123456789AB", "ProdShortName": "AXIS M3066-V", "BuildDate": "Feb 04 2026 10:03"}}}
