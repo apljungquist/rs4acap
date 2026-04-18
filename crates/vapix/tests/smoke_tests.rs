@@ -23,7 +23,7 @@ async fn test_client() -> Option<Client> {
     Some(
         client
             .with_inner(|b| b.danger_accept_invalid_certs(true))
-            .build_with_automatic_scheme()
+            .build()
             .await
             .unwrap(),
     )

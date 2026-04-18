@@ -36,9 +36,9 @@ impl Netloc {
         rs4a_vapix::ClientBuilder::new(self.host.clone())
             .plain_port(self.http_port)
             .secure_port(self.https_port)
-            .basic_authentication(&self.user, &self.pass)
+            .username_password(&self.user, &self.pass)
             .with_inner(|b| b.danger_accept_invalid_certs(true))
-            .build_with_automatic_scheme()
+            .build()
             .await
     }
 
@@ -47,7 +47,7 @@ impl Netloc {
             .plain_port(self.http_port)
             .secure_port(self.https_port)
             .with_inner(|b| b.danger_accept_invalid_certs(true))
-            .build_with_automatic_scheme()
+            .build()
             .await
     }
 }
