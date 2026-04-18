@@ -1,0 +1,3 @@
+200 OK
+
+{"apiVersion": "1.3", "data": {"propertyList": {"Architecture": "aarch64", "ProdNbr": "D6310", "HardwareID": "A12", "ProdFullName": "AXIS D6310 Air Quality Sensor", "Version": "12.9.57", "ProdType": "Air Quality Sensor", "SocSerialNumber": "00000000-00000000-01234567-89ABCDEF", "Soc": "Ambarella S6Lm", "Brand": "AXIS", "WebURL": "https://www.axis.com", "ProdVariant": "", "SerialNumber": "0123456789AB", "ProdShortName": "AXIS D6310", "BuildDate": "Feb 20 2026 18:22"}}}
