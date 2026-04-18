@@ -125,6 +125,7 @@ impl DeviceArchitecture {
 pub enum DeviceStatus {
     Connected = 1,
     OnLoan = 3,
+    UpgradingOs = 5,
 }
 
 impl DeviceStatus {
@@ -132,6 +133,7 @@ impl DeviceStatus {
         match self {
             DeviceStatus::Connected => "connected",
             DeviceStatus::OnLoan => "on-loan",
+            DeviceStatus::UpgradingOs => "upgrading-os",
         }
     }
 }
@@ -143,6 +145,7 @@ impl TryFrom<u8> for DeviceStatus {
         match value {
             1 => Ok(DeviceStatus::Connected),
             3 => Ok(DeviceStatus::OnLoan),
+            5 => Ok(DeviceStatus::UpgradingOs),
             _ => Err(format!("Unknown device status: {}", value)),
         }
     }
@@ -160,6 +163,19 @@ where
 {
     let s = v.to_rfc3339_opts(SecondsFormat::Millis, true);
     serializer.serialize_str(&s)
+}
+
+fn serialize_optional_datetime<S>(
+    v: &Option<DateTime<Utc>>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match v {
+        Some(dt) => serialize_datetime(dt, serializer),
+        None => serializer.serialize_none(),
+    }
 }
 
 fn serialize_datetime_array<S>(vs: &Vec<DateTime<Utc>>, serializer: S) -> Result<S::Ok, S::Error>
@@ -184,6 +200,38 @@ where
     let list = list.iter().map(|fw| fw.0.to_string()).collect::<Vec<_>>();
     let s = list.join(";");
     serializer.serialize_str(&s)
+}
+
+fn deserialize_non_empty_string<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    if s.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(s))
+    }
+}
+
+fn serialize_non_empty_string<S>(v: &Option<String>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match v {
+        Some(s) => serializer.serialize_str(s),
+        None => serializer.serialize_str(""),
+    }
+}
+
+/// Deserializes a present-but-nullable field into `Some(None)` for null, `Some(Some(v))` for a value.
+/// When paired with `#[serde(default)]`, an absent field becomes the outer `None`.
+fn deserialize_nullable<'de, D, T>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Ok(Some(Option::deserialize(deserializer)?))
 }
 
 fn deserialize_semicolon_separated_list<'de, D>(
@@ -287,15 +335,25 @@ pub struct NewLoan {
     pub loan_end: DateTime<Utc>,
     pub id: LoanId,
     pub selected_firmware: FirmwareVersion,
-    pub password: String,
-    #[serde(serialize_with = "serialize_datetime")]
-    pub started_at: DateTime<Utc>,
+    #[serde(
+        deserialize_with = "deserialize_non_empty_string",
+        serialize_with = "serialize_non_empty_string"
+    )]
+    pub password: Option<String>,
+    #[serde(serialize_with = "serialize_optional_datetime")]
+    pub started_at: Option<DateTime<Utc>>,
     pub status: DeviceStatus,
-    pub username: String,
+    #[serde(
+        deserialize_with = "deserialize_non_empty_string",
+        serialize_with = "serialize_non_empty_string"
+    )]
+    pub username: Option<String>,
     pub loanable: NewLoanable,
     pub meta: Vec<String>,
 }
 
+// TODO: Consider modeling relationship between omitted fields and status
+// TODO: Consider updating old responses - no need to support historical versions of this service.
 #[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Loan {
@@ -308,12 +366,20 @@ pub struct Loan {
     pub loan_start: DateTime<Utc>,
     pub loanable: Loanable,
     pub meta: Vec<String>,
-    pub password: String,
+    #[serde(
+        deserialize_with = "deserialize_non_empty_string",
+        serialize_with = "serialize_non_empty_string"
+    )]
+    pub password: Option<String>,
     pub selected_firmware: FirmwareVersion,
-    #[serde(serialize_with = "serialize_datetime")]
-    pub started_at: DateTime<Utc>,
+    #[serde(serialize_with = "serialize_optional_datetime")]
+    pub started_at: Option<DateTime<Utc>>,
     pub status: DeviceStatus,
-    pub username: String,
+    #[serde(
+        deserialize_with = "deserialize_non_empty_string",
+        serialize_with = "serialize_non_empty_string"
+    )]
+    pub username: Option<String>,
 }
 
 impl Loan {
@@ -367,12 +433,26 @@ impl Display for LoanId {
 #[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Loanable {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub device_map_id: Option<u16>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
     /// Despite it's name, the device is not accessible from the internet at this IP.
     /// Consider using [`Loan::host`] instead.
     pub external_ip: ExternalIp,
-    pub internal_ip: String,
     pub id: LoanableId,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image_url: Option<PathBuf>,
+    pub internal_ip: String,
     pub model: String,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_nullable",
+        skip_serializing_if = "Option::is_none"
+    )]
+    portcast_device: Option<Option<PortcastDevice>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]

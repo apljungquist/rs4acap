@@ -140,7 +140,7 @@ Options:
   -s, --status <STATUS>
           Consider only devices with a matching status
           
-          [possible values: connected, on-loan]
+          [possible values: connected, on-loan, upgrading-os]
 
   -h, --help
           Print help (see a summary with '-h')

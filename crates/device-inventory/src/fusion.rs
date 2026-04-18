@@ -312,7 +312,7 @@ impl Device {
                 .as_ref()
                 .map(|(_, d)| d.username.clone()),
         );
-        values.extend(self.vlt_loan.as_ref().map(|d| d.username.clone()));
+        values.extend(self.vlt_loan.as_ref().and_then(|d| d.username.clone()));
         values.dedup();
         debug_assert!(values.len() < 2);
         values.pop()
@@ -327,7 +327,7 @@ impl Device {
                 .as_ref()
                 .map(|(_, d)| d.password.dangerous_reveal().to_string()),
         );
-        values.extend(self.vlt_loan.as_ref().map(|d| d.password.clone()));
+        values.extend(self.vlt_loan.as_ref().and_then(|d| d.password.clone()));
         values.dedup();
         debug_assert!(values.len() < 2);
         values.pop()
@@ -364,7 +364,8 @@ impl Device {
             match d.status {
                 DeviceStatus::Connected => priorities.push(4),
                 DeviceStatus::OnLoan => priorities.push(5),
-                _ => priorities.push(6),
+                DeviceStatus::UpgradingOs => priorities.push(6),
+                _ => priorities.push(7),
             };
         }
         priorities

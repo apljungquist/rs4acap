@@ -49,16 +49,17 @@ fn sync_parsed(db: &Database, loans: Vec<Loan>) -> anyhow::Result<HashMap<String
     let mut devices = db.read_devices()?;
     let mut vlt_aliases: HashSet<String> = HashSet::new();
     for loan in loans.into_iter() {
-        let (alias, device) = device_from_loan(loan);
-        vlt_aliases.insert(alias.clone());
-        devices.insert(alias, device);
+        if let Some((alias, device)) = device_from_loan(loan) {
+            vlt_aliases.insert(alias.clone());
+            devices.insert(alias, device);
+        }
     }
     devices.retain(|alias, _| !alias.starts_with("vlt-") || vlt_aliases.contains(alias));
     db.write_devices(&devices)?;
     Ok(devices)
 }
 
-pub fn device_from_loan(loan: Loan) -> (String, Device) {
+pub fn device_from_loan(loan: Loan) -> Option<(String, Device)> {
     let host = loan.host();
     let http_port = loan.http_port();
     let https_port = loan.https_port();
@@ -76,7 +77,9 @@ pub fn device_from_loan(loan: Loan) -> (String, Device) {
             },
         ..
     } = loan;
-    (
+    let username = username?;
+    let password = password?;
+    Some((
         format!("vlt-{id}"),
         Device {
             model: Some(model),
@@ -87,5 +90,5 @@ pub fn device_from_loan(loan: Loan) -> (String, Device) {
             https_port: Some(https_port),
             ssh_port: Some(ssh_port),
         },
-    )
+    ))
 }
