@@ -15,7 +15,7 @@ serde = { workspace = true, features = ["derive"] }
 base64 = { workspace = true }
 quick-xml = { workspace = true, features = ["serialize"] }
 rs4a-dut = { workspace = true }
-semver = { workspace = true }
+semver = { workspace = true, features = ["serde"] }
 serde_json = { workspace = true, features = ["raw_value"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }

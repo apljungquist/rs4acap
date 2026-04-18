@@ -2,6 +2,10 @@ pub mod api_discovery_1 {
     pub use crate::api_discovery_1::{GetApiListRequest, GetSupportedVersionsRequest};
 }
 
+pub mod discover {
+    pub use crate::discover::DiscoverRequest;
+}
+
 pub mod applications_config {
     pub use crate::applications_config::ApplicationConfigRequest;
 }

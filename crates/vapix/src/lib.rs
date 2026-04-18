@@ -16,5 +16,7 @@ pub use axis_cgi::{
     parameter_management, pwdgrp, system_ready_1,
 };
 pub use client::{Client, ClientBuilder, Scheme};
-pub use config::{recording_group_1, remote_object_storage_1_beta, siren_and_light_2_alpha, ssh_1};
+pub use config::{
+    discover, recording_group_1, remote_object_storage_1_beta, siren_and_light_2_alpha, ssh_1,
+};
 pub use services::{action1, event1};

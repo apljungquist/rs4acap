@@ -8,6 +8,7 @@ use rs4a_vapix::{
     apis,
     apis::basic_device_info_1,
     basic_device_info_1::{ProductType, UnrestrictedProperties},
+    discover::ApiState,
     firmware_management_1::UpgradeRequest,
     http,
     parameter_management::{ImageResolution, ListRequest, NetworkSshEnabled, UpdateRequest},
@@ -131,6 +132,7 @@ cassette_tests! {
             r#""SerialNumber": "0123456789AB""#,
         ),
     ],
+    device_configuration_discover,
     device_configuration_item_does_not_exist,
     device_configuration_validation_error,
     device_configuration_item_already_exists,
@@ -318,6 +320,34 @@ async fn basic_device_info_get_all_unrestricted_properties(
 
     property_list.parse_product_type().unwrap();
     property_list.parse_version().unwrap();
+}
+
+async fn device_configuration_discover(client: &CassetteClient, prelude: Option<Prelude>) {
+    use rs4a_vapix::discover::DiscoverRequest;
+
+    if let Some(prelude) = prelude {
+        if !prelude.supports_device_config() {
+            return;
+        }
+    }
+
+    let data = DiscoverRequest.send(client).await.unwrap();
+    assert!(!data.apis.is_empty());
+
+    for versions in data.apis.values() {
+        for info in versions.values() {
+            let pre = info.version.pre.as_str();
+            let state = info.parse_state().unwrap();
+
+            match state {
+                ApiState::Alpha | ApiState::Beta => {
+                    assert!(pre.starts_with(state.to_string().as_str()))
+                }
+                ApiState::Released => assert!(pre.is_empty()),
+                _ => todo!("{state:?}"),
+            }
+        }
+    }
 }
 
 async fn device_configuration_item_does_not_exist(
