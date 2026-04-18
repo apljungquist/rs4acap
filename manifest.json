@@ -104,6 +104,9 @@
       ],
       "b95891a43483ffdc": [
         "P3245-LVE@11.11.192"
+      ],
+      "d31aae5dcb8284cb": [
+        "M1075-L@12.9.57"
       ]
     },
     "basic_device_info_get_all_unrestricted_properties": {
@@ -113,8 +116,19 @@
       "3269e6a95a82a6f2": [
         "M3066-V@10.12.323"
       ],
+      "5f71017b3d0f8a7b": [
+        "M1075-L@12.9.57"
+      ],
       "f247415a8f274df1": [
         "P3245-LVE@11.11.192"
+      ]
+    },
+    "device_configuration_discover": {
+      "0e6c93d0d143f4b0": [
+        "P3245-LVE@11.11.192"
+      ],
+      "cedbedcd6c1243ee": [
+        "M1075-L@12.9.57"
       ]
     },
     "device_configuration_item_already_exists": {
@@ -159,6 +173,9 @@
       ],
       "35c38d0d5a119af3": [
         "M3066-V@10.12.323"
+      ],
+      "705274eca08351ae": [
+        "P3245-LVE@11.11.192"
       ]
     },
     "parameter_management_list_all": {
@@ -190,6 +207,7 @@
         "D4200-VE@12.9.57",
         "M1075-L@12.9.57",
         "M3066-V@10.12.323",
+        "P3245-LVE@11.11.192",
         "P8815-2@10.12.228",
         "P8815-2@11.11.192"
       ]
@@ -212,6 +230,7 @@
     "ssh_1_crud": {
       "537e8892c15335ba": [
         "M1075-L@11.11.192",
+        "P3245-LVE@11.11.192",
         "P8815-2@11.11.192"
       ],
       "8be9f3f4f553d9bd": [
@@ -222,6 +241,7 @@
     "ssh_1_set_user_does_not_exist": {
       "0cc8ac149c0b2e1c": [
         "M1075-L@11.11.192",
+        "P3245-LVE@11.11.192",
         "P8815-2@11.11.192"
       ],
       "e8a9611ca8c99da0": [
@@ -232,6 +252,7 @@
     "ssh_1_set_user_validation_error": {
       "0c5e9bc851da2e7a": [
         "M1075-L@11.11.192",
+        "P3245-LVE@11.11.192",
         "P8815-2@11.11.192"
       ],
       "a2175aa2077011dd": [
@@ -256,6 +277,9 @@
     }
   },
   "skipped": {
+    "device_configuration_discover": [
+      "M3066-V@10.12.323"
+    ],
     "device_configuration_item_already_exists": [
       "M3066-V@10.12.323",
       "P8815-2@10.12.228"

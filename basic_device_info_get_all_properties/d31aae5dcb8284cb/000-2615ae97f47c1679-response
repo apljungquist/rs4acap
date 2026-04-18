@@ -1,0 +1,3 @@
+200 OK
+
+{"apiVersion": "1.3", "data": {"propertyList": {"Architecture": "aarch64", "ProdNbr": "M1075-L", "HardwareID": "92A.1", "ProdFullName": "AXIS M1075-L Box Camera", "Version": "12.9.57", "ProdType": "Box Camera", "SocSerialNumber": "00000000-00000000-01234567-89ABCDEF", "Soc": "Ambarella CV25", "Brand": "AXIS", "WebURL": "https://www.axis.com", "ProdVariant": "", "SerialNumber": "0123456789AB", "ProdShortName": "AXIS M1075-L", "BuildDate": "Feb 20 2026 18:24"}}}

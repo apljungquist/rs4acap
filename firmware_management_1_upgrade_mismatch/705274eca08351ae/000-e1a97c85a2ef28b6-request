@@ -1,0 +1,14 @@
+POST axis-cgi/firmwaremanagement.cgi
+Content-Type: multipart/form-data; boundary=----FormBoundaryS6untlhO8j7poXo
+
+------FormBoundaryS6untlhO8j7poXo
+Content-Disposition: form-data; name="data"
+Content-Type: application/json
+
+{"apiVersion":"1.0","method":"upgrade","params":{}}
+------FormBoundaryS6untlhO8j7poXo
+Content-Disposition: form-data; name="firmwareImage"; filename="firmware.bin"
+Content-Type: application/octet-stream
+
+DUMMY_FIRMWARE_BYTES
+------FormBoundaryS6untlhO8j7poXo--
