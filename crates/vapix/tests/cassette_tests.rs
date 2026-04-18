@@ -508,7 +508,7 @@ async fn parameter_management_list_image_resolution(
     if let Some(prelude) = prelude {
         if matches!(
             prelude.props.parse_product_type().unwrap(),
-            ProductType::NetworkStrobeSpeaker
+            ProductType::AirQualitySensor | ProductType::NetworkStrobeSpeaker
         ) {
             return;
         }

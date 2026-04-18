@@ -46,6 +46,7 @@ where
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ProductType {
+    AirQualitySensor,
     BoxCamera,
     DomeCamera,
     NetworkCamera,
@@ -57,6 +58,7 @@ pub enum ProductType {
 impl Display for ProductType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::AirQualitySensor => write!(f, "Air Quality Sensor"),
             Self::BoxCamera => write!(f, "Box Camera"),
             Self::DomeCamera => write!(f, "Dome Camera"),
             Self::NetworkCamera => write!(f, "Network Camera"),
@@ -72,6 +74,7 @@ impl FromStr for ProductType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            "Air Quality Sensor" => Ok(Self::AirQualitySensor),
             "Box Camera" => Ok(Self::BoxCamera),
             "Dome Camera" => Ok(Self::DomeCamera),
             "Network Camera" => Ok(Self::NetworkCamera),
