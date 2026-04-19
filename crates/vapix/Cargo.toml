@@ -9,10 +9,10 @@ description = "Utilities for working with VAPIX"
 anyhow = { workspace = true }
 base32 = { workspace = true }
 clap = { workspace = true, optional = true }
+digest_auth = { workspace = true }
 log = { workspace = true }
 reqwest = { workspace = true, features = ["json", "http2"] }
 serde = { workspace = true, features = ["derive"] }
-base64 = { workspace = true }
 quick-xml = { workspace = true, features = ["serialize"] }
 rs4a-dut = { workspace = true }
 semver = { workspace = true, features = ["serde"] }

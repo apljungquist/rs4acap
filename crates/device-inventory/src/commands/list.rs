@@ -125,11 +125,11 @@ async fn probe_device(
     match (username, password) {
         (Some(username), Some(password)) => {
             let client = rs4a_vapix::Client::builder(host)
-                .basic_authentication(&username, &password)
                 .plain_port(http_port)
                 .secure_port(https_port)
                 .with_inner(|b| b.danger_accept_invalid_certs(true))
-                .build_with_automatic_scheme()
+                .username_password(&username, &password)
+                .build()
                 .await
                 .context("Could not create client")?;
 
@@ -147,7 +147,7 @@ async fn probe_device(
                 .plain_port(http_port)
                 .secure_port(https_port)
                 .with_inner(|b| b.danger_accept_invalid_certs(true))
-                .build_with_automatic_scheme()
+                .build()
                 .await
                 .context("Could not create client")?;
 
