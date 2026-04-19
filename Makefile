@@ -53,6 +53,7 @@ check_format_rs:
 ## _
 check_generated_files: \
 	Cargo.lock \
+	snapshots/cli4a-docs \
 	snapshots/device-finder-docs \
 	snapshots/device-inventory-docs \
 	snapshots/device-inventory-smoke-test \

@@ -8,6 +8,7 @@ Commit messages ...
 | Scope | Explanation            | Deprecated aliases |
 |-------|------------------------|--------------------|
 | a     | rs4a-authentication    |                    |
+| c     | cli4a                  |                    |
 | di    | device-inventory       | device-inventory   |
 | dm    | device-manager         |                    |
 | dut   | rs4a-dut               |                    |

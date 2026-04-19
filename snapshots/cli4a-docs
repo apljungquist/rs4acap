@@ -1,0 +1,91 @@
++ unset RUST_LOG
++ unset AXIS_DEVICE_IP
++ unset AXIS_DEVICE_PASS
++ unset AXIS_DEVICE_USER
++ unset AXIS_DEVICE_HTTP_PORT
++ unset AXIS_DEVICE_HTTPS_PORT
++ unset FIRMWARE_INVENTORY_LOCATION
++ unset FIRMWARE_INVENTORY_OFFLINE
++ cli4a help
+Usage: cli4a <COMMAND>
+
+Commands:
+  install      Install firmware matching a semver requirement
+  completions  Generate shell completions
+  help         Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
++ cli4a help completions
+Generate shell completions
+
+Example: `cli4a completions zsh | source /dev/stdin`
+
+Usage: cli4a completions <SHELL>
+
+Arguments:
+  <SHELL>
+          [possible values: bash, elvish, fish, powershell, zsh]
+
+Options:
+  -h, --help
+          Print help (see a summary with '-h')
++ cli4a help install
+Install firmware matching a semver requirement
+
+Fetches the device's model, resolves matching firmware, and applies it. Downgrades automatically use factory-default soft and re-initialize the device.
+
+Usage: cli4a install [OPTIONS] --host <HOST> <VERSION>
+
+Arguments:
+  <VERSION>
+          Semver version requirement (e.g. "12", "^12.8", "<13")
+
+Options:
+      --host <HOST>
+          Hostname or IP address of the device
+          
+          [env: AXIS_DEVICE_IP=]
+
+      --http-port <HTTP_PORT>
+          Override the default port for HTTP
+          
+          [env: AXIS_DEVICE_HTTP_PORT=]
+
+      --https-port <HTTPS_PORT>
+          Override the default port for HTTPS
+          
+          [env: AXIS_DEVICE_HTTPS_PORT=]
+
+  -u, --user <USER>
+          The username to use for authentication
+          
+          [env: AXIS_DEVICE_USER=]
+          [default: root]
+
+  -p, --pass <PASS>
+          The password to use for authentication
+          
+          [env: AXIS_DEVICE_PASS=]
+          [default: pass]
+
+      --inventory <INVENTORY>
+          Location of the firmware-inventory data
+          
+          [env: FIRMWARE_INVENTORY_LOCATION=]
+
+      --offline
+          Do not fetch firmware that is not already cached locally
+          
+          [env: FIRMWARE_INVENTORY_OFFLINE=]
+
+  -c, --auto-commit <AUTO_COMMIT>
+          Auto-commit behavior after upgrade
+          
+          [possible values: never, boot, started]
+
+  -r, --auto-rollback <AUTO_ROLLBACK>
+          Auto-rollback behavior: "never", or minutes
+
+  -h, --help
+          Print help (see a summary with '-h')
