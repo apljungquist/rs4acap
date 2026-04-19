@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use anyhow::bail;
 use semver::{Version, VersionReq};
 
@@ -6,9 +8,9 @@ use crate::db::Database;
 #[derive(Clone, Debug, clap::Args)]
 pub struct ListCommand {
     /// Glob pattern to match product names (default: all)
-    product: Option<glob::Pattern>,
+    pub product: Option<glob::Pattern>,
     /// Semver version requirement to filter versions
-    version: Option<VersionReq>,
+    pub version: Option<VersionReq>,
 }
 
 fn version_from_underscore(s: &str) -> Option<Version> {
@@ -21,7 +23,7 @@ fn version_from_underscore(s: &str) -> Option<Version> {
 }
 
 impl ListCommand {
-    pub fn exec(self, db: &Database) -> anyhow::Result<()> {
+    pub(crate) fn exec(self, db: &Database) -> anyhow::Result<String> {
         let Self {
             product,
             version: req,
@@ -37,6 +39,7 @@ impl ListCommand {
             bail!("No indexed products found. Run update first.");
         }
 
+        let mut out = String::new();
         for product in &matching {
             let versions = &index[product.as_str()];
             let mut entries: Vec<_> = versions
@@ -59,10 +62,10 @@ impl ListCommand {
                 } else {
                     ""
                 };
-                println!("{product} {semver}{cached}");
+                writeln!(out, "{product} {semver}{cached}")?;
             }
         }
 
-        Ok(())
+        Ok(out)
     }
 }

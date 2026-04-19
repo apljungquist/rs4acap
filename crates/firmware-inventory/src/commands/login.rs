@@ -13,10 +13,10 @@ use crate::db::Database;
 pub struct LoginCommand {
     /// Authenticate with a username and password.
     #[arg(long, short)]
-    username: Option<String>,
+    pub username: Option<String>,
     /// Store an existing session.
     #[arg(long, short)]
-    cookie: bool,
+    pub cookie: bool,
 }
 
 fn input(prompt: &str) -> anyhow::Result<String> {
@@ -43,7 +43,7 @@ fn direct_input_flow() -> anyhow::Result<String> {
 }
 
 impl LoginCommand {
-    pub async fn exec(self, db: Database) -> anyhow::Result<()> {
+    pub(crate) async fn exec(self, db: Database) -> anyhow::Result<String> {
         let Self { username, cookie } = self;
         assert_eq!(username.is_none(), cookie);
         let cookie = match username {
@@ -51,6 +51,6 @@ impl LoginCommand {
             Some(username) => username_password_flow(username).await?,
         };
         db.write_cookie(&cookie)?;
-        Ok(())
+        Ok(String::new())
     }
 }

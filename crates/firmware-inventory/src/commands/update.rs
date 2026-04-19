@@ -8,11 +8,11 @@ const MPQT_BASE_URL: &str = "https://www.axis.com/ftp/pub/axis/software/MPQT/";
 #[derive(Clone, Debug, clap::Args)]
 pub struct UpdateCommand {
     /// Glob pattern to match product names
-    product: glob::Pattern,
+    pub product: glob::Pattern,
 }
 
 impl UpdateCommand {
-    pub async fn exec(self, db: &Database, offline: bool) -> anyhow::Result<()> {
+    pub(crate) async fn exec(self, db: &Database, offline: bool) -> anyhow::Result<String> {
         let Self { product } = self;
 
         if offline {
@@ -66,6 +66,6 @@ impl UpdateCommand {
         db.write_index(&index)?;
         info!("Index updated");
 
-        Ok(())
+        Ok(String::new())
     }
 }

@@ -11,9 +11,9 @@ const MPQT_BASE_URL: &str = "https://www.axis.com/ftp/pub/axis/software/MPQT/";
 #[derive(Clone, Debug, clap::Args)]
 pub struct GetCommand {
     /// Glob pattern to match a product name (must match exactly one)
-    product: glob::Pattern,
+    pub product: glob::Pattern,
     /// Semver version requirement (e.g. "12", "^12.8", "<13")
-    version: VersionReq,
+    pub version: VersionReq,
 }
 
 fn version_from_underscore(s: &str) -> Option<Version> {
@@ -30,7 +30,7 @@ fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
 }
 
 impl GetCommand {
-    pub async fn exec(self, db: &Database, offline: bool) -> anyhow::Result<()> {
+    pub(crate) async fn exec(self, db: &Database, offline: bool) -> anyhow::Result<String> {
         let Self {
             product,
             version: req,
@@ -71,8 +71,7 @@ impl GetCommand {
         let path = db.firmware_path(product, &version_str);
 
         if path.exists() {
-            println!("{}", path.display());
-            return Ok(());
+            return Ok(format!("{}\n", path.display()));
         }
 
         if offline {
@@ -103,7 +102,6 @@ impl GetCommand {
         }
         fs::write(&path, &bytes).context("Failed to write firmware file")?;
 
-        println!("{}", path.display());
-        Ok(())
+        Ok(format!("{}\n", path.display()))
     }
 }
