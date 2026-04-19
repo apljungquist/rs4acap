@@ -11,13 +11,14 @@ use crate::Netloc;
 #[derive(Clone, Debug, clap::Args)]
 pub struct InitCommand {
     #[command(flatten)]
-    netloc: Netloc,
+    pub netloc: Netloc,
 }
 
 impl InitCommand {
-    pub async fn exec(self) -> anyhow::Result<()> {
+    pub async fn exec(self) -> anyhow::Result<String> {
         require_root_user(&self.netloc)?;
-        initialize(&self.netloc).await
+        initialize(&self.netloc).await?;
+        Ok(String::new())
     }
 }
 

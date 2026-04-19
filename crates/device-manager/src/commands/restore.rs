@@ -9,12 +9,13 @@ use crate::{restart_detector::RestartDetector, Netloc};
 #[derive(Clone, Debug, clap::Args)]
 pub struct RestoreCommand {
     #[command(flatten)]
-    netloc: Netloc,
+    pub netloc: Netloc,
 }
 
 impl RestoreCommand {
-    pub async fn exec(self) -> anyhow::Result<()> {
-        restore(&self.netloc).await
+    pub async fn exec(self) -> anyhow::Result<String> {
+        restore(&self.netloc).await?;
+        Ok(String::new())
     }
 }
 

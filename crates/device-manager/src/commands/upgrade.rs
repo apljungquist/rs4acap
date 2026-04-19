@@ -24,22 +24,22 @@ fn parse_auto_rollback(s: &str) -> anyhow::Result<AutoRollback> {
 #[derive(Clone, Debug, clap::Args)]
 pub struct UpgradeCommand {
     #[command(flatten)]
-    netloc: Netloc,
+    pub netloc: Netloc,
     /// Path to the firmware image
-    firmware: PathBuf,
+    pub firmware: PathBuf,
     /// Factory default mode to apply during upgrade
     #[arg(long, short = 'm')]
-    factory_default_mode: Option<FactoryDefaultMode>,
+    pub factory_default_mode: Option<FactoryDefaultMode>,
     /// Auto-commit behavior after upgrade
     #[arg(long, short = 'c')]
-    auto_commit: Option<AutoCommit>,
+    pub auto_commit: Option<AutoCommit>,
     /// Auto-rollback behavior: "never", or minutes
     #[arg(long, short = 'r')]
-    auto_rollback: Option<String>,
+    pub auto_rollback: Option<String>,
 }
 
 impl UpgradeCommand {
-    pub async fn exec(self) -> anyhow::Result<()> {
+    pub async fn exec(self) -> anyhow::Result<String> {
         let auto_rollback = self
             .auto_rollback
             .as_deref()
@@ -78,6 +78,6 @@ impl UpgradeCommand {
         let () = timeout(Duration::from_secs(300), restart_detector.wait()).await?;
 
         info!("Upgrade complete");
-        Ok(())
+        Ok(String::new())
     }
 }

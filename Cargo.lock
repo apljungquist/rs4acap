@@ -548,20 +548,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "device-manager"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "log",
- "rs4a-bin-utils",
- "rs4a-vapix",
- "semver",
- "tokio",
- "url",
-]
-
-[[package]]
 name = "dirs"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1805,6 +1791,20 @@ dependencies = [
  "rs4a-vapix",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "rs4a-device-manager"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "log",
+ "rs4a-bin-utils",
+ "rs4a-vapix",
+ "semver",
+ "tokio",
+ "url",
 ]
 
 [[package]]
