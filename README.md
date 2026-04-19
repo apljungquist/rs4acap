@@ -5,18 +5,50 @@ _A collection of language agnostic tools that facilitate development for the AXI
 ## Table of Contents
 
 - [Preview](#preview)
-  - [device-finder](#device-finder)
-  - [device-inventory](#device-inventory)
-  - [device-manager](#device-manager)
-  - [firmware-inventory](#firmware-inventory)
+  - [Porcelain programs](#porcelain-programs)
+    - [cli4a](#cli4a)
+  - [Plumbing programs](#plumbing-programs)
+    - [device-finder](#device-finder)
+    - [device-inventory](#device-inventory)
+    - [device-manager](#device-manager)
+    - [firmware-inventory](#firmware-inventory)
 - [Installation](#installation)
 - [Related projects](#related-projects)
 
 ## Preview
 
-The following tools are available:
+The tools in this project are split into two categories:
 
-### `device-finder`
+- **Porcelain programs** combine one or more plumbing programs to make common workflows ergonomic.
+  Because integrations change and break, porcelain is inherently more fragile than the plumbing it sits on.
+  To prevent combinatorial growth of the test matrix, only a subset of the plumbing functionality is exposed.
+- **Plumbing programs** each target a single integration.
+  These are designed to be composable, robust, and to afford the user more flexibility than porcelain programs.
+
+Note that some programs don't yet fit this model.
+The biggest deviation is in `device-inventory`, which integrates with mDNS and the VLT in addition to its own database.
+The status of `firmware-inventory` is also a bit murky as it integrates with an online service and its own database.
+
+### Porcelain programs
+
+#### `cli4a`
+
+```console
+$ cli4a help
+Usage: cli4a <COMMAND>
+
+Commands:
+  upgrade      Upgrade the device to a firmware version matching a semver requirement
+  completions  Generate shell completions
+  help         Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+```
+
+### Plumbing programs
+
+#### `device-finder`
 
 ```console
 $ device-finder help
@@ -31,7 +63,7 @@ Options:
   -h, --help  Print help
 ```
 
-### `device-inventory`
+#### `device-inventory`
 
 ```console
 $ device-inventory help
@@ -57,7 +89,7 @@ Options:
   -h, --help                   Print help
 ```
 
-### `device-manager`
+#### `device-manager`
 
 ```console
 $ device-manager help
@@ -75,7 +107,7 @@ Options:
   -h, --help  Print help
 ```
 
-### `firmware-inventory`
+#### `firmware-inventory`
 
 ```console
 $ firmware-inventory help
@@ -100,6 +132,7 @@ Options:
 The tools in this project can be installed using Cargo:
 
 ```shell
+cargo install --locked --git https://github.com/apljungquist/rs4a.git cli4a
 cargo install --locked --git https://github.com/apljungquist/rs4a.git device-finder
 cargo install --locked --git https://github.com/apljungquist/rs4a.git device-inventory
 cargo install --locked --git https://github.com/apljungquist/rs4a.git device-manager

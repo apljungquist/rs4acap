@@ -19,7 +19,7 @@ use crate::{
 const PATH: &str = "axis-cgi/firmwaremanagement.cgi";
 
 #[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum FactoryDefaultMode {
     Soft,
