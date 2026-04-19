@@ -56,7 +56,10 @@ impl InstallCommand {
             .await?
             .property_list;
         let current = props.parse_version()?;
-        let model = props.prod_nbr;
+        let model = match props.prod_nbr {
+            s if s == "P8815-2" => "P8815-2_3D_People_Counter".to_string(),
+            s => s,
+        };
         info!("Device model: {model}, version: {current}");
 
         let product = glob::Pattern::new(&model)
