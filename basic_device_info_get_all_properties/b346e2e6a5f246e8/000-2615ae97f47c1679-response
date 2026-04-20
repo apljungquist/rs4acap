@@ -1,0 +1,3 @@
+200 OK
+
+{"apiVersion": "1.3", "data": {"propertyList": {"Architecture": "aarch64", "ProdNbr": "Q1961-TE", "HardwareID": "947.2", "ProdFullName": "AXIS Q1961-TE Thermal Camera", "Version": "12.9.57", "ProdType": "Thermal Camera", "SocSerialNumber": "01234567-89ABCDEF", "Soc": "Axis Artpec-8", "Brand": "AXIS", "WebURL": "https://www.axis.com", "ProdVariant": "13mm", "SerialNumber": "0123456789AB", "ProdShortName": "AXIS Q1961-TE", "BuildDate": "Feb 20 2026 18:29"}}}

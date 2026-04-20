@@ -1,0 +1,3 @@
+200 OK
+
+{"apiVersion": "1.3", "data": {"propertyList": {"ProdNbr": "Q1951-E", "HardwareID": "7B5.1", "ProdFullName": "AXIS Q1951-E Thermal Camera", "Version": "11.11.192", "ProdType": "Thermal Camera", "Brand": "AXIS", "WebURL": "http://www.axis.com", "ProdVariant": "", "SerialNumber": "0123456789AB", "ProdShortName": "AXIS Q1951-E", "BuildDate": "Jan 17 2026 18:25"}}}
