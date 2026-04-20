@@ -25,9 +25,11 @@ tokio = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]
+clap = { workspace = true, features = ["derive", "env"] }
 env_logger = { workspace = true }
 expect-test = { workspace = true }
 libtest-mimic = { workspace = true }
+rs4a-bin-utils = { workspace = true }
 rs4a-cassette-testing = { workspace = true }
 tokio = { workspace = true, features = ["macros"] }
 

@@ -1952,6 +1952,7 @@ dependencies = [
  "log",
  "quick-xml",
  "reqwest",
+ "rs4a-bin-utils",
  "rs4a-cassette-testing",
  "rs4a-dut",
  "semver",
