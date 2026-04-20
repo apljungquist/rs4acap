@@ -1,0 +1,1 @@
+GET axis-cgi/param.cgi?action=list&group=root.Network.SSH.Enabled

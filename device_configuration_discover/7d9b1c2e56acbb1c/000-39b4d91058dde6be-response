@@ -1,0 +1,357 @@
+200 OK
+
+{
+  "apis": {
+    "action-rules": {
+      "v2": {
+        "doc": "/config/discover/apis/action-rules/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/action-rules/v2/doc.md",
+        "model": "/config/discover/apis/action-rules/v2/model.json",
+        "rest_api": "/config/rest/action-rules/v2beta",
+        "rest_openapi": "/config/discover/apis/action-rules/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/action-rules/v2/openapi.json",
+        "state": "beta",
+        "version": "2.0.0-beta.2"
+      }
+    },
+    "audio-multicast-ctrl": {
+      "v1": {
+        "doc": "/config/discover/apis/audio-multicast-ctrl/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/audio-multicast-ctrl/v1/doc.md",
+        "model": "/config/discover/apis/audio-multicast-ctrl/v1/model.json",
+        "rest_api": "/config/rest/audio-multicast-ctrl/v1beta",
+        "rest_openapi": "/config/discover/apis/audio-multicast-ctrl/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/audio-multicast-ctrl/v1/openapi.json",
+        "state": "beta",
+        "version": "1.0.0-beta.3"
+      }
+    },
+    "basic-device-info": {
+      "v2": {
+        "doc": "/config/discover/apis/basic-device-info/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/basic-device-info/v2/doc.md",
+        "model": "/config/discover/apis/basic-device-info/v2/model.json",
+        "rest_api": "/config/rest/basic-device-info/v2beta",
+        "rest_openapi": "/config/discover/apis/basic-device-info/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/basic-device-info/v2/openapi.json",
+        "state": "beta",
+        "version": "2.0.0-beta.2"
+      }
+    },
+    "cert": {
+      "v1": {
+        "doc": "/config/discover/apis/cert/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/cert/v1/doc.md",
+        "model": "/config/discover/apis/cert/v1/model.json",
+        "rest_api": "/config/rest/cert/v1",
+        "rest_openapi": "/config/discover/apis/cert/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/cert/v1/openapi.json",
+        "state": "released",
+        "version": "1.0.3"
+      }
+    },
+    "cert-est": {
+      "v1": {
+        "doc": "/config/discover/apis/cert-est/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/cert-est/v1/doc.md",
+        "model": "/config/discover/apis/cert-est/v1/model.json",
+        "rest_api": "/config/rest/cert-est/v1beta",
+        "rest_openapi": "/config/discover/apis/cert-est/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/cert-est/v1/openapi.json",
+        "state": "beta",
+        "version": "1.0.0-beta.1"
+      }
+    },
+    "crypto-policy": {
+      "v1": {
+        "doc": "/config/discover/apis/crypto-policy/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/crypto-policy/v1/doc.md",
+        "model": "/config/discover/apis/crypto-policy/v1/model.json",
+        "rest_api": "/config/rest/crypto-policy/v1beta",
+        "rest_openapi": "/config/discover/apis/crypto-policy/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/crypto-policy/v1/openapi.json",
+        "state": "beta",
+        "version": "1.0.0-beta.1"
+      }
+    },
+    "event-mqtt-bridge": {
+      "v2": {
+        "doc": "/config/discover/apis/event-mqtt-bridge/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/event-mqtt-bridge/v2/doc.md",
+        "model": "/config/discover/apis/event-mqtt-bridge/v2/model.json",
+        "rest_api": "/config/rest/event-mqtt-bridge/v2beta",
+        "rest_openapi": "/config/discover/apis/event-mqtt-bridge/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/event-mqtt-bridge/v2/openapi.json",
+        "state": "beta",
+        "version": "2.0.0-beta.2"
+      }
+    },
+    "event-schedules": {
+      "v2": {
+        "doc": "/config/discover/apis/event-schedules/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/event-schedules/v2/doc.md",
+        "model": "/config/discover/apis/event-schedules/v2/model.json",
+        "rest_api": "/config/rest/event-schedules/v2beta",
+        "rest_openapi": "/config/discover/apis/event-schedules/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/event-schedules/v2/openapi.json",
+        "state": "beta",
+        "version": "2.0.0-beta.1"
+      }
+    },
+    "firewall": {
+      "v1": {
+        "doc": "/config/discover/apis/firewall/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/firewall/v1/doc.md",
+        "model": "/config/discover/apis/firewall/v1/model.json",
+        "rest_api": "/config/rest/firewall/v1",
+        "rest_openapi": "/config/discover/apis/firewall/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/firewall/v1/openapi.json",
+        "state": "released",
+        "version": "1.1.1"
+      }
+    },
+    "geolocation": {
+      "v2": {
+        "doc": "/config/discover/apis/geolocation/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/geolocation/v2/doc.md",
+        "model": "/config/discover/apis/geolocation/v2/model.json",
+        "rest_api": "/config/rest/geolocation/v2beta",
+        "rest_openapi": "/config/discover/apis/geolocation/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/geolocation/v2/openapi.json",
+        "state": "beta",
+        "version": "2.0.0-beta.1"
+      }
+    },
+    "io-port-accessory-mode": {
+      "v0": {
+        "doc": "/config/discover/apis/io-port-accessory-mode/v0/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/io-port-accessory-mode/v0/doc.md",
+        "model": "/config/discover/apis/io-port-accessory-mode/v0/model.json",
+        "rest_api": "/config/rest/io-port-accessory-mode/v0beta",
+        "rest_openapi": "/config/discover/apis/io-port-accessory-mode/v0/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/io-port-accessory-mode/v0/openapi.json",
+        "state": "beta",
+        "version": "0.0.1-beta.4"
+      }
+    },
+    "lldp": {
+      "v1": {
+        "doc": "/config/discover/apis/lldp/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/lldp/v1/doc.md",
+        "model": "/config/discover/apis/lldp/v1/model.json",
+        "rest_api": "/config/rest/lldp/v1",
+        "rest_openapi": "/config/discover/apis/lldp/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/lldp/v1/openapi.json",
+        "state": "released",
+        "version": "1.0.2"
+      }
+    },
+    "log": {
+      "v1": {
+        "doc": "/config/discover/apis/log/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/log/v1/doc.md",
+        "model": "/config/discover/apis/log/v1/model.json",
+        "rest_api": "/config/rest/log/v1beta",
+        "rest_openapi": "/config/discover/apis/log/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/log/v1/openapi.json",
+        "state": "beta",
+        "version": "1.0.0-beta.1"
+      }
+    },
+    "mdnssd": {
+      "v2": {
+        "doc": "/config/discover/apis/mdnssd/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/mdnssd/v2/doc.md",
+        "model": "/config/discover/apis/mdnssd/v2/model.json",
+        "rest_api": "/config/rest/mdnssd/v2beta",
+        "rest_openapi": "/config/discover/apis/mdnssd/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/mdnssd/v2/openapi.json",
+        "state": "beta",
+        "version": "2.0.0-beta.1"
+      }
+    },
+    "network-settings": {
+      "v2": {
+        "doc": "/config/discover/apis/network-settings/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/network-settings/v2/doc.md",
+        "model": "/config/discover/apis/network-settings/v2/model.json",
+        "rest_api": "/config/rest/network-settings/v2beta",
+        "rest_openapi": "/config/discover/apis/network-settings/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/network-settings/v2/openapi.json",
+        "state": "beta",
+        "version": "2.0.0-beta.4"
+      }
+    },
+    "network-time-sync": {
+      "v1": {
+        "doc": "/config/discover/apis/network-time-sync/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/network-time-sync/v1/doc.md",
+        "model": "/config/discover/apis/network-time-sync/v1/model.json",
+        "rest_api": "/config/rest/network-time-sync/v1beta",
+        "rest_openapi": "/config/discover/apis/network-time-sync/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/network-time-sync/v1/openapi.json",
+        "state": "beta",
+        "version": "1.0.0-beta.6"
+      }
+    },
+    "oauth-ccgrant": {
+      "v1": {
+        "doc": "/config/discover/apis/oauth-ccgrant/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/oauth-ccgrant/v1/doc.md",
+        "model": "/config/discover/apis/oauth-ccgrant/v1/model.json",
+        "rest_api": "/config/rest/oauth-ccgrant/v1beta",
+        "rest_openapi": "/config/discover/apis/oauth-ccgrant/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/oauth-ccgrant/v1/openapi.json",
+        "state": "beta",
+        "version": "1.0.0-beta.1"
+      }
+    },
+    "oidcsetup": {
+      "v1": {
+        "doc": "/config/discover/apis/oidcsetup/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/oidcsetup/v1/doc.md",
+        "model": "/config/discover/apis/oidcsetup/v1/model.json",
+        "rest_api": "/config/rest/oidcsetup/v1",
+        "rest_openapi": "/config/discover/apis/oidcsetup/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/oidcsetup/v1/openapi.json",
+        "state": "released",
+        "version": "1.0.2"
+      }
+    },
+    "param": {
+      "v2": {
+        "doc": "/config/discover/apis/param/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/param/v2/doc.md",
+        "model": "/config/discover/apis/param/v2/model.json",
+        "rest_api": "/config/rest/param/v2beta",
+        "rest_openapi": "/config/discover/apis/param/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/param/v2/openapi.json",
+        "state": "beta",
+        "version": "2.0.0-beta.1"
+      }
+    },
+    "recording-group": {
+      "v2": {
+        "doc": "/config/discover/apis/recording-group/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/recording-group/v2/doc.md",
+        "model": "/config/discover/apis/recording-group/v2/model.json",
+        "rest_api": "/config/rest/recording-group/v2",
+        "rest_openapi": "/config/discover/apis/recording-group/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/recording-group/v2/openapi.json",
+        "state": "released",
+        "version": "2.2.0"
+      }
+    },
+    "remote-object-storage": {
+      "v1": {
+        "doc": "/config/discover/apis/remote-object-storage/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/remote-object-storage/v1/doc.md",
+        "model": "/config/discover/apis/remote-object-storage/v1/model.json",
+        "rest_api": "/config/rest/remote-object-storage/v1",
+        "rest_openapi": "/config/discover/apis/remote-object-storage/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/remote-object-storage/v1/openapi.json",
+        "state": "released",
+        "version": "1.0.4"
+      }
+    },
+    "siren-and-light": {
+      "v2": {
+        "doc": "/config/discover/apis/siren-and-light/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/siren-and-light/v2/doc.md",
+        "model": "/config/discover/apis/siren-and-light/v2/model.json",
+        "rest_api": "/config/rest/siren-and-light/v2beta",
+        "rest_openapi": "/config/discover/apis/siren-and-light/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/siren-and-light/v2/openapi.json",
+        "state": "beta",
+        "version": "2.0.0-beta.15"
+      }
+    },
+    "snmp": {
+      "v1": {
+        "doc": "/config/discover/apis/snmp/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/snmp/v1/doc.md",
+        "model": "/config/discover/apis/snmp/v1/model.json",
+        "rest_api": "/config/rest/snmp/v1",
+        "rest_openapi": "/config/discover/apis/snmp/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/snmp/v1/openapi.json",
+        "state": "released",
+        "version": "1.2.1"
+      }
+    },
+    "ssh": {
+      "v1": {
+        "doc": "/config/discover/apis/ssh/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/ssh/v1/doc.md",
+        "model": "/config/discover/apis/ssh/v1/model.json",
+        "rest_api": "/config/rest/ssh/v1beta",
+        "rest_openapi": "/config/discover/apis/ssh/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/ssh/v1/openapi.json",
+        "state": "beta",
+        "version": "1.0.0-beta.1"
+      },
+      "v2": {
+        "doc": "/config/discover/apis/ssh/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/ssh/v2/doc.md",
+        "model": "/config/discover/apis/ssh/v2/model.json",
+        "rest_api": "/config/rest/ssh/v2",
+        "rest_openapi": "/config/discover/apis/ssh/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/ssh/v2/openapi.json",
+        "state": "released",
+        "version": "2.0.1"
+      }
+    },
+    "time": {
+      "v2": {
+        "doc": "/config/discover/apis/time/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/time/v2/doc.md",
+        "model": "/config/discover/apis/time/v2/model.json",
+        "rest_api": "/config/rest/time/v2",
+        "rest_openapi": "/config/discover/apis/time/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/time/v2/openapi.json",
+        "state": "released",
+        "version": "2.0.1"
+      }
+    },
+    "unified-proxy-configuration": {
+      "v1": {
+        "doc": "/config/discover/apis/unified-proxy-configuration/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/unified-proxy-configuration/v1/doc.md",
+        "model": "/config/discover/apis/unified-proxy-configuration/v1/model.json",
+        "rest_api": "/config/rest/unified-proxy-configuration/v1beta",
+        "rest_openapi": "/config/discover/apis/unified-proxy-configuration/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/unified-proxy-configuration/v1/openapi.json",
+        "state": "beta",
+        "version": "1.0.0-beta.1"
+      }
+    },
+    "user-management": {
+      "v2": {
+        "doc": "/config/discover/apis/user-management/v2/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/user-management/v2/doc.md",
+        "model": "/config/discover/apis/user-management/v2/model.json",
+        "rest_api": "/config/rest/user-management/v2beta",
+        "rest_openapi": "/config/discover/apis/user-management/v2/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/user-management/v2/openapi.json",
+        "state": "beta",
+        "version": "2.0.0-beta.1"
+      }
+    },
+    "virtualhost": {
+      "v1": {
+        "doc": "/config/discover/apis/virtualhost/v1/doc.md",
+        "doc_html": "/config/web-ui/cu-doc.html?md-doc-loc=/config/discover/apis/virtualhost/v1/doc.md",
+        "model": "/config/discover/apis/virtualhost/v1/model.json",
+        "rest_api": "/config/rest/virtualhost/v1",
+        "rest_openapi": "/config/discover/apis/virtualhost/v1/openapi.json",
+        "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/apis/virtualhost/v1/openapi.json",
+        "state": "released",
+        "version": "1.2.0"
+      }
+    }
+  },
+  "device": {
+    "rest_openapi": "/config/discover/openapi.json",
+    "rest_ui": "/config/web-ui/swagger-ui/?url=/config/discover/openapi.json"
+  },
+  "framework_version": "1.0.0"
+}
