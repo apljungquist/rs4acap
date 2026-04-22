@@ -1,5 +1,6 @@
 use std::{future::Future, pin::Pin};
 
+use anyhow::Context;
 use libtest_mimic::{Arguments, Trial};
 use log::{warn, LevelFilter};
 use rs4a_cassette_testing::{Cassette, CassetteClient, DeviceInfo, Library};
@@ -116,6 +117,10 @@ cassette_tests! {
         (
             r#""SocSerialNumber": "[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}""#,
             r#""SocSerialNumber": "00000000-00000000-01234567-89ABCDEF""#,
+        ),
+        (
+            r#""SocSerialNumber": "[0-9A-F]{8}-[0-9A-F]{8}""#,
+            r#""SocSerialNumber": "01234567-89ABCDEF""#,
         ),
         (
             r#""SocSerialNumber": "[0-9A-F]{16}""#,
@@ -305,7 +310,11 @@ async fn basic_device_info_get_all_properties(client: &CassetteClient, _: Option
         .unwrap()
         .property_list;
 
-    assert!(property_list.restricted.parse_soc_serial_number().is_ok())
+    let _ = property_list
+        .restricted
+        .parse_soc_serial_number()
+        .context(format!("{:?}", property_list.restricted.soc_serial_number))
+        .unwrap();
 }
 
 async fn basic_device_info_get_all_unrestricted_properties(
@@ -488,6 +497,7 @@ async fn parameter_management_list_error(client: &CassetteClient, prelude: Optio
             ProductType::NetworkStrobeSpeaker => {}
             ProductType::Radar => return,
             ProductType::PeopleCounter3D => return,
+            ProductType::ThermalCamera => return,
             _ => {}
         }
     }
@@ -637,7 +647,7 @@ async fn siren_and_light_2_alpha_maintenance_mode_not_supported(
         if !prelude.version_matches(">=12.5.0") {
             return;
         }
-        if ["M1075-L", "D2210-VE"].contains(&prelude.props.prod_nbr.as_str()) {
+        if ["M1075-L", "D2210-VE", "Q1961-TE"].contains(&prelude.props.prod_nbr.as_str()) {
             return;
         }
     }

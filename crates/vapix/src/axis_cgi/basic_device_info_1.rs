@@ -53,6 +53,7 @@ pub enum ProductType {
     NetworkStrobeSpeaker,
     PeopleCounter3D,
     Radar,
+    ThermalCamera,
 }
 
 impl Display for ProductType {
@@ -65,6 +66,7 @@ impl Display for ProductType {
             Self::NetworkStrobeSpeaker => write!(f, "Network Strobe Speaker"),
             Self::PeopleCounter3D => write!(f, "3D People Counter"),
             Self::Radar => write!(f, "Radar"),
+            Self::ThermalCamera => write!(f, "Thermal Camera"),
         }
     }
 }
@@ -81,6 +83,7 @@ impl FromStr for ProductType {
             "Network Strobe Speaker" => Ok(Self::NetworkStrobeSpeaker),
             "3D People Counter" => Ok(Self::PeopleCounter3D),
             "Radar" => Ok(Self::Radar),
+            "Thermal Camera" => Ok(Self::ThermalCamera),
             _ => Err(anyhow!("unrecognized product type '{s}'")),
         }
     }
@@ -169,14 +172,16 @@ pub enum Architecture {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SocSerialNumber {
     Plain(u64),
-    Dashed(u128),
+    Dashed64(u64),
+    Dashed128(u128),
 }
 
 impl Display for SocSerialNumber {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Plain(v) => write!(f, "{v:016X}"),
-            Self::Dashed(v) => write!(
+            Self::Dashed64(v) => write!(f, "{:08X}-{:08X}", (*v >> 32) as u32, *v as u32),
+            Self::Dashed128(v) => write!(
                 f,
                 "{:08X}-{:08X}-{:08X}-{:08X}",
                 (*v >> 96) as u32,
@@ -188,7 +193,7 @@ impl Display for SocSerialNumber {
     }
 }
 
-fn parse_dashed_soc_serial(s: &str) -> anyhow::Result<u128> {
+fn parse_dashed_soc_serial_128(s: &str) -> anyhow::Result<u128> {
     let parts: Vec<&str> = s.split('-').collect();
     if parts.len() != 4 {
         bail!("Expected 4 segments, got {}", parts.len());
@@ -208,6 +213,26 @@ fn parse_dashed_soc_serial(s: &str) -> anyhow::Result<u128> {
     Ok(bits)
 }
 
+fn parse_dashed_soc_serial_64(s: &str) -> anyhow::Result<u64> {
+    let parts: Vec<&str> = s.split('-').collect();
+    if parts.len() != 2 {
+        bail!("Expected 2 segments, got {}", parts.len());
+    }
+    let mut bits: u64 = 0;
+    for (i, part) in parts.iter().enumerate() {
+        if part.len() != 8 {
+            bail!(
+                "Expected each segment to be 8 characters long, but segment {} is {}",
+                i + 1,
+                part.len()
+            );
+        }
+        let segment = u32::from_str_radix(part, 16)?;
+        bits |= (segment as u64) << (32 - i * 32);
+    }
+    Ok(bits)
+}
+
 fn parse_plain_soc_serial(s: &str) -> anyhow::Result<u64> {
     if s.len() != 16 {
         bail!("Expected 16 characters long, got {}", s.len());
@@ -219,10 +244,11 @@ impl FromStr for SocSerialNumber {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.contains('-') {
-            Ok(Self::Dashed(parse_dashed_soc_serial(s)?))
-        } else {
-            Ok(Self::Plain(parse_plain_soc_serial(s)?))
+        match s.chars().filter(|c| *c == '-').count() {
+            0 => Ok(Self::Plain(parse_plain_soc_serial(s)?)),
+            1 => Ok(Self::Dashed64(parse_dashed_soc_serial_64(s)?)),
+            3 => Ok(Self::Dashed128(parse_dashed_soc_serial_128(s)?)),
+            n => Err(anyhow!("Expected 1, 2 or 4 segments, got {}", n + 1)),
         }
     }
 }
@@ -346,7 +372,7 @@ mod tests {
                 .unwrap_err()
                 .to_string(),
         );
-        expect!("Expected 4 segments, got 3").assert_eq(
+        expect!("Expected 1, 2 or 4 segments, got 3").assert_eq(
             &SocSerialNumber::from_str("00000000-00000000-0000000000000000")
                 .unwrap_err()
                 .to_string(),
