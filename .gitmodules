@@ -1,4 +1,4 @@
 [submodule "crates/vapix/tests/cassette_tests"]
 	path = crates/vapix/tests/cassette_tests
-	url = git@github.com:apljungquist/rs4acap.git
+	url = https://github.com/apljungquist/rs4acap.git
 	branch = cassettes
