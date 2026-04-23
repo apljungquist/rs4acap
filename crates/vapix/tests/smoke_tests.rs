@@ -20,13 +20,7 @@ async fn test_client() -> Option<Client> {
         eprintln!("No device configured, skipping test.");
         return None;
     };
-    Some(
-        client
-            .with_inner(|b| b.danger_accept_invalid_certs(true))
-            .build()
-            .await
-            .unwrap(),
-    )
+    Some(client.build().await.unwrap())
 }
 
 fn somewhat_unique_name(prefix: &str) -> String {

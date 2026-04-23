@@ -28,6 +28,9 @@ pub struct AddCommand {
     /// SSH port to use, if different from default
     #[clap(long)]
     ssh_port: Option<u16>,
+    /// The device uses a self-signed HTTPS certificate.
+    #[clap(long)]
+    https_self_signed: bool,
 }
 
 impl AddCommand {
@@ -40,6 +43,7 @@ impl AddCommand {
             http_port,
             https_port,
             ssh_port,
+            https_self_signed,
         } = self;
         let mut devices = db.read_devices()?;
         devices.insert(
@@ -53,6 +57,7 @@ impl AddCommand {
                 ssh_port,
                 // TODO: Fetch from device
                 model: None,
+                https_self_signed,
             },
         );
         db.write_devices(&devices)?;

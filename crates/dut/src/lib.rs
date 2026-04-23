@@ -1,6 +1,15 @@
 use std::env;
 
+use anyhow::bail;
 use url::Host;
+
+fn parse_boolish(s: &str) -> anyhow::Result<bool> {
+    match s.to_lowercase().as_str() {
+        "true" | "yes" | "on" | "1" => Ok(true),
+        "false" | "no" | "off" | "0" => Ok(false),
+        _ => bail!("not a valid bool: {s:?}"),
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct Device {
@@ -10,6 +19,7 @@ pub struct Device {
     pub http_port: Option<u16>,
     pub https_port: Option<u16>,
     pub ssh_port: Option<u16>,
+    pub https_self_signed: bool,
 }
 
 impl Device {
@@ -32,6 +42,11 @@ impl Device {
             .ok()
             .map(|p| p.parse())
             .transpose()?;
+        let https_self_signed = env::var("AXIS_DEVICE_HTTPS_SELF_SIGNED")
+            .ok()
+            .map(|v| parse_boolish(&v))
+            .transpose()?
+            .unwrap_or(false);
         Ok(Some(Self {
             host,
             username,
@@ -39,6 +54,7 @@ impl Device {
             http_port,
             https_port,
             ssh_port,
+            https_self_signed,
         }))
     }
 
@@ -50,6 +66,7 @@ impl Device {
             http_port,
             https_port,
             ssh_port,
+            https_self_signed,
         } = self;
         let mut envs = Vec::new();
 
@@ -79,7 +96,7 @@ impl Device {
 
         envs.push((
             "AXIS_DEVICE_HTTPS_SELF_SIGNED".to_string(),
-            Some("1".to_string()),
+            Some(if *https_self_signed { "1" } else { "0" }.to_string()),
         ));
 
         envs

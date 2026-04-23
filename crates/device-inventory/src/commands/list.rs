@@ -112,6 +112,7 @@ impl Table {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn probe_device(
     offline: bool,
     fingerprint: String,
@@ -120,6 +121,7 @@ async fn probe_device(
     https_port: Option<u16>,
     username: Option<String>,
     password: Option<String>,
+    https_self_signed: bool,
 ) -> anyhow::Result<(String, UnrestrictedProperties, Option<RestrictedProperties>)> {
     assert!(!offline);
     match (username, password) {
@@ -127,7 +129,7 @@ async fn probe_device(
             let client = rs4a_vapix::Client::builder(host)
                 .plain_port(http_port)
                 .secure_port(https_port)
-                .with_inner(|b| b.danger_accept_invalid_certs(true))
+                .with_inner(|b| b.danger_accept_invalid_certs(https_self_signed))
                 .username_password(&username, &password)
                 .build()
                 .await
@@ -146,7 +148,7 @@ async fn probe_device(
             let client = rs4a_vapix::Client::builder(host)
                 .plain_port(http_port)
                 .secure_port(https_port)
-                .with_inner(|b| b.danger_accept_invalid_certs(true))
+                .with_inner(|b| b.danger_accept_invalid_certs(https_self_signed))
                 .build()
                 .await
                 .context("Could not create client")?;
@@ -173,6 +175,9 @@ pub struct ListCommand {
     /// Consider loans and devices from the VLT.
     #[arg(long, env = "DI_VLT")]
     vlt: bool,
+    /// Accept self-signed HTTPS certificates when probing devices.
+    #[arg(long, env = "AXIS_DEVICE_HTTPS_SELF_SIGNED", value_parser = clap::builder::BoolishValueParser::new())]
+    https_self_signed: bool,
     #[command(flatten)]
     device_filter: DeviceFilterParser,
 }
@@ -183,6 +188,7 @@ impl ListCommand {
             probe,
             mdns,
             vlt,
+            https_self_signed,
             device_filter,
         } = self;
         let device_filter = device_filter.into_filter()?;
@@ -264,6 +270,7 @@ impl ListCommand {
                         .expect("all devices added have a https port"),
                     device.username(),
                     device.password(),
+                    https_self_signed,
                 ));
             }
             for r in join_set.join_all().await {
