@@ -3,7 +3,6 @@
 //! [Basic device information]: https://developer.axis.com/vapix/network-video/basic-device-information/
 
 use std::{
-    convert::Infallible,
     fmt::{Display, Formatter},
     str::FromStr,
 };
@@ -14,8 +13,39 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
     http::{Error, HttpClient},
-    json_rpc_http,
+    json_rpc, json_rpc_http,
 };
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum ErrorKind {
+    InvalidParameter = 1000,
+    AccessForbidden = 2001,
+    UnsupportedHttpMethod = 2002,
+    UnsupportedApiVersion = 2003,
+    UnsupportedMethod = 2004,
+    InvalidJson = 4000,
+    MissingOrInvalidParameter = 4002,
+    InternalError = 8000,
+}
+
+impl TryFrom<u16> for ErrorKind {
+    type Error = u16;
+
+    fn try_from(code: u16) -> Result<Self, u16> {
+        match code {
+            1000 => Ok(Self::InvalidParameter),
+            2001 => Ok(Self::AccessForbidden),
+            2002 => Ok(Self::UnsupportedHttpMethod),
+            2003 => Ok(Self::UnsupportedApiVersion),
+            2004 => Ok(Self::UnsupportedMethod),
+            4000 => Ok(Self::InvalidJson),
+            4002 => Ok(Self::MissingOrInvalidParameter),
+            8000 => Ok(Self::InternalError),
+            _ => Err(code),
+        }
+    }
+}
 
 fn serialize_none_as_empty_string<T, S>(value: &Option<T>, serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -154,7 +184,7 @@ impl GetAllUnrestrictedPropertiesRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<AllUnrestrictedPropertiesData, Error<Infallible>> {
+    ) -> Result<AllUnrestrictedPropertiesData, Error<json_rpc::Error>> {
         json_rpc_http::send_request(client, PATH, &self).await
     }
 }
@@ -332,7 +362,7 @@ impl GetAllPropertiesRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<AllPropertiesData, Error<Infallible>> {
+    ) -> Result<AllPropertiesData, Error<json_rpc::Error>> {
         json_rpc_http::send_request(client, PATH, &self).await
     }
 }

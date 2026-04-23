@@ -2,13 +2,13 @@
 //!
 //! [Systemready API]: https://developer.axis.com/vapix/network-video/systemready-api/
 
-use std::{convert::Infallible, time::Duration};
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
     http::{Error, HttpClient},
-    json_rpc_http,
+    json_rpc, json_rpc_http,
 };
 
 fn deserialize_english_boolean<'de, D>(deserializer: D) -> Result<bool, D::Error>
@@ -117,7 +117,7 @@ impl SystemReadyRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<SystemreadyData, Error<Infallible>> {
+    ) -> Result<SystemreadyData, Error<json_rpc::Error>> {
         json_rpc_http::send_request(client, PATH, &self).await
     }
 }

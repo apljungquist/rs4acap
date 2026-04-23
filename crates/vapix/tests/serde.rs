@@ -3,8 +3,9 @@ use std::time::Duration;
 use expect_test::expect_file;
 use rs4a_vapix::{
     action1::{AddActionConfigurationResponse, Condition},
-    apis,
+    apis, basic_device_info_1,
     basic_device_info_1::{AllPropertiesData, AllUnrestrictedPropertiesData, Architecture},
+    firmware_management_1,
     firmware_management_1::UpgradeData,
     json_rpc::{parse_data, parse_data_lossless},
     soap::parse_soap,
@@ -24,6 +25,7 @@ fn can_deserialize_basic_device_info_1_examples() {
     let text = include_str!("../src/axis_cgi/basic_device_info_1/get_all_properties_1_0.json");
     let property_list = parse_data_lossless::<AllPropertiesData>(text)
         .unwrap()
+        .unwrap()
         .property_list;
     assert_eq!(property_list.restricted.architecture, Architecture::Mips);
     assert_eq!(property_list.unrestricted.prod_variant, None);
@@ -31,31 +33,41 @@ fn can_deserialize_basic_device_info_1_examples() {
     let text = include_str!(
         "../src/axis_cgi/basic_device_info_1/get_all_unrestricted_properties_2004_error_1_0.json"
     );
-    parse_data_lossless::<AllUnrestrictedPropertiesData>(text).unwrap_err();
-    // TODO: Expose error code
+    let error = parse_data_lossless::<AllUnrestrictedPropertiesData>(text)
+        .unwrap()
+        .unwrap_err();
+    assert_eq!(
+        basic_device_info_1::ErrorKind::try_from(error.code),
+        Ok(basic_device_info_1::ErrorKind::UnsupportedMethod),
+    );
 }
 
 #[test]
 fn can_deserialize_firmware_management_1_examples() {
     let text = include_str!("../src/axis_cgi/firmware_management_1/upgrade_1_0.json");
-    let UpgradeData { .. } = parse_data_lossless::<UpgradeData>(text).unwrap();
+    let UpgradeData { .. } = parse_data_lossless::<UpgradeData>(text).unwrap().unwrap();
 
     let text = include_str!("../src/axis_cgi/firmware_management_1/upgrade_409_error_1_0.json");
-    parse_data_lossless::<UpgradeData>(text).unwrap_err();
-    // TODO: Expose error code
+    let error = parse_data_lossless::<UpgradeData>(text)
+        .unwrap()
+        .unwrap_err();
+    assert_eq!(
+        firmware_management_1::ErrorKind::try_from(error.code),
+        Ok(firmware_management_1::ErrorKind::DowngradeNotAllowed),
+    );
 }
 
 #[test]
 fn can_deserialize_system_ready_1_examples() {
     let text = include_str!("../src/axis_cgi/system_ready_1/system_ready_200.json");
-    let data = parse_data::<SystemreadyData>(text).unwrap();
+    let data = parse_data::<SystemreadyData>(text).unwrap().unwrap();
     assert!(!data.needsetup);
 }
 
 #[test]
 fn can_deserialize_system_ready_1_preview_mode() {
     let text = include_str!("serde/system_ready_1_preview_mode.json");
-    let data = parse_data::<SystemreadyData>(text).unwrap();
+    let data = parse_data::<SystemreadyData>(text).unwrap().unwrap();
     assert_eq!(
         data.parse_preview_mode().unwrap(),
         Some(Duration::from_secs(7200))

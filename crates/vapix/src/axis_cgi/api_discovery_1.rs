@@ -2,13 +2,11 @@
 //!
 //! [API Discovery]: https://developer.axis.com/vapix/network-video/api-discovery-service/
 
-use std::convert::Infallible;
-
 use serde::{Deserialize, Serialize};
 
 use crate::{
     http::{Error, HttpClient},
-    json_rpc_http,
+    json_rpc, json_rpc_http,
 };
 
 #[non_exhaustive]
@@ -52,7 +50,7 @@ impl GetApiListRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<ApiListData, Error<Infallible>> {
+    ) -> Result<ApiListData, Error<json_rpc::Error>> {
         json_rpc_http::send_request(client, PATH, &self).await
     }
 }
@@ -82,7 +80,7 @@ impl GetSupportedVersionsRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<SupportedVersionsData, Error<Infallible>> {
+    ) -> Result<SupportedVersionsData, Error<json_rpc::Error>> {
         json_rpc_http::send_request(client, PATH, &self).await
     }
 }

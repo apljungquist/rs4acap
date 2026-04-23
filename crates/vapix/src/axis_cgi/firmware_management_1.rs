@@ -2,10 +2,7 @@
 //!
 //! [Firmware Management API]: https://developer.axis.com/vapix/network-video/firmware-management-api/
 
-use std::{
-    convert::Infallible,
-    fmt::{Display, Formatter},
-};
+use std::fmt::{Display, Formatter};
 
 use anyhow::Context;
 use reqwest::Method;
@@ -13,8 +10,50 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     http::{Error, HttpClient, Request},
-    json_rpc_http,
+    json_rpc, json_rpc_http,
 };
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum ErrorKind {
+    BadRequest = 400,
+    NoPreviousFirmware = 404,
+    UnknownMethod = 405,
+    DowngradeNotAllowed = 409,
+    FirmwareRevoked = 410,
+    UncommittedFirmware = 412,
+    InvalidImage = 415,
+    IncompatibleApiVersion = 417,
+    /// Also returned for otherwise invalid firmware binaries.
+    ImageMismatch = 421,
+    MissingSignature = 422,
+    SystemBusy = 423,
+    UnknownCertificate = 424,
+    InternalError = 500,
+}
+
+impl TryFrom<u16> for ErrorKind {
+    type Error = u16;
+
+    fn try_from(code: u16) -> Result<Self, u16> {
+        match code {
+            400 => Ok(Self::BadRequest),
+            404 => Ok(Self::NoPreviousFirmware),
+            405 => Ok(Self::UnknownMethod),
+            409 => Ok(Self::DowngradeNotAllowed),
+            410 => Ok(Self::FirmwareRevoked),
+            412 => Ok(Self::UncommittedFirmware),
+            415 => Ok(Self::InvalidImage),
+            417 => Ok(Self::IncompatibleApiVersion),
+            421 => Ok(Self::ImageMismatch),
+            422 => Ok(Self::MissingSignature),
+            423 => Ok(Self::SystemBusy),
+            424 => Ok(Self::UnknownCertificate),
+            500 => Ok(Self::InternalError),
+            _ => Err(code),
+        }
+    }
+}
 
 const PATH: &str = "axis-cgi/firmwaremanagement.cgi";
 
@@ -71,7 +110,7 @@ impl FactoryDefaultRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<FactoryDefaultData, Error<Infallible>> {
+    ) -> Result<FactoryDefaultData, Error<json_rpc::Error>> {
         json_rpc_http::send_request(client, PATH, &self).await
     }
 }
@@ -202,7 +241,7 @@ impl UpgradeRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<UpgradeData, Error<Infallible>> {
+    ) -> Result<UpgradeData, Error<json_rpc::Error>> {
         let boundary = "----FormBoundaryS6untlhO8j7poXo";
 
         let json = serde_json::to_string(&self.json)
@@ -215,11 +254,7 @@ impl UpgradeRequest {
 
         let response = client.execute(request).await.map_err(Error::Transport)?;
 
-        let status = response.status;
-
-        let text = response.body;
-
-        json_rpc_http::from_response(status, text).map_err(Error::Decode)
+        json_rpc_http::from_response(response.status, response.body)
     }
 }
 
