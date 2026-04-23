@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 mod commands;
 mod db;
 mod db_vlt;
