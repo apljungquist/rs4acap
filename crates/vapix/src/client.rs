@@ -194,6 +194,7 @@ impl ClientBuilder {
             http_port,
             https_port,
             ssh_port: _,
+            https_self_signed,
         } = device;
 
         debug!("Building client using username {username} from env");
@@ -201,7 +202,8 @@ impl ClientBuilder {
             ClientBuilder::new(host)
                 .plain_port(http_port)
                 .secure_port(https_port)
-                .username_password(&username, &password),
+                .username_password(&username, &password)
+                .with_inner(|b| b.danger_accept_invalid_certs(https_self_signed)),
         ))
     }
 
@@ -275,6 +277,9 @@ impl ClientBuilder {
             port: None,
             client: inner.build()?,
         };
+        // If the certificate is self-signed and self-signed certificates are not allowed,
+        // then this will fall back on plain HTTP, which is probably worse.
+        // TODO: Consider skipping plain by default or falling through only on specific errors
         let () = Self::set_scheme(
             &mut client,
             &[(Scheme::Secure, secure_port), (Scheme::Plain, plain_port)],

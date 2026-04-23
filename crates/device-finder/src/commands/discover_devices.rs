@@ -144,12 +144,19 @@ pub struct DiscoverDevicesCommand {
     /// Probe devices for additional information
     #[arg(long)]
     probe: bool,
+    /// Accept self-signed HTTPS certificates when probing devices.
+    #[arg(long, env = "AXIS_DEVICE_HTTPS_SELF_SIGNED", value_parser = clap::builder::BoolishValueParser::new())]
+    https_self_signed: bool,
 }
 
-async fn probe(host: String, addr: String) -> anyhow::Result<(String, HashMap<String, String>)> {
+async fn probe(
+    host: String,
+    addr: String,
+    https_self_signed: bool,
+) -> anyhow::Result<(String, HashMap<String, String>)> {
     let mut details = HashMap::new();
     let client = rs4a_vapix::Client::builder(Host::parse(&addr)?)
-        .with_inner(|b| b.danger_accept_invalid_certs(true))
+        .with_inner(|b| b.danger_accept_invalid_certs(https_self_signed))
         .build()
         .await
         .context("Could not create client")?;
@@ -224,7 +231,11 @@ impl DiscoverDevicesCommand {
             let mut join_set = JoinSet::new();
             for s in &found {
                 if let Some(addr) = s.ip_addr() {
-                    join_set.spawn(probe(format!("{s:?}"), addr.to_string()));
+                    join_set.spawn(probe(
+                        format!("{s:?}"),
+                        addr.to_string(),
+                        self.https_self_signed,
+                    ));
                 } else {
                     warn!("Service {s:?} has no IP address");
                 }

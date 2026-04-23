@@ -57,6 +57,7 @@ Options:
       --http-port <HTTP_PORT>    HTTP port to use, if different from default
       --https-port <HTTPS_PORT>  HTTPS port to use, if different from default
       --ssh-port <SSH_PORT>      SSH port to use, if different from default
+      --https-self-signed        The device uses a self-signed HTTPS certificate
   -h, --help                     Print help
 + device-inventory help deactivate
 Deactivate any active device.
@@ -114,6 +115,11 @@ Options:
           Consider loans and devices from the VLT
           
           [env: DI_VLT=]
+
+      --https-self-signed
+          Accept self-signed HTTPS certificates when probing devices
+          
+          [env: AXIS_DEVICE_HTTPS_SELF_SIGNED=]
 
       --alias <ALIAS>
           Consider only devices with a matching alias.

@@ -10,6 +10,10 @@ use crate::psst::Password;
 
 const DEVICES_FILE_NAME: &str = "devices.json";
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct Device {
     pub host: Host,
@@ -19,6 +23,8 @@ pub struct Device {
     pub https_port: Option<u16>,
     pub ssh_port: Option<u16>,
     pub model: Option<String>,
+    #[serde(default = "default_true")]
+    pub https_self_signed: bool,
 }
 
 impl From<rs4a_dut::Device> for Device {
@@ -30,6 +36,7 @@ impl From<rs4a_dut::Device> for Device {
             http_port,
             https_port,
             ssh_port,
+            https_self_signed,
         } = value;
         Self {
             host,
@@ -39,6 +46,7 @@ impl From<rs4a_dut::Device> for Device {
             https_port,
             ssh_port,
             model: None,
+            https_self_signed,
         }
     }
 }
@@ -53,6 +61,7 @@ impl From<Device> for rs4a_dut::Device {
             https_port,
             ssh_port,
             model: _,
+            https_self_signed,
         } = value;
         rs4a_dut::Device {
             host,
@@ -61,6 +70,7 @@ impl From<Device> for rs4a_dut::Device {
             http_port,
             https_port,
             ssh_port,
+            https_self_signed,
         }
     }
 }

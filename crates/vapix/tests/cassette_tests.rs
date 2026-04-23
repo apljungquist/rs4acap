@@ -172,7 +172,6 @@ fn record_trials(library: &Library) -> Vec<Trial> {
         ClientBuilder::from_dut()
             .unwrap()
             .unwrap()
-            .with_inner(|b| b.danger_accept_invalid_certs(true))
             .build()
             .await
             .unwrap()
