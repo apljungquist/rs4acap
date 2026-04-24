@@ -1,7 +1,9 @@
 //! Utilities for working with JSON RPC style APIs.
 
+use std::fmt::{Display, Formatter};
+
 use anyhow::{bail, Context};
-use log::debug;
+use log::{debug, error, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::{value::RawValue, Value};
 
@@ -29,35 +31,83 @@ impl<'a> Response<'a> {
     }
 }
 
-pub fn parse_data<T>(text: &str) -> anyhow::Result<T>
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Error {
+    pub code: u16,
+    message: String,
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let Self { code, message } = self;
+        write!(f, "({code}) {message}")
+    }
+}
+
+impl std::error::Error for Error {}
+
+pub fn parse_data<T>(text: &str) -> anyhow::Result<Result<T, Error>>
 where
     T: for<'de> Deserialize<'de>,
 {
     let result = serde_json::from_str::<Response>(text)
         .with_context(|| format!("Could not parse response; status text: {text}"))?
         .try_into_data()?;
-    let data = match result {
-        Ok(d) => d,
-        // TODO: Proper error
-        Err(e) => bail!("Error: {:?}", e),
-    };
-    serde_json::from_str::<T>(data.get())
-        .with_context(|| format!("Could not parse data: {}", data.get()))
+    match result {
+        Ok(d) => {
+            let data = serde_json::from_str::<T>(d.get())
+                .with_context(|| format!("Could not parse data: {}", d.get()))?;
+            Ok(Ok(data))
+        }
+        Err(e) => {
+            let error = serde_json::from_str::<Error>(e.get())
+                .with_context(|| format!("Could not parse error: {}", e.get()))?;
+            Ok(Err(error))
+        }
+    }
 }
 
-pub fn parse_data_lossless<T>(text: &str) -> anyhow::Result<T>
+fn soft_assert_lossless<T>(text: &str, result: &Result<T, Error>) -> anyhow::Result<()>
+where
+    T: for<'a> Deserialize<'a> + Serialize,
+{
+    let Response { data, error } = serde_json::from_str(text)
+        .with_context(|| format!("Could not parse response; text: {text}"))?;
+
+    match result {
+        Ok(d) => {
+            let data = data.expect("If it deserializes to Ok, then it has a data field");
+            let actual: Value = serde_json::from_str(&serde_json::to_string(d)?)?;
+            let expected: Value = serde_json::from_str(data.get())?;
+            if actual != expected {
+                warn!("Data deserialization is not lossless");
+            }
+            debug_assert_eq!(actual, expected);
+        }
+        Err(e) => {
+            let error = error.expect("If it deserializes to Err, then it has an error field");
+            let actual: Value = serde_json::from_str(&serde_json::to_string(e)?)?;
+            let expected: Value = serde_json::from_str(error.get())?;
+            if actual != expected {
+                warn!("Error deserialization is not lossless");
+            }
+            debug_assert_eq!(actual, expected);
+        }
+    }
+
+    Ok(())
+}
+
+pub fn parse_data_lossless<T>(text: &str) -> anyhow::Result<Result<T, Error>>
 where
     T: for<'de> Deserialize<'de> + Serialize,
 {
-    let data = parse_data(text)?;
-    if cfg!(debug_assertions) {
-        let envelope: Value = serde_json::from_str::<Value>(text)
-            .expect("If it deserializes to Response<T>, then it deserializes to Value");
-        let expected = envelope
-            .get("data")
-            .expect("If it deserializes to Response, then it has a data field");
-        let actual: Value = serde_json::from_str(&serde_json::to_string(&data)?)?;
-        debug_assert_eq!(&actual, expected);
+    let result = parse_data(text)?;
+
+    if let Err(e) = soft_assert_lossless(text, &result) {
+        error!("Failed to verify losslessness: {e:?}");
+        debug_assert!(false);
     }
-    Ok(data)
+
+    Ok(result)
 }

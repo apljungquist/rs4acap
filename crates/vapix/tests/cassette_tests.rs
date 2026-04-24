@@ -10,6 +10,7 @@ use rs4a_vapix::{
     apis::basic_device_info_1,
     basic_device_info_1::{ProductType, UnrestrictedProperties},
     discover::ApiState,
+    firmware_management_1,
     firmware_management_1::UpgradeRequest,
     http,
     parameter_management::{ImageResolution, ListRequest, NetworkSshEnabled, UpdateRequest},
@@ -474,16 +475,13 @@ async fn firmware_management_1_upgrade_mismatch(
         .await
         .unwrap_err();
 
-    // TODO: Propagate as service error.
-    let http::Error::Decode(error) = error else {
-        panic!("Expected Decode error but got {error:?}");
+    let http::Error::Service(error) = error else {
+        panic!("Expected Service error but got {error:?}");
     };
 
-    let error = format!("{error:?}");
-
-    assert!(
-        error.contains("421"),
-        "Expected error code 421 but got: {error}"
+    assert_eq!(
+        firmware_management_1::ErrorKind::try_from(error.code),
+        Ok(firmware_management_1::ErrorKind::ImageMismatch),
     );
 }
 
