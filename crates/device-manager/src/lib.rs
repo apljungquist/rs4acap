@@ -29,6 +29,9 @@ pub struct Netloc {
     /// The password to use for authentication.
     #[arg(short, long, env = "AXIS_DEVICE_PASS", default_value = "pass")]
     pub pass: String,
+    /// Accept self-signed HTTPS certificates.
+    #[arg(long, env = "AXIS_DEVICE_HTTPS_SELF_SIGNED", value_parser = clap::builder::BoolishValueParser::new())]
+    pub https_self_signed: bool,
 }
 
 impl Netloc {
@@ -37,7 +40,7 @@ impl Netloc {
             .plain_port(self.http_port)
             .secure_port(self.https_port)
             .username_password(&self.user, &self.pass)
-            .with_inner(|b| b.danger_accept_invalid_certs(true))
+            .with_inner(|b| b.danger_accept_invalid_certs(self.https_self_signed))
             .build()
             .await
     }
@@ -46,7 +49,7 @@ impl Netloc {
         rs4a_vapix::ClientBuilder::new(self.host.clone())
             .plain_port(self.http_port)
             .secure_port(self.https_port)
-            .with_inner(|b| b.danger_accept_invalid_certs(true))
+            .with_inner(|b| b.danger_accept_invalid_certs(self.https_self_signed))
             .build()
             .await
     }

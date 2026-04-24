@@ -86,6 +86,7 @@ pub fn device_from_loan(loan: Loan) -> (String, Device) {
             http_port: Some(http_port),
             https_port: Some(https_port),
             ssh_port: Some(ssh_port),
+            https_self_signed: true,
         },
     )
 }

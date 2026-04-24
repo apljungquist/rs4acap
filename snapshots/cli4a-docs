@@ -69,6 +69,11 @@ Options:
           [env: AXIS_DEVICE_PASS=]
           [default: pass]
 
+      --https-self-signed
+          Accept self-signed HTTPS certificates
+          
+          [env: AXIS_DEVICE_HTTPS_SELF_SIGNED=]
+
       --inventory <INVENTORY>
           Location of the firmware-inventory data
           

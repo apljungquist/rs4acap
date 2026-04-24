@@ -8,6 +8,7 @@
     "http_port": 12051,
     "https_port": 42051,
     "ssh_port": 22051,
-    "model": "AXIS Q1615 Mk III"
+    "model": "AXIS Q1615 Mk III",
+    "https_self_signed": true
   }
 }
