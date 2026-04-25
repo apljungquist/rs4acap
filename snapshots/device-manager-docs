@@ -43,6 +43,7 @@ Options:
   -u, --user <USER>              The username to use for authentication [env: AXIS_DEVICE_USER=] [default: root]
   -p, --pass <PASS>              The password to use for authentication [env: AXIS_DEVICE_PASS=] [default: pass]
       --https-self-signed        Accept self-signed HTTPS certificates [env: AXIS_DEVICE_HTTPS_SELF_SIGNED=]
+      --profile <PROFILE>        [default: default] [possible values: default, vlt]
   -h, --help                     Print help
 + device-manager help reinit
 Restore and initialize the device to a known, useful state
@@ -56,6 +57,7 @@ Options:
   -u, --user <USER>              The username to use for authentication [env: AXIS_DEVICE_USER=] [default: root]
   -p, --pass <PASS>              The password to use for authentication [env: AXIS_DEVICE_PASS=] [default: pass]
       --https-self-signed        Accept self-signed HTTPS certificates [env: AXIS_DEVICE_HTTPS_SELF_SIGNED=]
+      --profile <PROFILE>        [default: default] [possible values: default, vlt]
   -h, --help                     Print help
 + device-manager help restore
 Restore the device to a clean state (factory default)
