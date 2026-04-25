@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 use clap::{Parser, Subcommand};
 use rs4a_bin_utils::completions_command::CompletionsCommand;
 

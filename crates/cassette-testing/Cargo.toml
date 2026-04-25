@@ -5,6 +5,9 @@ edition.workspace = true
 license = "MIT"
 description = "Cassette recording and playback infrastructure for rs4a-vapix"
 
+[lints]
+workspace = true
+
 [dependencies]
 anyhow = { workspace = true }
 log = { workspace = true }
