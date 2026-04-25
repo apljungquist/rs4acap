@@ -26,7 +26,7 @@ pub struct AddActionConfigurationRequest {
 
 // TODO: Consider enabling typed templates to give users early feedback about missing params
 impl AddActionConfigurationRequest {
-    pub(crate) fn new(template_token: &str) -> AddActionConfigurationRequest {
+    pub fn new(template_token: &str) -> AddActionConfigurationRequest {
         Self {
             name: None,
             template_token: template_token.to_string(),
@@ -126,10 +126,14 @@ pub struct Parameter {
     pub value: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct GetActionConfigurationsRequest;
 
 impl GetActionConfigurationsRequest {
+    pub fn new() -> Self {
+        Self
+    }
+
     pub fn into_envelope(self) -> String {
         soap::envelope(NAMESPACE, "GetActionConfigurations", None)
     }

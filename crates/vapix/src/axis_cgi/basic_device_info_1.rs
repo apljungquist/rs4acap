@@ -169,23 +169,27 @@ pub struct GetAllUnrestrictedPropertiesRequest {
     method: &'static str,
 }
 
-impl Default for GetAllUnrestrictedPropertiesRequest {
-    fn default() -> Self {
+const PATH: &str = "axis-cgi/basicdeviceinfo.cgi";
+
+impl GetAllUnrestrictedPropertiesRequest {
+    pub fn new() -> Self {
         Self {
             api_version: "1.0",
             method: "getAllUnrestrictedProperties",
         }
     }
-}
 
-const PATH: &str = "axis-cgi/basicdeviceinfo.cgi";
-
-impl GetAllUnrestrictedPropertiesRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
     ) -> Result<AllUnrestrictedPropertiesData, Error<json_rpc::Error>> {
         json_rpc_http::send_request(client, PATH, &self).await
+    }
+}
+
+impl Default for GetAllUnrestrictedPropertiesRequest {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -349,16 +353,14 @@ pub struct GetAllPropertiesRequest {
     method: &'static str,
 }
 
-impl Default for GetAllPropertiesRequest {
-    fn default() -> Self {
+impl GetAllPropertiesRequest {
+    pub fn new() -> Self {
         Self {
             api_version: "1.0",
             method: "getAllProperties",
         }
     }
-}
 
-impl GetAllPropertiesRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
@@ -367,12 +369,10 @@ impl GetAllPropertiesRequest {
     }
 }
 
-pub fn get_all_properties() -> GetAllPropertiesRequest {
-    GetAllPropertiesRequest::default()
-}
-
-pub fn get_all_unrestricted_properties() -> GetAllUnrestrictedPropertiesRequest {
-    GetAllUnrestrictedPropertiesRequest::default()
+impl Default for GetAllPropertiesRequest {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]

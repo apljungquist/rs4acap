@@ -187,7 +187,7 @@ fn record_trials(library: &Library) -> Vec<Trial> {
     });
 
     let prelude = rt.block_on(async {
-        let props = apis::basic_device_info_1::get_all_unrestricted_properties()
+        let props = apis::basic_device_info_1::GetAllUnrestrictedPropertiesRequest::new()
             .send(&client)
             .await
             .unwrap()
@@ -286,14 +286,14 @@ fn main() {
 }
 
 async fn action1_get_action_configurations(client: &CassetteClient, _prelude: Option<Prelude>) {
-    apis::action_1::get_action_configurations()
+    apis::action_1::GetActionConfigurationsRequest
         .send(client)
         .await
         .unwrap();
 }
 
 async fn action1_get_action_rules(client: &CassetteClient, _prelude: Option<Prelude>) {
-    apis::action_1::get_action_rules()
+    apis::action_1::GetActionRulesRequest
         .send(client)
         .await
         .unwrap();
@@ -326,7 +326,7 @@ async fn api_discovery_1_get_supported_versions(client: &CassetteClient, _: Opti
 }
 
 async fn basic_device_info_get_all_properties(client: &CassetteClient, _: Option<Prelude>) {
-    let property_list = basic_device_info_1::get_all_properties()
+    let property_list = basic_device_info_1::GetAllPropertiesRequest::new()
         .send(client)
         .await
         .unwrap()
@@ -343,7 +343,7 @@ async fn basic_device_info_get_all_unrestricted_properties(
     client: &CassetteClient,
     _: Option<Prelude>,
 ) {
-    let property_list = basic_device_info_1::get_all_unrestricted_properties()
+    let property_list = basic_device_info_1::GetAllUnrestrictedPropertiesRequest::new()
         .send(client)
         .await
         .unwrap()
@@ -487,7 +487,7 @@ async fn device_configuration_item_already_exists(
 
 // TODO: Find a way to avoid the churn caused by XML lists not being consistently ordered
 async fn event1_get_event_instances(client: &CassetteClient, _prelude: Option<Prelude>) {
-    let data = apis::event_1::get_event_instances()
+    let data = apis::event_1::GetEventInstancesRequest
         .send(client)
         .await
         .unwrap();
@@ -715,19 +715,19 @@ async fn ssh_1_crud(client: &CassetteClient, prelude: Option<Prelude>) {
 
     let username = "dalliard";
 
-    apis::ssh_1::add_user(username, "Good morning")
+    apis::ssh_1::AddUserRequest::new(username, "Good morning")
         .comment("Good morning")
         .send(client)
         .await
         .unwrap();
 
-    apis::ssh_1::set_user(username)
+    apis::ssh_1::SetUserRequest::new(username)
         .comment("When's the day?")
         .send(client)
         .await
         .unwrap();
 
-    apis::ssh_1::delete_user(username)
+    apis::ssh_1::DeleteUserRequest::new(username)
         .send(client)
         .await
         .unwrap();
@@ -740,7 +740,7 @@ async fn ssh_1_set_user_does_not_exist(client: &CassetteClient, prelude: Option<
         }
     }
 
-    let error = apis::ssh_1::set_user("nonexistent_user")
+    let error = apis::ssh_1::SetUserRequest::new("nonexistent_user")
         .comment("should fail")
         .send(client)
         .await
@@ -762,14 +762,14 @@ async fn ssh_1_set_user_validation_error(client: &CassetteClient, prelude: Optio
 
     let username = "cassette_test_validation";
 
-    apis::ssh_1::add_user(username, "Good morning")
+    apis::ssh_1::AddUserRequest::new(username, "Good morning")
         .comment("Good morning")
         .send(client)
         .await
         .unwrap();
 
     // Empty string violates the minimum length of 1
-    let error = apis::ssh_1::set_user(username)
+    let error = apis::ssh_1::SetUserRequest::new(username)
         .password("")
         .send(client)
         .await
@@ -782,14 +782,14 @@ async fn ssh_1_set_user_validation_error(client: &CassetteClient, prelude: Optio
     assert_eq!(error.kind().unwrap(), ErrorKind::ValidationError);
 
     // Clean up
-    apis::ssh_1::delete_user(username)
+    apis::ssh_1::DeleteUserRequest::new(username)
         .send(client)
         .await
         .unwrap();
 }
 
 async fn system_ready_1_system_ready(client: &CassetteClient, _prelude: Option<Prelude>) {
-    let data = apis::system_ready_1::system_ready()
+    let data = apis::system_ready_1::SystemReadyRequest::new()
         .send(client)
         .await
         .unwrap();

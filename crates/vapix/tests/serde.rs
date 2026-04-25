@@ -77,7 +77,7 @@ fn can_deserialize_system_ready_1_preview_mode() {
 #[test]
 fn can_serialize_action_1_requests() {
     expect_file!["./snapshots/add_action_configuration.xml"].assert_eq(
-        &apis::action_1::add_action_configuration("com.axis.action.fixed.ledcontrol")
+        &apis::action_1::AddActionConfigurationRequest::new("com.axis.action.fixed.ledcontrol")
             .name("Flash status LED")
             .param("led", "statusled")
             .param("color", "green,none")
@@ -87,7 +87,7 @@ fn can_serialize_action_1_requests() {
             .unwrap(),
     );
     expect_file!["./snapshots/add_action_rule.xml"].assert_eq(
-        &apis::action_1::add_action_rule("My Action Rule".to_string(), 123)
+        &apis::action_1::AddActionRuleRequest::new("My Action Rule".to_string(), 123)
             .condition(Condition {
                 topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
                 message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#
@@ -96,7 +96,7 @@ fn can_serialize_action_1_requests() {
             .into_envelope(),
     );
     expect_file!["./snapshots/get_action_configurations.xml"]
-        .assert_eq(&apis::action_1::get_action_configurations().into_envelope());
+        .assert_eq(&apis::action_1::GetActionConfigurationsRequest::new().into_envelope());
     expect_file!["./snapshots/get_action_rules.xml"]
-        .assert_eq(&apis::action_1::get_action_rules().into_envelope());
+        .assert_eq(&apis::action_1::GetActionRulesRequest::new().into_envelope());
 }

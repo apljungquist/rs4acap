@@ -19,7 +19,7 @@ pub struct AddActionRuleRequest {
 }
 
 impl AddActionRuleRequest {
-    pub(crate) fn new(name: String, primary_action: u16) -> Self {
+    pub fn new(name: String, primary_action: u16) -> Self {
         Self {
             name,
             enabled: true,
@@ -133,10 +133,14 @@ pub struct GetActionRulesResponse {
     pub action_rules: ActionRules,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct GetActionRulesRequest;
 
 impl GetActionRulesRequest {
+    pub fn new() -> Self {
+        Self
+    }
+
     pub fn into_envelope(self) -> String {
         soap::envelope(NAMESPACE, "GetActionRules", None)
     }

@@ -138,7 +138,7 @@ async fn probe_device(
             let AllProperties {
                 unrestricted,
                 restricted,
-            } = apis::basic_device_info_1::get_all_properties()
+            } = apis::basic_device_info_1::GetAllPropertiesRequest::new()
                 .send(&client)
                 .await?
                 .property_list;
@@ -153,10 +153,11 @@ async fn probe_device(
                 .await
                 .context("Could not create client")?;
 
-            let unrestricted = apis::basic_device_info_1::get_all_unrestricted_properties()
-                .send(&client)
-                .await?
-                .property_list;
+            let unrestricted =
+                apis::basic_device_info_1::GetAllUnrestrictedPropertiesRequest::new()
+                    .send(&client)
+                    .await?
+                    .property_list;
             Ok((fingerprint, unrestricted, None))
         }
     }
