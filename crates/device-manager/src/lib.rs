@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 pub mod commands;
 mod restart_detector;
 mod ssh_keygen;

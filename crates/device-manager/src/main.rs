@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 use clap::Parser;
 
 #[tokio::main]
