@@ -55,12 +55,16 @@ pub struct SegmentSize {
     pub target: u64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CreateRecordingGroupsRequest {
     data: Value,
 }
 
 impl CreateRecordingGroupsRequest {
+    pub fn new() -> Self {
+        Self { data: Value::Null }
+    }
+
     pub fn data(mut self, data: Value) -> Self {
         self.data = data;
         self
@@ -81,8 +85,4 @@ impl CreateRecordingGroupsRequest {
     ) -> Result<CreateRecordingGroupResponse, Error<rest::Error>> {
         rest_http::send_request(client, self.into_request()).await
     }
-}
-
-pub fn create_recording_groups() -> CreateRecordingGroupsRequest {
-    CreateRecordingGroupsRequest { data: Value::Null }
 }

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use log::{debug, trace, warn};
-use rs4a_vapix::{system_ready_1, system_ready_1::SystemreadyData};
+use rs4a_vapix::system_ready_1::{SystemReadyRequest, SystemreadyData};
 use tokio::time::sleep;
 
 #[derive(Clone, Copy, Debug)]
@@ -20,7 +20,7 @@ pub(crate) struct RestartDetector<'a> {
 
 impl<'a> RestartDetector<'a> {
     pub(crate) async fn try_new(client: &'a rs4a_vapix::Client) -> anyhow::Result<Self> {
-        let data = system_ready_1::system_ready().send(client).await?;
+        let data = SystemReadyRequest::new().send(client).await?;
         let boot_id = data.bootid.clone();
         let uptime = data.try_uptime()?;
         Ok(Self {
@@ -106,7 +106,7 @@ impl<'a> RestartDetector<'a> {
 
             let data = tokio::time::timeout(
                 Duration::from_secs(5),
-                system_ready_1::system_ready().send(self.client),
+                SystemReadyRequest::new().send(self.client),
             )
             .await
             .inspect_err(|_| debug!("system_ready request timed out"))

@@ -3,12 +3,20 @@ use anyhow::{bail, Context};
 
 use crate::Client;
 
-pub struct Request {
+/// Get a jpg encoded snapshot.
+pub struct GetImageRequest {
     resolution: Option<String>,
     compression: Option<u8>,
 }
 
-impl Request {
+impl GetImageRequest {
+    pub fn new() -> Self {
+        Self {
+            resolution: None,
+            compression: None,
+        }
+    }
+
     /// The image resolution in the format `"{width}x{height}"`.
     ///
     /// Example: `"640x360"`.
@@ -29,9 +37,7 @@ impl Request {
         self.compression = Some(compression);
         self
     }
-}
 
-impl Request {
     // TODO: Migrate to `HttpClient` when cassette tests support binary responses.
     pub async fn send(self, client: &Client) -> anyhow::Result<Vec<u8>> {
         let Self {
@@ -70,10 +76,8 @@ impl Request {
     }
 }
 
-/// Get a jpg encoded snapshot.
-pub fn get_image() -> Request {
-    Request {
-        resolution: None,
-        compression: None,
+impl Default for GetImageRequest {
+    fn default() -> Self {
+        Self::new()
     }
 }

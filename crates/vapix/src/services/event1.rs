@@ -59,10 +59,14 @@ impl SoapResponse for EventInstances {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct GetEventInstancesRequest;
 
 impl GetEventInstancesRequest {
+    pub fn new() -> Self {
+        Self
+    }
+
     pub fn into_envelope(self) -> String {
         soap::envelope(
             "http://www.axis.com/vapix/ws/event1",
@@ -79,8 +83,4 @@ impl GetEventInstancesRequest {
             Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
         soap_http::send_request(client, request).await
     }
-}
-
-pub fn get_event_instances() -> GetEventInstancesRequest {
-    GetEventInstancesRequest
 }

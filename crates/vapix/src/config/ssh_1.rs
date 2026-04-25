@@ -21,6 +21,20 @@ pub struct AddUserRequest {
 }
 
 impl AddUserRequest {
+    /// Creates a new user.
+    ///
+    /// # Arguments
+    ///
+    /// - `username` no shorter than 1, no longer than 32 and matching `^[a-z_][a-z0-9-_]*[$]?$`.
+    /// - `password` no shorter than 1 and no longer than 256.
+    pub fn new(username: impl ToString, password: impl ToString) -> Self {
+        Self {
+            comment: None,
+            password: password.to_string(),
+            username: username.to_string(),
+        }
+    }
+
     /// Sets the full name or the comment of the SSH user.
     ///
     /// Must be no longer than 256 and must match `^[^:\n]*$`.
@@ -71,6 +85,21 @@ pub struct SetUserRequest {
 impl SetUserRequest {
     // TODO: Figure out how the config API measures length
 
+    /// Updates an existing user.
+    ///
+    /// # Arguments
+    ///
+    /// - `username` name of the user to update.
+    pub fn new(username: impl ToString) -> Self {
+        Self {
+            properties: SetUserProperties {
+                password: None,
+                comment: None,
+            },
+            username: username.to_string(),
+        }
+    }
+
     /// Sets the password of the SSH user.
     ///
     /// Must be no shorter than 1 and no longer than 256.
@@ -113,6 +142,17 @@ pub struct DeleteUserRequest {
 }
 
 impl DeleteUserRequest {
+    /// Deletes an existing user.
+    ///
+    /// # Arguments
+    ///
+    /// - `username` name of the user to delete.
+    pub fn new(username: impl ToString) -> Self {
+        Self {
+            username: username.to_string(),
+        }
+    }
+
     pub fn into_request(self) -> Request {
         Request::new(
             Method::DELETE,
@@ -126,43 +166,3 @@ impl DeleteUserRequest {
 }
 
 // TODO: Consider creating new types for comment, username, and password.
-
-/// Creates a new user.
-///
-/// # Arguments
-///
-/// - `username` no shorter than 1, no longer than 32 and matching `^[a-z_][a-z0-9-_]*[$]?$`.
-/// - `password` shorter than 1 and no longer than 256.
-pub fn add_user(username: impl ToString, password: impl ToString) -> AddUserRequest {
-    AddUserRequest {
-        comment: None,
-        password: password.to_string(),
-        username: username.to_string(),
-    }
-}
-
-/// Updates an existing user.
-///
-/// # Arguments
-///
-/// - `username` name of the user to update.
-pub fn set_user(username: impl ToString) -> SetUserRequest {
-    SetUserRequest {
-        properties: SetUserProperties {
-            password: None,
-            comment: None,
-        },
-        username: username.to_string(),
-    }
-}
-
-/// Deletes an existing user.
-///
-/// # Arguments
-///
-/// - `username` name of the user to delete.
-pub fn delete_user(username: impl ToString) -> DeleteUserRequest {
-    DeleteUserRequest {
-        username: username.to_string(),
-    }
-}

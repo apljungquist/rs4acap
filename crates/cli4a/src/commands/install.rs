@@ -51,7 +51,7 @@ impl InstallCommand {
 
         info!("Querying device for model and version");
         let client = netloc.connect().await?;
-        let props = rs4a_vapix::basic_device_info_1::get_all_unrestricted_properties()
+        let props = rs4a_vapix::basic_device_info_1::GetAllUnrestrictedPropertiesRequest::new()
             .send(&client)
             .await?
             .property_list;

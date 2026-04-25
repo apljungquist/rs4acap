@@ -1,7 +1,9 @@
 use std::time::Duration;
 
 use log::{debug, info};
-use rs4a_vapix::{firmware_management_1::FactoryDefaultRequest, system_ready_1};
+use rs4a_vapix::{
+    firmware_management_1::FactoryDefaultRequest, system_ready_1::SystemReadyRequest,
+};
 use tokio::time::timeout;
 
 use crate::{restart_detector::RestartDetector, Netloc};
@@ -24,7 +26,7 @@ pub async fn restore(netloc: &Netloc) -> anyhow::Result<()> {
     let client = netloc.connect().await?;
 
     debug!("Querying device state");
-    let data = system_ready_1::system_ready().send(&client).await?;
+    let data = SystemReadyRequest::new().send(&client).await?;
     if data.needsetup {
         info!("Already in setup mode, nothing to do");
         return Ok(());

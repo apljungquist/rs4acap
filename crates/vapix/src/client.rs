@@ -298,7 +298,7 @@ impl ClientBuilder {
         for (scheme, port) in schemes {
             candidate.scheme = *scheme;
             candidate.port = *port;
-            if apis::system_ready_1::system_ready()
+            if apis::system_ready_1::SystemReadyRequest::new()
                 .timeout(1)
                 .send(candidate)
                 .await

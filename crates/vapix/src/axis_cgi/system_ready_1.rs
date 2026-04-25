@@ -98,17 +98,15 @@ pub struct SystemReadyRequest {
 
 const PATH: &str = "axis-cgi/systemready.cgi";
 
-impl Default for SystemReadyRequest {
-    fn default() -> Self {
+impl SystemReadyRequest {
+    pub fn new() -> Self {
         Self {
-            method: "systemready",
             api_version: "1",
+            method: "systemready",
             params: None,
         }
     }
-}
 
-impl SystemReadyRequest {
     pub fn timeout(mut self, timeout: u16) -> Self {
         self.params.get_or_insert(SystemReadyParams { timeout });
         self
@@ -122,6 +120,8 @@ impl SystemReadyRequest {
     }
 }
 
-pub fn system_ready() -> SystemReadyRequest {
-    SystemReadyRequest::default()
+impl Default for SystemReadyRequest {
+    fn default() -> Self {
+        Self::new()
+    }
 }

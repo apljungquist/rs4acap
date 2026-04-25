@@ -165,7 +165,9 @@ async fn probe(
         needsetup,
         systemready,
         ..
-    } = apis::system_ready_1::system_ready().send(&client).await?;
+    } = apis::system_ready_1::SystemReadyRequest::new()
+        .send(&client)
+        .await?;
     details
         .insert("Need Setup".to_string(), needsetup.to_string())
         .inspect(|_| panic!("Each key is created at most once"));
@@ -182,7 +184,7 @@ async fn probe(
         serial_number,
         version,
         ..
-    } = apis::basic_device_info_1::get_all_unrestricted_properties()
+    } = apis::basic_device_info_1::GetAllUnrestrictedPropertiesRequest::new()
         .send(&client)
         .await?
         .property_list;

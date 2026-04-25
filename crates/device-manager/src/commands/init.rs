@@ -1,8 +1,8 @@
 use anyhow::{bail, Context};
 use log::{debug, info, warn};
 use rs4a_vapix::{
-    applications_config, basic_device_info_1, parameter_management, pwdgrp, pwdgrp::AddUserRequest,
-    system_ready_1,
+    applications_config, basic_device_info_1::GetAllUnrestrictedPropertiesRequest,
+    parameter_management, pwdgrp, pwdgrp::AddUserRequest, system_ready_1::SystemReadyRequest,
 };
 use semver::Version;
 
@@ -42,7 +42,7 @@ fn parse_firmware_version(s: &str) -> anyhow::Result<Version> {
 }
 
 async fn apply_setup_profile(client: &rs4a_vapix::Client) -> anyhow::Result<()> {
-    let data = basic_device_info_1::get_all_unrestricted_properties()
+    let data = GetAllUnrestrictedPropertiesRequest::new()
         .send(client)
         .await
         .context("Failed to query firmware version")?;
@@ -71,7 +71,7 @@ pub async fn initialize(netloc: &Netloc) -> anyhow::Result<()> {
     // Device needs setup, no authentication possible or required
     let client = netloc.connect_anonymous().await?;
 
-    let data = system_ready_1::system_ready().send(&client).await?;
+    let data = SystemReadyRequest::new().send(&client).await?;
     if !data.needsetup {
         bail!("Expected device to be in setup mode, but needsetup is false");
     }

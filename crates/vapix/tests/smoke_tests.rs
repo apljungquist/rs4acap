@@ -38,7 +38,7 @@ async fn action_1_get_action_configurations_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
-    apis::action_1::get_action_configurations()
+    apis::action_1::GetActionConfigurationsRequest::new()
         .send(&client)
         .await
         .unwrap();
@@ -51,7 +51,7 @@ async fn action_1_add_and_get_returns_ok() {
     };
 
     let action_configuration_id =
-        apis::action_1::add_action_configuration("com.axis.action.fixed.ledcontrol")
+        apis::action_1::AddActionConfigurationRequest::new("com.axis.action.fixed.ledcontrol")
             .param("led", "statusled")
             .param("color", "green,none")
             .param("duration", "1")
@@ -62,19 +62,20 @@ async fn action_1_add_and_get_returns_ok() {
             .configuration_id;
 
     let action_rule_name = "smoke test rule";
-    let action_rule_id =
-        apis::action_1::add_action_rule(action_rule_name.to_string(), action_configuration_id)
-            .condition(Condition {
-                topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
-                message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#
-                    .to_string(),
-            })
-            .send(&client)
-            .await
-            .unwrap()
-            .id;
+    let action_rule_id = apis::action_1::AddActionRuleRequest::new(
+        action_rule_name.to_string(),
+        action_configuration_id,
+    )
+    .condition(Condition {
+        topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
+        message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+    })
+    .send(&client)
+    .await
+    .unwrap()
+    .id;
 
-    let actions_rules = apis::action_1::get_action_rules()
+    let actions_rules = apis::action_1::GetActionRulesRequest::new()
         .send(&client)
         .await
         .unwrap()
@@ -94,7 +95,7 @@ async fn event_1_get_event_instances_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
-    apis::event_1::get_event_instances()
+    apis::event_1::GetEventInstancesRequest::new()
         .send(&client)
         .await
         .unwrap();
@@ -105,7 +106,7 @@ async fn jpg_get_image_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
-    apis::jpg_3::get_image()
+    apis::jpg_3::GetImageRequest::new()
         .compression(100)
         .send(&client)
         .await
@@ -142,7 +143,7 @@ async fn recording_group_1_create_returns_ok() {
         actual_recording_destination_id.into_string()
     );
 
-    apis::recording_group_1::create_recording_groups()
+    apis::recording_group_1::CreateRecordingGroupsRequest::new()
         .data(json!({
             "destinations": [{
                 "remoteObjectStorage":  {
@@ -160,7 +161,7 @@ async fn system_ready_system_ready_returns_ok() {
     let Some(client) = test_client().await else {
         return;
     };
-    apis::system_ready_1::system_ready()
+    apis::system_ready_1::SystemReadyRequest::new()
         .send(&client)
         .await
         .unwrap();
