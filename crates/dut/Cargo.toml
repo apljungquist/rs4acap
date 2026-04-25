@@ -5,6 +5,9 @@ edition.workspace = true
 license = "MIT"
 description = "Framework for specifying and inferring what DUT to target"
 
+[lints]
+workspace = true
+
 [dependencies]
 anyhow = { workspace = true }
 url = { workspace = true }
