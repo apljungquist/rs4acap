@@ -1,0 +1,151 @@
+200 OK
+
+{
+  "apiVersion": "1.38",
+  "method": "getNetworkInfo",
+  "data": {
+    "system": {
+      "tcpEcnMode": "acceptAndInitiate",
+      "maxSupportedVlans": 5,
+      "deviceSwitching": {
+        "mode": "auto",
+        "manualActiveDevices": [],
+        "devices": [
+          "eth0"
+        ],
+        "activeDevices": [
+          "eth0"
+        ]
+      },
+      "hostname": {
+        "useDhcpHostname": true,
+        "hostname": "axis-0123456789ab",
+        "staticHostname": "axis-0123456789ab"
+      },
+      "resolver": {
+        "useDhcpResolverInfo": true,
+        "nameServers": [
+          "192.168.1.1"
+        ],
+        "staticNameServers": [],
+        "maxSupportedStaticNameServers": 3,
+        "searchDomains": [],
+        "staticSearchDomains": [],
+        "maxSupportedStaticSearchDomains": 6,
+        "domainName": "localdomain",
+        "staticDomainName": ""
+      },
+      "globalProxies": {
+        "httpProxy": "http://192.0.2.1:8080",
+        "httpsProxy": "http://192.0.2.1:8080",
+        "noProxy": "192.0.2.2"
+      }
+    },
+    "devices": [
+      {
+        "name": "eth0",
+        "type": "wired",
+        "macAddress": "01:23:45:67:89:ab",
+        "partOfBridge": "",
+        "link": true,
+        "state": "up",
+        "staticState": "up",
+        "wired": {
+          "linkMode": "auto",
+          "supportedLinkModes": [
+            "auto",
+            "10BaseT-HD",
+            "10BaseT-FD",
+            "100BaseTX-HD",
+            "100BaseTX-FD"
+          ],
+          "isDownlink": false,
+          "8021X": {
+            "enabled": true,
+            "status": "Unauthorized",
+            "mode": "WPA-Enterprise-EAPTLS",
+            "configurations": [
+              {
+                "mode": "WPA-Enterprise-PEAP-MSCHAPv2",
+                "params": {
+                  "identity": "",
+                  "is_password_set": false,
+                  "eapolVersion": "EAPoLv3",
+                  "peapVersion": "PEAPv1",
+                  "label": 1,
+                  "certClient": "",
+                  "certsCA": []
+                }
+              },
+              {
+                "mode": "WPA-Enterprise-EAPTLS",
+                "params": {
+                  "identity": "axis-0123456789ab",
+                  "eapolVersion": "EAPoLv3",
+                  "certClient": "Axis device ID ECC-P256 (802.1AR)",
+                  "certsCA": []
+                }
+              },
+              {
+                "mode": "MACsec-PSK",
+                "params": {
+                  "is_mka_cak_set": false,
+                  "mkaCkn": ""
+                }
+              }
+            ],
+            "supportedModes": [
+              "WPA-Enterprise-PEAP-MSCHAPv2",
+              "WPA-Enterprise-EAPTLS",
+              "MACsec-PSK"
+            ],
+            "MACsecSecured": false
+          }
+        },
+        "IPv4": {
+          "enabled": true,
+          "configurationMode": "dhcp",
+          "linkLocalMode": "on",
+          "addresses": [
+            {
+              "address": "169.254.79.59",
+              "prefixLength": 16,
+              "origin": "linkLocal",
+              "scope": "link"
+            },
+            {
+              "address": "192.168.1.219",
+              "prefixLength": 24,
+              "origin": "dhcp",
+              "scope": "global",
+              "broadcast": "192.168.1.255"
+            }
+          ],
+          "maxSupportedStaticAddressConfigurations": 1,
+          "staticAddressConfigurations": [
+            {
+              "address": "192.168.0.90",
+              "prefixLength": 24,
+              "broadcast": "192.168.0.255"
+            }
+          ],
+          "defaultRouter": "192.168.1.1",
+          "staticDefaultRouter": "192.168.0.1",
+          "useStaticDHCPFallback": true,
+          "useDHCPStaticRoutes": false
+        },
+        "IPv6": {
+          "enabled": true,
+          "addresses": [
+            {
+              "address": "fe80::0123:4567:89ab:cdef",
+              "prefixLength": 64,
+              "origin": "linkLocal",
+              "scope": "link"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

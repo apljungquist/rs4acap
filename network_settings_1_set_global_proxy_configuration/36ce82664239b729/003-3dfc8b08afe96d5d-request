@@ -1,0 +1,12 @@
+POST axis-cgi/network_settings.cgi
+Content-Type: application/json
+
+{
+  "apiVersion": "1.0",
+  "method": "setGlobalProxyConfiguration",
+  "params": {
+    "httpProxy": "http://localhost:8118",
+    "httpsProxy": "http://localhost:8118",
+    "noProxy": "127.0.0.12"
+  }
+}

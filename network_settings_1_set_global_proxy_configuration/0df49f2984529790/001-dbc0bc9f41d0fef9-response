@@ -1,0 +1,7 @@
+200 OK
+
+{
+  "apiVersion": "1.33",
+  "method": "setGlobalProxyConfiguration",
+  "data": {}
+}

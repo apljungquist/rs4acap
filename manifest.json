@@ -316,17 +316,17 @@
       ]
     },
     "event1_get_event_instances": {
-      "1d79f15b6460046d": [
+      "52a2629abf3ce7be": [
+        "D4200-VE@12.9.57"
+      ],
+      "94add4203713beb0": [
         "P8815-2@11.11.192"
       ],
-      "2aa6c439a25d452b": [
+      "c95d9e334f322ffa": [
         "M1075-L@12.9.57"
       ],
-      "578e938a3851054b": [
+      "fc65bf49670fc9e3": [
         "P8815-2@10.12.323"
-      ],
-      "b26ed786f50dd31a": [
-        "D4200-VE@12.9.57"
       ]
     },
     "firmware_management_1_upgrade_mismatch": {
@@ -346,6 +346,22 @@
         "P3245-LVE@11.11.192",
         "P8815-2@11.11.192",
         "Q1951-E@11.11.192"
+      ]
+    },
+    "network_settings_1_get_network_info": {
+      "8dad94585f80e3f0": [
+        "P8815-2@10.12.323"
+      ]
+    },
+    "network_settings_1_set_global_proxy_configuration": {
+      "0df49f2984529790": [
+        "P8815-2@11.11.192"
+      ],
+      "102497b18b22b231": [
+        "D4200-VE@12.9.57"
+      ],
+      "36ce82664239b729": [
+        "M1075-L@12.9.57"
       ]
     },
     "parameter_management_list_all": {
@@ -419,8 +435,10 @@
     },
     "siren_and_light_2_alpha_maintenance_mode_not_supported": {
       "0896e34abdde4ea2": [
-        "D4200-VE@12.9.57",
         "D6310@12.9.57"
+      ],
+      "46114d06fa77ca1a": [
+        "D4200-VE@12.9.57"
       ]
     },
     "ssh_1_crud": {
@@ -509,6 +527,14 @@
       "M3066-V@10.12.323",
       "P3245-LVE@10.12.323",
       "P8815-2@10.12.228",
+      "P8815-2@10.12.323"
+    ],
+    "network_settings_1_get_network_info": [
+      "D4200-VE@12.9.57",
+      "M1075-L@12.9.57",
+      "P8815-2@11.11.192"
+    ],
+    "network_settings_1_set_global_proxy_configuration": [
       "P8815-2@10.12.323"
     ],
     "parameter_management_list_error": [
