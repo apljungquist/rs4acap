@@ -112,6 +112,8 @@ macro_rules! cassette_tests {
 }
 
 cassette_tests! {
+    action1_get_action_configurations,
+    action1_get_action_rules,
     api_discovery_1_get_api_list,
     api_discovery_1_get_supported_versions,
     basic_device_info_get_all_properties => [
@@ -142,6 +144,12 @@ cassette_tests! {
     device_configuration_item_does_not_exist,
     device_configuration_validation_error,
     device_configuration_item_already_exists,
+    event1_get_event_instances => [
+        (
+            r#"Name="DeviceUUID"><aev:Value>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}</aev:Value>"#,
+            r#"Name="DeviceUUID"><aev:Value>00000000-0000-0000-0123-456789abcdef</aev:Value>"#,
+        ),
+    ],
     firmware_management_1_upgrade_mismatch,
     parameter_management_list_error,
     parameter_management_list_image_resolution,
@@ -275,6 +283,20 @@ fn main() {
         library.cleanup_unreferenced().unwrap();
     }
     conclusion.exit();
+}
+
+async fn action1_get_action_configurations(client: &CassetteClient, _prelude: Option<Prelude>) {
+    apis::action_1::get_action_configurations()
+        .send(client)
+        .await
+        .unwrap();
+}
+
+async fn action1_get_action_rules(client: &CassetteClient, _prelude: Option<Prelude>) {
+    apis::action_1::get_action_rules()
+        .send(client)
+        .await
+        .unwrap();
 }
 
 async fn api_discovery_1_get_api_list(client: &CassetteClient, _: Option<Prelude>) {
@@ -463,6 +485,15 @@ async fn device_configuration_item_already_exists(
         .unwrap();
 }
 
+// TODO: Find a way to avoid the churn caused by XML lists not being consistently ordered
+async fn event1_get_event_instances(client: &CassetteClient, _prelude: Option<Prelude>) {
+    let data = apis::event_1::get_event_instances()
+        .send(client)
+        .await
+        .unwrap();
+    assert!(!data.message_instances.is_empty());
+}
+
 // This normally happens if the firmware is for a different device model.
 // Apparently it also happens with an invalid firmware binary.
 async fn firmware_management_1_upgrade_mismatch(
@@ -632,6 +663,7 @@ async fn remote_object_storage_1_beta_crud(client: &CassetteClient, prelude: Opt
     assert!(!all.iter().any(|d| d.id == created.id));
 }
 
+// TODO: Figure out why these recordings are inconsistent
 async fn siren_and_light_2_alpha_maintenance_mode_not_supported(
     client: &CassetteClient,
     prelude: Option<Prelude>,
