@@ -4,6 +4,7 @@ pub mod applications_config;
 pub mod basic_device_info_1;
 pub mod firmware_management_1;
 pub mod jpg_3;
+pub mod network_settings_1;
 pub mod parameter_management;
 pub mod pwdgrp;
 pub mod system_ready_1;

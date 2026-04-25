@@ -13,7 +13,7 @@ pub mod soap_http;
 
 pub use axis_cgi::{
     api_discovery_1, applications_config, basic_device_info_1, firmware_management_1,
-    parameter_management, pwdgrp, system_ready_1,
+    network_settings_1, parameter_management, pwdgrp, system_ready_1,
 };
 pub use client::{Client, ClientBuilder, RequestBuilder, Scheme};
 pub use config::{

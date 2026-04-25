@@ -59,6 +59,12 @@ pub mod firmware_management_1 {
     pub use crate::firmware_management_1::{FactoryDefaultRequest, UpgradeRequest};
 }
 
+pub mod network_settings_1 {
+    pub use crate::network_settings_1::{
+        GetNetworkInfoRequest, SetGlobalProxyConfigurationRequest,
+    };
+}
+
 pub mod parameter_management {
     pub use crate::parameter_management::{
         ImageResolution, ListRequest, ParamList, Parameter, Resolution, UpdateRequest,
