@@ -72,5 +72,5 @@ pub mod parameter_management {
 }
 
 pub mod pwdgrp {
-    pub use crate::pwdgrp::AddUserRequest;
+    pub use crate::pwdgrp::{AddUserRequest, RemoveUserRequest};
 }
