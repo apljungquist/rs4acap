@@ -10,8 +10,8 @@ use reqwest::{
 use url::{Host, Position, Url};
 
 use crate::{
-    apis,
     http::{HttpClient, Request, Response},
+    system_ready_1::SystemReadyRequest,
 };
 
 #[derive(Clone)]
@@ -298,7 +298,7 @@ impl ClientBuilder {
         for (scheme, port) in schemes {
             candidate.scheme = *scheme;
             candidate.port = *port;
-            if apis::system_ready_1::SystemReadyRequest::new()
+            if SystemReadyRequest::new()
                 .timeout(1)
                 .send(candidate)
                 .await

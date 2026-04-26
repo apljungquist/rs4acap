@@ -2,9 +2,9 @@ use std::collections::{hash_map::Entry, HashMap};
 
 use anyhow::Context;
 use log::warn;
-use rs4a_vapix::{
-    apis,
-    basic_device_info_1::{AllProperties, RestrictedProperties, UnrestrictedProperties},
+use rs4a_vapix::basic_device_info_1::{
+    AllProperties, GetAllPropertiesRequest, GetAllUnrestrictedPropertiesRequest,
+    RestrictedProperties, UnrestrictedProperties,
 };
 use rs4a_vlt::requests;
 use tokio::task::JoinSet;
@@ -138,7 +138,7 @@ async fn probe_device(
             let AllProperties {
                 unrestricted,
                 restricted,
-            } = apis::basic_device_info_1::GetAllPropertiesRequest::new()
+            } = GetAllPropertiesRequest::new()
                 .send(&client)
                 .await?
                 .property_list;
@@ -153,11 +153,10 @@ async fn probe_device(
                 .await
                 .context("Could not create client")?;
 
-            let unrestricted =
-                apis::basic_device_info_1::GetAllUnrestrictedPropertiesRequest::new()
-                    .send(&client)
-                    .await?
-                    .property_list;
+            let unrestricted = GetAllUnrestrictedPropertiesRequest::new()
+                .send(&client)
+                .await?
+                .property_list;
             Ok((fingerprint, unrestricted, None))
         }
     }

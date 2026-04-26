@@ -1,3 +1,8 @@
+//! Request builders for the APIs that have pre-built bindings.
+//!
+//! Each submodule re-exports the request builders for one API, making it easy to discover what is
+//! supported without navigating the full type surface of the crate.
+
 pub mod api_discovery_1 {
     pub use crate::api_discovery_1::{GetApiListRequest, GetSupportedVersionsRequest};
 }
@@ -66,9 +71,7 @@ pub mod network_settings_1 {
 }
 
 pub mod parameter_management {
-    pub use crate::parameter_management::{
-        ImageResolution, ListRequest, ParamList, Parameter, Resolution, UpdateRequest,
-    };
+    pub use crate::parameter_management::{ListRequest, UpdateRequest};
 }
 
 pub mod pwdgrp {
