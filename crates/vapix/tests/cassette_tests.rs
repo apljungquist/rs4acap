@@ -13,6 +13,7 @@ use rs4a_vapix::{
     firmware_management_1,
     firmware_management_1::UpgradeRequest,
     http,
+    network_settings_1::{GetNetworkInfoRequest, SetGlobalProxyConfigurationRequest},
     parameter_management::{ImageResolution, ListRequest, NetworkSshEnabled, UpdateRequest},
     remote_object_storage_1_beta::{
         AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
@@ -116,6 +117,56 @@ cassette_tests! {
     action1_get_action_rules,
     api_discovery_1_get_api_list,
     api_discovery_1_get_supported_versions,
+    network_settings_1_get_network_info => [
+        // MAC address
+        (
+            r#""macAddress": "[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}""#,
+            r#""macAddress": "01:23:45:67:89:ab""#,
+        ),
+        // IPv6 link-local (EUI-64, derived from MAC)
+        (
+            r#""address": "fe80::[0-9a-f]{4}:[0-9a-f]{4}:[0-9a-f]{4}:[0-9a-f]{4}""#,
+            r#""address": "fe80::0123:4567:89ab:cdef""#,
+        ),
+        // Hostname derived from MAC/serial
+        (
+            r#""hostname": "axis-[0-9a-f]{12}""#,
+            r#""hostname": "axis-0123456789ab""#,
+        ),
+        (
+            r#""staticHostname": "axis-[0-9a-f]{12}""#,
+            r#""staticHostname": "axis-0123456789ab""#,
+        ),
+        (
+            r#""identity": "axis-[0-9a-f]{12}""#,
+            r#""identity": "axis-0123456789ab""#,
+        ),
+    ],
+    network_settings_1_set_global_proxy_configuration => [
+        // MAC address
+        (
+            r#""macAddress": "[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}""#,
+            r#""macAddress": "01:23:45:67:89:ab""#,
+        ),
+        // IPv6 link-local (EUI-64, derived from MAC)
+        (
+            r#""address": "fe80::[0-9a-f]{4}:[0-9a-f]{4}:[0-9a-f]{4}:[0-9a-f]{4}""#,
+            r#""address": "fe80::0123:4567:89ab:cdef""#,
+        ),
+        // Hostname derived from MAC/serial
+        (
+            r#""hostname": "axis-[0-9a-f]{12}""#,
+            r#""hostname": "axis-0123456789ab""#,
+        ),
+        (
+            r#""staticHostname": "axis-[0-9a-f]{12}""#,
+            r#""staticHostname": "axis-0123456789ab""#,
+        ),
+        (
+            r#""identity": "axis-[0-9a-f]{12}""#,
+            r#""identity": "axis-0123456789ab""#,
+        ),
+    ],
     basic_device_info_get_all_properties => [
         (
             r#""SocSerialNumber": "[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}-[0-9A-F]{8}""#,
@@ -786,6 +837,61 @@ async fn ssh_1_set_user_validation_error(client: &CassetteClient, prelude: Optio
         .send(client)
         .await
         .unwrap();
+}
+
+async fn network_settings_1_get_network_info(client: &CassetteClient, prelude: Option<Prelude>) {
+    if let Some(prelude) = prelude {
+        if !prelude.version_matches("<11") {
+            return;
+        }
+    }
+
+    let data = GetNetworkInfoRequest::new().send(client).await.unwrap();
+    assert!(data.system.global_proxies.is_none(),);
+}
+
+async fn network_settings_1_set_global_proxy_configuration(
+    client: &CassetteClient,
+    prelude: Option<Prelude>,
+) {
+    if let Some(prelude) = prelude {
+        if !prelude.version_matches(">=11") {
+            return;
+        }
+    }
+
+    let read = || async {
+        let data = GetNetworkInfoRequest::new().send(client).await.unwrap();
+        data.system.global_proxies.unwrap()
+    };
+
+    let initial = read().await;
+
+    SetGlobalProxyConfigurationRequest::new()
+        .http_proxy("http://192.0.2.1:8080")
+        .https_proxy("http://192.0.2.1:8080")
+        .no_proxy("192.0.2.2")
+        .send(client)
+        .await
+        .unwrap();
+
+    let updated = read().await;
+    assert_eq!(updated.http_proxy, "http://192.0.2.1:8080");
+    assert_eq!(updated.https_proxy, "http://192.0.2.1:8080");
+    assert_eq!(updated.no_proxy, "192.0.2.2");
+
+    SetGlobalProxyConfigurationRequest::new()
+        .http_proxy(&initial.http_proxy)
+        .https_proxy(&initial.https_proxy)
+        .no_proxy(&initial.no_proxy)
+        .send(client)
+        .await
+        .unwrap();
+
+    let restored = read().await;
+    assert_eq!(restored.http_proxy, initial.http_proxy);
+    assert_eq!(restored.https_proxy, initial.https_proxy);
+    assert_eq!(restored.no_proxy, initial.no_proxy);
 }
 
 async fn system_ready_1_system_ready(client: &CassetteClient, _prelude: Option<Prelude>) {
