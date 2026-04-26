@@ -5,17 +5,19 @@ use libtest_mimic::{Arguments, Trial};
 use log::{warn, LevelFilter};
 use rs4a_cassette_testing::{Cassette, CassetteClient, DeviceInfo, Library};
 use rs4a_vapix::{
-    api_discovery_1::{Api, ApiListData},
-    apis,
-    apis::basic_device_info_1,
-    basic_device_info_1::{ProductType, UnrestrictedProperties},
+    action1::{GetActionConfigurationsRequest, GetActionRulesRequest},
+    api_discovery_1::{Api, ApiListData, GetApiListRequest},
+    basic_device_info_1::{
+        GetAllPropertiesRequest, GetAllUnrestrictedPropertiesRequest, ProductType,
+        UnrestrictedProperties,
+    },
     discover::ApiState,
+    event1::GetEventInstancesRequest,
     firmware_management_1,
     firmware_management_1::UpgradeRequest,
     http,
     network_settings_1::{GetNetworkInfoRequest, SetGlobalProxyConfigurationRequest},
     parameter_management::{ImageResolution, ListRequest, NetworkSshEnabled, UpdateRequest},
-    pwdgrp::{Group, Role},
     remote_object_storage_1_beta::{
         AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
         DestinationId, ListDestinationsRequest, UpdateDestinationRequest,
@@ -24,6 +26,7 @@ use rs4a_vapix::{
     siren_and_light_2_alpha::{
         GetMaintenanceModeRequest, StartMaintenanceModeRequest, StopMaintenanceModeRequest,
     },
+    system_ready_1::SystemReadyRequest,
     ClientBuilder,
 };
 use semver::VersionReq;
@@ -246,15 +249,12 @@ fn record_trials(library: &Library) -> Vec<Trial> {
     });
 
     let prelude = rt.block_on(async {
-        let props = apis::basic_device_info_1::GetAllUnrestrictedPropertiesRequest::new()
+        let props = GetAllUnrestrictedPropertiesRequest::new()
             .send(&client)
             .await
             .unwrap()
             .property_list;
-        let api_list = apis::api_discovery_1::GetApiListRequest::default()
-            .send(&client)
-            .await
-            .unwrap();
+        let api_list = GetApiListRequest::default().send(&client).await.unwrap();
         Prelude { props, api_list }
     });
 
@@ -349,17 +349,11 @@ fn main() {
 }
 
 async fn action1_get_action_configurations(client: &CassetteClient, _prelude: Option<Prelude>) {
-    apis::action_1::GetActionConfigurationsRequest
-        .send(client)
-        .await
-        .unwrap();
+    GetActionConfigurationsRequest.send(client).await.unwrap();
 }
 
 async fn action1_get_action_rules(client: &CassetteClient, _prelude: Option<Prelude>) {
-    apis::action_1::GetActionRulesRequest
-        .send(client)
-        .await
-        .unwrap();
+    GetActionRulesRequest.send(client).await.unwrap();
 }
 
 async fn api_discovery_1_get_api_list(client: &CassetteClient, _: Option<Prelude>) {
@@ -393,7 +387,7 @@ async fn api_discovery_1_get_supported_versions(client: &CassetteClient, _: Opti
 }
 
 async fn basic_device_info_get_all_properties(client: &CassetteClient, _: Option<Prelude>) {
-    let property_list = basic_device_info_1::GetAllPropertiesRequest::new()
+    let property_list = GetAllPropertiesRequest::new()
         .send(client)
         .await
         .unwrap()
@@ -410,7 +404,7 @@ async fn basic_device_info_get_all_unrestricted_properties(
     client: &CassetteClient,
     _: Option<Prelude>,
 ) {
-    let property_list = basic_device_info_1::GetAllUnrestrictedPropertiesRequest::new()
+    let property_list = GetAllUnrestrictedPropertiesRequest::new()
         .send(client)
         .await
         .unwrap()
@@ -554,10 +548,7 @@ async fn device_configuration_item_already_exists(
 
 // TODO: Find a way to avoid the churn caused by XML lists not being consistently ordered
 async fn event1_get_event_instances(client: &CassetteClient, _prelude: Option<Prelude>) {
-    let data = apis::event_1::GetEventInstancesRequest
-        .send(client)
-        .await
-        .unwrap();
+    let data = GetEventInstancesRequest.send(client).await.unwrap();
     assert!(!data.message_instances.is_empty());
 }
 
@@ -661,18 +652,18 @@ async fn parameter_management_update_network_ssh_enabled(
 }
 
 async fn pwdgrp_add_user_already_exists(client: &CassetteClient, _prelude: Option<Prelude>) {
+    use rs4a_vapix::pwdgrp::{AddUserRequest, Group, RemoveUserRequest, Role};
     let username = "cassettetest";
 
-    apis::pwdgrp::AddUserRequest::new(username, "Good morning", Group::Users, Role::Viewer)
+    AddUserRequest::new(username, "Good morning", Group::Users, Role::Viewer)
         .send(client)
         .await
         .unwrap();
 
-    let err =
-        apis::pwdgrp::AddUserRequest::new(username, "Good morning", Group::Users, Role::Viewer)
-            .send(client)
-            .await
-            .unwrap_err();
+    let err = AddUserRequest::new(username, "Good morning", Group::Users, Role::Viewer)
+        .send(client)
+        .await
+        .unwrap_err();
 
     let http::Error::Service(err) = err else {
         panic!("Expected Service error but got {err:?}");
@@ -683,14 +674,13 @@ async fn pwdgrp_add_user_already_exists(client: &CassetteClient, _prelude: Optio
     );
 
     // Cleanup
-    apis::pwdgrp::RemoveUserRequest::new(username)
-        .send(client)
-        .await
-        .unwrap();
+    RemoveUserRequest::new(username).send(client).await.unwrap();
 }
 
 async fn pwdgrp_add_user_invalid_password(client: &CassetteClient, _prelude: Option<Prelude>) {
-    let err = apis::pwdgrp::AddUserRequest::new("testuser", "", Group::Users, Role::Viewer)
+    use rs4a_vapix::pwdgrp::{AddUserRequest, Group, Role};
+
+    let err = AddUserRequest::new("testuser", "", Group::Users, Role::Viewer)
         .send(client)
         .await
         .unwrap_err();
@@ -702,11 +692,12 @@ async fn pwdgrp_add_user_invalid_password(client: &CassetteClient, _prelude: Opt
 }
 
 async fn pwdgrp_add_user_invalid_username(client: &CassetteClient, _prelude: Option<Prelude>) {
-    let err =
-        apis::pwdgrp::AddUserRequest::new("user!", "Good morning", Group::Users, Role::Viewer)
-            .send(client)
-            .await
-            .unwrap_err();
+    use rs4a_vapix::pwdgrp::{AddUserRequest, Group, Role};
+
+    let err = AddUserRequest::new("user!", "Good morning", Group::Users, Role::Viewer)
+        .send(client)
+        .await
+        .unwrap_err();
 
     let http::Error::Service(err) = err else {
         panic!("Expected Service error but got {err:?}");
@@ -715,7 +706,9 @@ async fn pwdgrp_add_user_invalid_username(client: &CassetteClient, _prelude: Opt
 }
 
 async fn pwdgrp_remove_user_does_not_exist(client: &CassetteClient, _prelude: Option<Prelude>) {
-    let err = apis::pwdgrp::RemoveUserRequest::new("nonexistent_user")
+    use rs4a_vapix::pwdgrp::RemoveUserRequest;
+
+    let err = RemoveUserRequest::new("nonexistent_user")
         .send(client)
         .await
         .unwrap_err();
@@ -840,6 +833,8 @@ async fn siren_and_light_2_alpha_maintenance_mode_not_supported(
 }
 
 async fn ssh_1_crud(client: &CassetteClient, prelude: Option<Prelude>) {
+    use rs4a_vapix::ssh_1::{AddUserRequest, DeleteUserRequest, SetUserRequest};
+
     if let Some(prelude) = &prelude {
         if !prelude.supports_device_config() {
             return;
@@ -848,32 +843,30 @@ async fn ssh_1_crud(client: &CassetteClient, prelude: Option<Prelude>) {
 
     let username = "dalliard";
 
-    apis::ssh_1::AddUserRequest::new(username, "Good morning")
+    AddUserRequest::new(username, "Good morning")
         .comment("Good morning")
         .send(client)
         .await
         .unwrap();
 
-    apis::ssh_1::SetUserRequest::new(username)
+    SetUserRequest::new(username)
         .comment("When's the day?")
         .send(client)
         .await
         .unwrap();
 
-    apis::ssh_1::DeleteUserRequest::new(username)
-        .send(client)
-        .await
-        .unwrap();
+    DeleteUserRequest::new(username).send(client).await.unwrap();
 }
 
 async fn ssh_1_set_user_does_not_exist(client: &CassetteClient, prelude: Option<Prelude>) {
+    use rs4a_vapix::ssh_1::SetUserRequest;
     if let Some(prelude) = &prelude {
         if !prelude.supports_device_config() {
             return;
         }
     }
 
-    let error = apis::ssh_1::SetUserRequest::new("nonexistent_user")
+    let error = SetUserRequest::new("nonexistent_user")
         .comment("should fail")
         .send(client)
         .await
@@ -887,6 +880,8 @@ async fn ssh_1_set_user_does_not_exist(client: &CassetteClient, prelude: Option<
 }
 
 async fn ssh_1_set_user_validation_error(client: &CassetteClient, prelude: Option<Prelude>) {
+    use rs4a_vapix::ssh_1::{AddUserRequest, DeleteUserRequest, SetUserRequest};
+
     if let Some(prelude) = &prelude {
         if !prelude.supports_device_config() {
             return;
@@ -895,14 +890,14 @@ async fn ssh_1_set_user_validation_error(client: &CassetteClient, prelude: Optio
 
     let username = "cassette_test_validation";
 
-    apis::ssh_1::AddUserRequest::new(username, "Good morning")
+    AddUserRequest::new(username, "Good morning")
         .comment("Good morning")
         .send(client)
         .await
         .unwrap();
 
     // Empty string violates the minimum length of 1
-    let error = apis::ssh_1::SetUserRequest::new(username)
+    let error = SetUserRequest::new(username)
         .password("")
         .send(client)
         .await
@@ -915,10 +910,7 @@ async fn ssh_1_set_user_validation_error(client: &CassetteClient, prelude: Optio
     assert_eq!(error.kind().unwrap(), ErrorKind::ValidationError);
 
     // Clean up
-    apis::ssh_1::DeleteUserRequest::new(username)
-        .send(client)
-        .await
-        .unwrap();
+    DeleteUserRequest::new(username).send(client).await.unwrap();
 }
 
 async fn network_settings_1_get_network_info(client: &CassetteClient, prelude: Option<Prelude>) {
@@ -977,9 +969,6 @@ async fn network_settings_1_set_global_proxy_configuration(
 }
 
 async fn system_ready_1_system_ready(client: &CassetteClient, _prelude: Option<Prelude>) {
-    let data = apis::system_ready_1::SystemReadyRequest::new()
-        .send(client)
-        .await
-        .unwrap();
+    let data = SystemReadyRequest::new().send(client).await.unwrap();
     assert!(data.systemready);
 }

@@ -6,7 +6,8 @@ use itertools::Itertools;
 use log::{debug, error, info, warn};
 use mdns::{RecordKind, Response};
 use rs4a_vapix::{
-    apis, basic_device_info_1::UnrestrictedProperties, system_ready_1::SystemreadyData,
+    basic_device_info_1::{GetAllUnrestrictedPropertiesRequest, UnrestrictedProperties},
+    system_ready_1::{SystemReadyRequest, SystemreadyData},
 };
 use tokio::{
     task::JoinSet,
@@ -165,9 +166,7 @@ async fn probe(
         needsetup,
         systemready,
         ..
-    } = apis::system_ready_1::SystemReadyRequest::new()
-        .send(&client)
-        .await?;
+    } = SystemReadyRequest::new().send(&client).await?;
     details
         .insert("Need Setup".to_string(), needsetup.to_string())
         .inspect(|_| panic!("Each key is created at most once"));
@@ -184,7 +183,7 @@ async fn probe(
         serial_number,
         version,
         ..
-    } = apis::basic_device_info_1::GetAllUnrestrictedPropertiesRequest::new()
+    } = GetAllUnrestrictedPropertiesRequest::new()
         .send(&client)
         .await?
         .property_list;

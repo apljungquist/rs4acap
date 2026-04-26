@@ -1,10 +1,10 @@
-pub mod apis;
 mod axis_cgi;
 mod client;
 mod config;
 pub mod http;
 pub mod json_rpc;
 pub(crate) mod json_rpc_http;
+pub mod requests;
 pub mod rest;
 pub mod rest_http;
 mod services;
