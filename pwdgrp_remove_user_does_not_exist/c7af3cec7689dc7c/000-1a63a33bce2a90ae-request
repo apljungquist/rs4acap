@@ -1,0 +1,1 @@
+GET axis-cgi/pwdgrp.cgi?action=remove&user=nonexistent_user

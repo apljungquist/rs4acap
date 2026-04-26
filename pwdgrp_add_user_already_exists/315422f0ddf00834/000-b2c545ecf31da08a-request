@@ -1,0 +1,1 @@
+GET axis-cgi/pwdgrp.cgi?action=add&user=cassettetest&pwd=Good morning&grp=users&sgrp=viewer

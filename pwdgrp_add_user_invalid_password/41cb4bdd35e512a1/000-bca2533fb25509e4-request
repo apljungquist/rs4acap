@@ -1,0 +1,1 @@
+GET axis-cgi/pwdgrp.cgi?action=add&user=testuser&pwd=&grp=users&sgrp=viewer
