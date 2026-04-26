@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 
 use reqwest::{Method, StatusCode};
 
-use crate::http::{Error, HttpClient, Request};
+use crate::http::{Error as HttpError, HttpClient, Request};
 
 const PATH: &str = "axis-cgi/pwdgrp.cgi";
 
@@ -16,6 +16,26 @@ fn extract_body(html: &str) -> Option<&str> {
     let content_end = html[content_start..].find("</body>")? + content_start;
     Some(&html[content_start..content_end])
 }
+
+/// An error returned by the user management CGI.
+#[derive(Clone, Debug)]
+pub struct Error {
+    message: String,
+}
+
+impl Error {
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for Error {}
 
 #[derive(Clone, Copy, Debug)]
 pub enum Role {
@@ -79,23 +99,70 @@ impl AddUserRequest {
         )
     }
 
-    pub async fn send(
-        self,
-        client: &impl HttpClient,
-    ) -> Result<(), Error<std::convert::Infallible>> {
+    pub async fn send(self, client: &impl HttpClient) -> Result<(), HttpError<Error>> {
         let expected = format!("Created account {}.", self.username);
         let response = client
             .execute(self.into_request())
             .await
-            .map_err(Error::Transport)?;
-        let body = response.body.map_err(|e| Error::Transport(e.into()))?;
-        if response.status == StatusCode::OK {
-            let html_body = extract_body(&body).unwrap_or("");
-            if html_body.trim() == expected {
-                return Ok(());
-            }
+            .map_err(HttpError::Transport)?;
+        let body = response.body.map_err(|e| HttpError::Transport(e.into()))?;
+        let html_body = extract_body(&body).unwrap_or("");
+        let trimmed = html_body.trim();
+        if let Some(message) = trimmed.strip_prefix("Error: ") {
+            let message = message.strip_suffix('.').unwrap_or(message);
+            return Err(HttpError::Service(Error {
+                message: message.to_string(),
+            }));
         }
-        Err(Error::Decode(anyhow::anyhow!(
+        if response.status == StatusCode::OK && trimmed == expected {
+            return Ok(());
+        }
+        Err(HttpError::Decode(anyhow::anyhow!(
+            "Unexpected response: {} {}",
+            response.status,
+            body.trim()
+        )))
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct RemoveUserRequest {
+    username: String,
+}
+
+impl RemoveUserRequest {
+    pub fn new(username: &str) -> Self {
+        Self {
+            username: username.to_string(),
+        }
+    }
+
+    fn into_request(self) -> Request {
+        Request::new(
+            Method::GET,
+            format!("{PATH}?action=remove&user={}", self.username),
+        )
+    }
+
+    pub async fn send(self, client: &impl HttpClient) -> Result<(), HttpError<Error>> {
+        let expected = format!("Removed account {}.", self.username);
+        let response = client
+            .execute(self.into_request())
+            .await
+            .map_err(HttpError::Transport)?;
+        let body = response.body.map_err(|e| HttpError::Transport(e.into()))?;
+        let html_body = extract_body(&body).unwrap_or("");
+        let trimmed = html_body.trim();
+        if let Some(message) = trimmed.strip_prefix("Error: ") {
+            let message = message.strip_suffix('.').unwrap_or(message);
+            return Err(HttpError::Service(Error {
+                message: message.to_string(),
+            }));
+        }
+        if response.status == StatusCode::OK && trimmed == expected {
+            return Ok(());
+        }
+        Err(HttpError::Decode(anyhow::anyhow!(
             "Unexpected response: {} {}",
             response.status,
             body.trim()

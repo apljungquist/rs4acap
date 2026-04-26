@@ -15,6 +15,7 @@ use rs4a_vapix::{
     http,
     network_settings_1::{GetNetworkInfoRequest, SetGlobalProxyConfigurationRequest},
     parameter_management::{ImageResolution, ListRequest, NetworkSshEnabled, UpdateRequest},
+    pwdgrp::{Group, Role},
     remote_object_storage_1_beta::{
         AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
         DestinationId, ListDestinationsRequest, UpdateDestinationRequest,
@@ -205,6 +206,10 @@ cassette_tests! {
     parameter_management_list_error,
     parameter_management_list_image_resolution,
     parameter_management_update_network_ssh_enabled,
+    pwdgrp_add_user_already_exists,
+    pwdgrp_add_user_invalid_password,
+    pwdgrp_add_user_invalid_username,
+    pwdgrp_remove_user_does_not_exist,
     remote_object_storage_1_beta_crud,
     siren_and_light_2_alpha_maintenance_mode_not_supported,
     ssh_1_crud,
@@ -642,6 +647,72 @@ async fn parameter_management_update_network_ssh_enabled(
         .unwrap();
 
     assert_eq!(read().await, initial);
+}
+
+async fn pwdgrp_add_user_already_exists(client: &CassetteClient, _prelude: Option<Prelude>) {
+    let username = "cassettetest";
+
+    apis::pwdgrp::AddUserRequest::new(username, "Good morning", Group::Users, Role::Viewer)
+        .send(client)
+        .await
+        .unwrap();
+
+    let err =
+        apis::pwdgrp::AddUserRequest::new(username, "Good morning", Group::Users, Role::Viewer)
+            .send(client)
+            .await
+            .unwrap_err();
+
+    let http::Error::Service(err) = err else {
+        panic!("Expected Service error but got {err:?}");
+    };
+    assert_eq!(
+        err.message(),
+        "this user name already exists, consult the system log file"
+    );
+
+    // Cleanup
+    apis::pwdgrp::RemoveUserRequest::new(username)
+        .send(client)
+        .await
+        .unwrap();
+}
+
+async fn pwdgrp_add_user_invalid_password(client: &CassetteClient, _prelude: Option<Prelude>) {
+    let err = apis::pwdgrp::AddUserRequest::new("testuser", "", Group::Users, Role::Viewer)
+        .send(client)
+        .await
+        .unwrap_err();
+
+    let http::Error::Service(err) = err else {
+        panic!("Expected Service error but got {err:?}");
+    };
+    assert_eq!(err.message(), "invalid password");
+}
+
+async fn pwdgrp_add_user_invalid_username(client: &CassetteClient, _prelude: Option<Prelude>) {
+    let err =
+        apis::pwdgrp::AddUserRequest::new("user!", "Good morning", Group::Users, Role::Viewer)
+            .send(client)
+            .await
+            .unwrap_err();
+
+    let http::Error::Service(err) = err else {
+        panic!("Expected Service error but got {err:?}");
+    };
+    assert_eq!(err.message(), "account user name");
+}
+
+async fn pwdgrp_remove_user_does_not_exist(client: &CassetteClient, _prelude: Option<Prelude>) {
+    let err = apis::pwdgrp::RemoveUserRequest::new("nonexistent_user")
+        .send(client)
+        .await
+        .unwrap_err();
+
+    let http::Error::Service(err) = err else {
+        panic!("Expected Service error but got {err:?}");
+    };
+    assert_eq!(err.message(), "account user name");
 }
 
 async fn remote_object_storage_1_beta_crud(client: &CassetteClient, prelude: Option<Prelude>) {
