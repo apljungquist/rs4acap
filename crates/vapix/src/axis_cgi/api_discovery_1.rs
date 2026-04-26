@@ -9,15 +9,44 @@ use crate::{
     json_rpc, json_rpc_http,
 };
 
+/// An identifier used with [`ApiListData`] to determine if an API exists and,if so, what version
+/// it is.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ApiId(&'static str);
+
+impl ApiId {
+    pub const fn new(id: &'static str) -> Self {
+        Self(id)
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        self.0
+    }
+}
+
 #[non_exhaustive]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApiListData {
     pub api_list: Vec<Api>,
 }
 
+impl ApiListData {
+    pub fn find(&self, id: ApiId) -> Option<&Api> {
+        self.api_list.iter().find(|a| a.id == id.0)
+    }
+
+    pub fn is_supported(&self, id: ApiId, req: &str) -> Result<bool, semver::Error> {
+        let req = semver::VersionReq::parse(req)?;
+        match self.find(id) {
+            Some(api) => api.parse_version().map(|v| req.matches(&v)),
+            None => Ok(false),
+        }
+    }
+}
+
 #[non_exhaustive]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Api {
     pub id: String,

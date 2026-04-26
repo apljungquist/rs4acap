@@ -5,7 +5,7 @@ use libtest_mimic::{Arguments, Trial};
 use log::{warn, LevelFilter};
 use rs4a_cassette_testing::{Cassette, CassetteClient, DeviceInfo, Library};
 use rs4a_vapix::{
-    api_discovery_1::Api,
+    api_discovery_1::{Api, ApiListData},
     apis,
     apis::basic_device_info_1,
     basic_device_info_1::{ProductType, UnrestrictedProperties},
@@ -69,15 +69,18 @@ pub fn env_flag(key: &str) -> bool {
 #[derive(Clone, Debug)]
 struct Prelude {
     props: UnrestrictedProperties,
+    api_list: ApiListData,
 }
 
 impl Prelude {
     pub(crate) fn supports_device_config(&self) -> bool {
         self.version_matches(">=11")
     }
-}
 
-impl Prelude {
+    pub(crate) fn is_supported(&self, id: rs4a_vapix::api_discovery_1::ApiId, req: &str) -> bool {
+        self.api_list.is_supported(id, req).unwrap()
+    }
+
     fn version_matches(&self, req: &str) -> bool {
         let v = self.props.parse_version().unwrap();
         let req = VersionReq::parse(req).unwrap();
@@ -243,7 +246,11 @@ fn record_trials(library: &Library) -> Vec<Trial> {
             .await
             .unwrap()
             .property_list;
-        Prelude { props }
+        let api_list = apis::api_discovery_1::GetApiListRequest::default()
+            .send(&client)
+            .await
+            .unwrap();
+        Prelude { props, api_list }
     });
 
     let device_info = DeviceInfo {
@@ -351,7 +358,7 @@ async fn action1_get_action_rules(client: &CassetteClient, _prelude: Option<Prel
 }
 
 async fn api_discovery_1_get_api_list(client: &CassetteClient, _: Option<Prelude>) {
-    use rs4a_vapix::api_discovery_1::GetApiListRequest;
+    use rs4a_vapix::{api_discovery_1::GetApiListRequest, network_settings_1};
 
     let data = GetApiListRequest::default().send(client).await.unwrap();
     let Api { .. } = data
@@ -364,6 +371,10 @@ async fn api_discovery_1_get_api_list(client: &CassetteClient, _: Option<Prelude
         api.parse_version().unwrap();
         api.parse_status().unwrap();
     }
+
+    assert!(data
+        .is_supported(network_settings_1::API_ID, ">=1")
+        .unwrap());
 }
 
 async fn api_discovery_1_get_supported_versions(client: &CassetteClient, _: Option<Prelude>) {
@@ -841,7 +852,7 @@ async fn ssh_1_set_user_validation_error(client: &CassetteClient, prelude: Optio
 
 async fn network_settings_1_get_network_info(client: &CassetteClient, prelude: Option<Prelude>) {
     if let Some(prelude) = prelude {
-        if !prelude.version_matches("<11") {
+        if prelude.is_supported(rs4a_vapix::network_settings_1::API_ID, ">=1.33") {
             return;
         }
     }
@@ -855,7 +866,7 @@ async fn network_settings_1_set_global_proxy_configuration(
     prelude: Option<Prelude>,
 ) {
     if let Some(prelude) = prelude {
-        if !prelude.version_matches(">=11") {
+        if prelude.is_supported(rs4a_vapix::network_settings_1::API_ID, "<1.33") {
             return;
         }
     }
