@@ -5,9 +5,12 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    api_discovery_1::ApiId,
     http::{Error, HttpClient},
     json_rpc, json_rpc_http,
 };
+
+pub const API_ID: ApiId = ApiId::new("network-settings");
 
 const PATH: &str = "axis-cgi/network_settings.cgi";
 
@@ -30,6 +33,8 @@ struct SetGlobalProxyConfigurationBody {
     params: SetGlobalProxyConfigurationParams,
 }
 
+/// Available with API version >=1.33 (AXIS OS 11).
+/// Not available on API version 1.15 (AXIS OS 10).
 #[derive(Debug)]
 pub struct SetGlobalProxyConfigurationRequest {
     params: SetGlobalProxyConfigurationParams,
