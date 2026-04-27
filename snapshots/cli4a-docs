@@ -92,5 +92,11 @@ Options:
   -r, --auto-rollback <AUTO_ROLLBACK>
           Auto-rollback behavior: "never", or minutes
 
+      --profile <PROFILE>
+          Device initialization profile
+          
+          [default: default]
+          [possible values: default, vlt]
+
   -h, --help
           Print help (see a summary with '-h')

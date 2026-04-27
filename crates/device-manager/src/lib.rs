@@ -7,7 +7,10 @@ use rs4a_bin_utils::completions_command::CompletionsCommand;
 use url::Host;
 
 pub use crate::commands::{
-    init::InitCommand, reinit::ReinitCommand, restore::RestoreCommand, upgrade::UpgradeCommand,
+    init::{InitCommand, Profile},
+    reinit::ReinitCommand,
+    restore::RestoreCommand,
+    upgrade::UpgradeCommand,
 };
 
 #[derive(Clone, Debug, clap::Args)]
@@ -34,10 +37,14 @@ pub struct Netloc {
 
 impl Netloc {
     pub async fn connect(&self) -> anyhow::Result<rs4a_vapix::Client> {
+        self.connect_as(&self.user).await
+    }
+
+    pub async fn connect_as(&self, user: &str) -> anyhow::Result<rs4a_vapix::Client> {
         rs4a_vapix::ClientBuilder::new(self.host.clone())
             .plain_port(self.http_port)
             .secure_port(self.https_port)
-            .username_password(&self.user, &self.pass)
+            .username_password(user, &self.pass)
             .with_inner(|b| b.danger_accept_invalid_certs(self.https_self_signed))
             .build()
             .await

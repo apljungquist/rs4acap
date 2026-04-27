@@ -26,6 +26,9 @@ pub struct InstallCommand {
     /// Auto-rollback behavior: "never", or minutes
     #[arg(long, short = 'r')]
     auto_rollback: Option<String>,
+    /// Device initialization profile
+    #[arg(long, default_value_t)]
+    profile: rs4a_device_manager::Profile,
 }
 
 fn version_from_firmware_path(path: &Path) -> anyhow::Result<Version> {
@@ -47,6 +50,7 @@ impl InstallCommand {
             offline,
             auto_commit,
             auto_rollback,
+            profile,
         } = self;
 
         info!("Querying device for model and version");
@@ -120,6 +124,7 @@ impl InstallCommand {
             let init_cli = rs4a_device_manager::Cli {
                 command: rs4a_device_manager::Commands::Init(rs4a_device_manager::InitCommand {
                     netloc,
+                    profile,
                 }),
             };
             init_cli.exec().await?;

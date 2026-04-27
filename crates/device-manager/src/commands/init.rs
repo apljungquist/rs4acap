@@ -1,36 +1,48 @@
 use anyhow::{bail, Context};
 use log::{debug, info, warn};
 use rs4a_vapix::{
-    applications_config, basic_device_info_1::GetAllUnrestrictedPropertiesRequest,
-    parameter_management, pwdgrp, pwdgrp::AddUserRequest, system_ready_1::SystemReadyRequest,
+    applications_config,
+    basic_device_info_1::GetAllUnrestrictedPropertiesRequest,
+    http::Error,
+    network_settings_1::{SetGlobalProxyConfigurationData, SetGlobalProxyConfigurationRequest},
+    parameter_management, pwdgrp,
+    pwdgrp::AddUserRequest,
+    system_ready_1::SystemReadyRequest,
+    Client,
 };
 use semver::Version;
 
 use crate::Netloc;
 
+#[derive(Clone, Debug, Default, clap::ValueEnum)]
+pub enum Profile {
+    #[default]
+    Default,
+    Vlt,
+}
+
+impl std::fmt::Display for Profile {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Profile::Default => write!(f, "default"),
+            Profile::Vlt => write!(f, "vlt"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, clap::Args)]
 pub struct InitCommand {
     #[command(flatten)]
     pub netloc: Netloc,
+    #[arg(long, default_value_t)]
+    pub profile: Profile,
 }
 
 impl InitCommand {
     pub async fn exec(self) -> anyhow::Result<String> {
-        require_root_user(&self.netloc)?;
-        initialize(&self.netloc).await?;
+        initialize(&self.netloc, &self.profile).await?;
         Ok(String::new())
     }
-}
-
-pub fn require_root_user(netloc: &Netloc) -> anyhow::Result<()> {
-    if netloc.user != "root" {
-        bail!(
-            "The --user must be 'root' (got '{}'); the initial user is always 'root' \
-             because older firmware requires it",
-            netloc.user
-        );
-    }
-    Ok(())
 }
 
 fn parse_firmware_version(s: &str) -> anyhow::Result<Version> {
@@ -65,28 +77,65 @@ async fn apply_setup_profile(client: &rs4a_vapix::Client) -> anyhow::Result<()> 
     Ok(())
 }
 
-pub async fn initialize(netloc: &Netloc) -> anyhow::Result<()> {
-    info!("Initializing device...");
+async fn create_user(netloc: &Netloc, anonymous_client: &Client) -> anyhow::Result<()> {
+    debug!("adding initial user");
+    let result = AddUserRequest::new(
+        &netloc.user,
+        &netloc.pass,
+        pwdgrp::Group::Root,
+        pwdgrp::Role::AdminOperatorViewerPtz,
+    )
+    .send(anonymous_client)
+    .await;
 
-    // Device needs setup, no authentication possible or required
-    let client = netloc.connect_anonymous().await?;
-
-    let data = SystemReadyRequest::new().send(&client).await?;
-    if !data.needsetup {
-        bail!("Expected device to be in setup mode, but needsetup is false");
+    match result {
+        Ok(()) => return Ok(()),
+        Err(Error::Service(e)) if e.message() == "not a valid initial admin user" => {}
+        Err(e) => return Err(e).context("Failed to create user"),
     }
 
-    info!("Adding root user...");
+    debug!("adding root user");
     AddUserRequest::new(
         "root",
         &netloc.pass,
         pwdgrp::Group::Root,
         pwdgrp::Role::AdminOperatorViewerPtz,
     )
-    .send(&client)
-    .await?;
+    .send(anonymous_client)
+    .await
+    .context("create root user failed")?;
 
-    // Device no longer needs setup, authentication is required
+    debug!("connecting as root");
+    let root_client = netloc.connect_as("root").await?;
+
+    debug!("adding initial user using root as springboard");
+    AddUserRequest::new(
+        &netloc.user,
+        &netloc.pass,
+        pwdgrp::Group::Root,
+        pwdgrp::Role::AdminOperatorViewerPtz,
+    )
+    .send(&root_client)
+    .await
+    .context("create initial user failed")?;
+
+    Ok(())
+}
+
+pub async fn initialize(netloc: &Netloc, profile: &Profile) -> anyhow::Result<()> {
+    info!("Initializing device...");
+
+    let anonymous_client = netloc.connect_anonymous().await?;
+
+    let data = SystemReadyRequest::new().send(&anonymous_client).await?;
+    if data.needsetup {
+        create_user(netloc, &anonymous_client).await?;
+    } else if matches!(profile, Profile::Vlt) {
+        info!("Device already set up, skipping root user creation");
+    } else {
+        bail!("Expected device to be in setup mode, but needsetup is false");
+    }
+
     let client = netloc.connect().await?;
 
     info!("Enabling SSH...");
@@ -102,6 +151,17 @@ pub async fn initialize(netloc: &Netloc) -> anyhow::Result<()> {
     }
 
     apply_setup_profile(&client).await?;
+
+    if matches!(profile, Profile::Vlt) {
+        // FIXME: Skip when not supported by firmware
+        info!("Setting global proxy configuration...");
+        let SetGlobalProxyConfigurationData { .. } = SetGlobalProxyConfigurationRequest::new()
+            .http_proxy("http://localhost:8118")
+            .https_proxy("http://localhost:8118")
+            .no_proxy("127.0.0.12")
+            .send(&client)
+            .await?;
+    }
 
     info!("Device initialized");
     Ok(())
