@@ -3,8 +3,8 @@ use std::convert::Infallible;
 use serde::Deserialize;
 
 use crate::{
-    http::{Error, HttpClient, Request},
-    soap, soap_http,
+    http::{HttpClient, Request},
+    protocol_helpers::{http::Error, soap, soap_http},
 };
 
 const PATH: &str = "vapix/services";
@@ -160,8 +160,8 @@ mod tests {
     use expect_test::expect;
 
     use crate::{
+        protocol_helpers::soap::parse_soap,
         services::action1::{action_rules::AddActionRuleResponse, GetActionRulesResponse},
-        soap::parse_soap,
     };
 
     #[test]

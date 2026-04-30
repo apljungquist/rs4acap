@@ -3,8 +3,8 @@ use std::convert::Infallible;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    http::{Error, HttpClient, Request},
-    soap, soap_http,
+    http::{HttpClient, Request},
+    protocol_helpers::{http::Error, soap, soap_http},
 };
 
 const PATH: &str = "vapix/services";
@@ -151,7 +151,7 @@ impl GetActionConfigurationsRequest {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::soap::parse_soap;
+    use crate::protocol_helpers::soap::parse_soap;
 
     #[test]
     fn can_deserialize_add_action_configuration_response() {

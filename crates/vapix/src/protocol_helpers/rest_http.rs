@@ -5,16 +5,13 @@ use log::trace;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    http::{Error, HttpClient, Request},
-    rest,
-    rest::parse_data_lossless,
-};
+use super::{http::Error, rest, rest::parse_data_lossless};
+use crate::http::{HttpClient, Request};
 
 // The device configuration API reports status codes both in the HTTP header and in the body.
 // TODO: Consider if there is any value in this.
 
-pub(crate) fn from_response<T>(
+pub fn from_response<T>(
     http_status: StatusCode,
     text: reqwest::Result<String>,
 ) -> Result<T, Error<rest::Error>>
@@ -30,7 +27,8 @@ where
     Error::flat_result(parse_data_lossless(&text))
 }
 
-pub(crate) async fn send_request<T>(
+// TODO: Factor out
+pub async fn send_request<T>(
     client: &(impl HttpClient + Sync),
     request: Request,
 ) -> Result<T, Error<rest::Error>>

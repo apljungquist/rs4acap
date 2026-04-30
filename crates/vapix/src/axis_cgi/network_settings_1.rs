@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     api_discovery_1::ApiId,
-    http::{Error, HttpClient},
-    json_rpc, json_rpc_http,
+    http::HttpClient,
+    protocol_helpers::{http::Error, json_rpc, json_rpc_http},
 };
 
 pub const API_ID: ApiId = ApiId::new("network-settings");

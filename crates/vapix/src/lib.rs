@@ -2,14 +2,9 @@ mod axis_cgi;
 mod client;
 mod config;
 pub mod http;
-pub mod json_rpc;
-pub(crate) mod json_rpc_http;
+pub mod protocol_helpers;
 pub mod requests;
-pub mod rest;
-pub mod rest_http;
 mod services;
-pub mod soap;
-pub mod soap_http;
 
 pub use axis_cgi::{
     api_discovery_1, applications_config, basic_device_info_1, firmware_management_1,

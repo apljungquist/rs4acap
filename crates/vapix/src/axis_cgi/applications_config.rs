@@ -4,7 +4,10 @@
 
 use reqwest::{Method, StatusCode};
 
-use crate::http::{Error, HttpClient, Request};
+use crate::{
+    http::{HttpClient, Request},
+    protocol_helpers::http::Error,
+};
 
 const PATH: &str = "axis-cgi/applications/config.cgi";
 

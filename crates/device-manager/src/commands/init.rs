@@ -3,9 +3,10 @@ use log::{debug, info, warn};
 use rs4a_vapix::{
     applications_config,
     basic_device_info_1::GetAllUnrestrictedPropertiesRequest,
-    http::Error,
     network_settings_1::{SetGlobalProxyConfigurationData, SetGlobalProxyConfigurationRequest},
-    parameter_management, pwdgrp,
+    parameter_management,
+    protocol_helpers::http::Error,
+    pwdgrp,
     pwdgrp::AddUserRequest,
     system_ready_1::SystemReadyRequest,
     Client,

@@ -15,14 +15,13 @@ use rs4a_vapix::{
     event1::GetEventInstancesRequest,
     firmware_management_1,
     firmware_management_1::UpgradeRequest,
-    http,
     network_settings_1::{GetNetworkInfoRequest, SetGlobalProxyConfigurationRequest},
     parameter_management::{ImageResolution, ListRequest, NetworkSshEnabled, UpdateRequest},
+    protocol_helpers::{http, rest::ErrorKind},
     remote_object_storage_1_beta::{
         AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
         DestinationId, ListDestinationsRequest, UpdateDestinationRequest,
     },
-    rest::ErrorKind,
     siren_and_light_2_alpha::{
         GetMaintenanceModeRequest, StartMaintenanceModeRequest, StopMaintenanceModeRequest,
     },

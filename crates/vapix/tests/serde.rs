@@ -10,8 +10,10 @@ use rs4a_vapix::{
     basic_device_info_1::{AllPropertiesData, AllUnrestrictedPropertiesData, Architecture},
     firmware_management_1,
     firmware_management_1::UpgradeData,
-    json_rpc::{parse_data, parse_data_lossless},
-    soap::parse_soap,
+    protocol_helpers::{
+        json_rpc::{parse_data, parse_data_lossless},
+        soap::parse_soap,
+    },
     system_ready_1::SystemreadyData,
 };
 

@@ -40,6 +40,7 @@ pub enum ErrorKind {
     BadContentType = 11,
 }
 
+/// Error returned by all REST-style APIs
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Error {
     pub code: u16,
