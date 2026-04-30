@@ -6,10 +6,8 @@ use anyhow::Context;
 use log::warn;
 use serde::Deserialize;
 
-use crate::{
-    http::{Error, HttpClient, Request},
-    soap::parse_soap,
-};
+use super::{http::Error, soap::parse_soap};
+use crate::http::{HttpClient, Request};
 
 pub trait SoapResponse: Sized {
     fn from_envelope(s: &str) -> anyhow::Result<Self>;
@@ -24,7 +22,8 @@ where
     }
 }
 
-pub(crate) async fn send_request<T: SoapResponse>(
+// TODO: Factor out
+pub async fn send_request<T: SoapResponse>(
     client: &(impl HttpClient + Sync),
     request: Request,
 ) -> Result<T, Error<Infallible>> {

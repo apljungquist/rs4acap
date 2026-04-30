@@ -5,8 +5,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    http::{Error, HttpClient},
-    json_rpc, json_rpc_http,
+    http::HttpClient,
+    protocol_helpers::{http::Error, json_rpc, json_rpc_http},
 };
 
 /// An identifier used with [`ApiListData`] to determine if an API exists and,if so, what version

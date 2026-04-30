@@ -4,8 +4,8 @@ use reqwest::Method;
 use serde_json::json;
 
 use crate::{
-    http::{Error, HttpClient, Request},
-    rest, rest_http,
+    http::{HttpClient, Request},
+    protocol_helpers::{http::Error, rest, rest_http},
 };
 
 const BASE_PATH: &str = "config/rest/siren-and-light/v2alpha";

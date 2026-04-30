@@ -7,8 +7,8 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    http::{Error, HttpClient},
-    json_rpc, json_rpc_http,
+    http::HttpClient,
+    protocol_helpers::{http::Error, json_rpc, json_rpc_http},
 };
 
 fn deserialize_english_boolean<'de, D>(deserializer: D) -> Result<bool, D::Error>

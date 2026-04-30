@@ -7,9 +7,8 @@ use std::convert::Infallible;
 use quick_xml::{events::Event, Reader};
 
 use crate::{
-    http::{Error, HttpClient, Request},
-    soap, soap_http,
-    soap_http::SoapResponse,
+    http::{HttpClient, Request},
+    protocol_helpers::{http::Error, soap, soap_http, soap_http::SoapResponse},
 };
 
 const PATH: &str = "vapix/services";

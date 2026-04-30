@@ -31,6 +31,7 @@ impl<'a> Response<'a> {
     }
 }
 
+/// Error returned by all JSON-RPC-style APIs
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Error {
     pub code: u16,

@@ -6,7 +6,10 @@ use std::fmt::{Display, Formatter};
 
 use reqwest::{Method, StatusCode};
 
-use crate::http::{Error as HttpError, HttpClient, Request};
+use crate::{
+    http::{HttpClient, Request},
+    protocol_helpers::http::Error as HttpError,
+};
 
 const PATH: &str = "axis-cgi/pwdgrp.cgi";
 

@@ -4,11 +4,8 @@ use anyhow::Context;
 use reqwest::{Method, StatusCode};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    http::{Error, HttpClient, Request},
-    json_rpc,
-    json_rpc::parse_data_lossless,
-};
+use super::{http::Error, json_rpc, json_rpc::parse_data_lossless};
+use crate::http::{HttpClient, Request};
 
 pub fn from_response<T>(
     status: StatusCode,
@@ -23,6 +20,7 @@ where
     Error::flat_result(parse_data_lossless(&text))
 }
 
+// TODO: Factor out
 pub async fn send_request<Req, Resp>(
     client: &(impl HttpClient + Sync),
     path: &str,

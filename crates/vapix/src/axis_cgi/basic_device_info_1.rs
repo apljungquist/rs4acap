@@ -12,8 +12,8 @@ use semver::Version;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
-    http::{Error, HttpClient},
-    json_rpc, json_rpc_http,
+    http::HttpClient,
+    protocol_helpers::{http::Error, json_rpc, json_rpc_http},
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

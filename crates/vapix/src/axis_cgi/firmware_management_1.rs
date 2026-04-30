@@ -9,8 +9,8 @@ use reqwest::Method;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    http::{Error, HttpClient, Request},
-    json_rpc, json_rpc_http,
+    http::{HttpClient, Request},
+    protocol_helpers::{http::Error, json_rpc, json_rpc_http},
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
