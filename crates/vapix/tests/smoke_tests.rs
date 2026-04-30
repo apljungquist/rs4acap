@@ -2,15 +2,17 @@ use std::{ops::Rem, time::SystemTime};
 
 use log::LevelFilter;
 use rs4a_vapix::{
-    action1::{
-        AddActionConfigurationRequest, AddActionRuleRequest, Condition,
-        GetActionConfigurationsRequest, GetActionRulesRequest,
+    apis::{
+        action1::{
+            AddActionConfigurationRequest, AddActionRuleRequest, Condition,
+            GetActionConfigurationsRequest, GetActionRulesRequest,
+        },
+        event1::GetEventInstancesRequest,
+        recording_group_1::CreateRecordingGroupsRequest,
+        remote_object_storage_1_beta::{CreateDestinationRequest, DestinationId, S3Destination},
+        system_ready_1::SystemReadyRequest,
     },
-    event1::GetEventInstancesRequest,
-    recording_group_1::CreateRecordingGroupsRequest,
-    remote_object_storage_1_beta::{CreateDestinationRequest, DestinationId, S3Destination},
     requests::jpg_3::GetImageRequest,
-    system_ready_1::SystemReadyRequest,
     Client, ClientBuilder,
 };
 use serde_json::json;

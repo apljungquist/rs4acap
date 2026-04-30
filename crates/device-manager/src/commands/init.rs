@@ -1,14 +1,15 @@
 use anyhow::{bail, Context};
 use log::{debug, info, warn};
 use rs4a_vapix::{
-    applications_config,
-    basic_device_info_1::GetAllUnrestrictedPropertiesRequest,
-    network_settings_1::{SetGlobalProxyConfigurationData, SetGlobalProxyConfigurationRequest},
-    parameter_management,
+    apis::{
+        applications_config,
+        basic_device_info_1::GetAllUnrestrictedPropertiesRequest,
+        network_settings_1::{SetGlobalProxyConfigurationData, SetGlobalProxyConfigurationRequest},
+        parameter_management, pwdgrp,
+        pwdgrp::AddUserRequest,
+        system_ready_1::SystemReadyRequest,
+    },
     protocol_helpers::http::Error,
-    pwdgrp,
-    pwdgrp::AddUserRequest,
-    system_ready_1::SystemReadyRequest,
     Client,
 };
 use semver::Version;

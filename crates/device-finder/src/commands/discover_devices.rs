@@ -5,7 +5,7 @@ use futures_util::{pin_mut, stream::StreamExt};
 use itertools::Itertools;
 use log::{debug, error, info, warn};
 use mdns::{RecordKind, Response};
-use rs4a_vapix::{
+use rs4a_vapix::apis::{
     basic_device_info_1::{GetAllUnrestrictedPropertiesRequest, UnrestrictedProperties},
     system_ready_1::{SystemReadyRequest, SystemreadyData},
 };

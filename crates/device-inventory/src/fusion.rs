@@ -1,7 +1,9 @@
 use std::{borrow::Cow, cmp::Ordering, str::FromStr};
 
 use anyhow::bail;
-use rs4a_vapix::basic_device_info_1::{Architecture, RestrictedProperties, UnrestrictedProperties};
+use rs4a_vapix::apis::basic_device_info_1::{
+    Architecture, RestrictedProperties, UnrestrictedProperties,
+};
 use rs4a_vlt::responses::{DeviceArchitecture, DeviceStatus, Loan};
 use semver::{BuildMetadata, Version, VersionReq};
 use url::Host;

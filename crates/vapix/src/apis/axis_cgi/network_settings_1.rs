@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    api_discovery_1::ApiId,
+    apis::api_discovery_1::ApiId,
     http::HttpClient,
     protocol_helpers::{http::Error, json_rpc, json_rpc_http},
 };

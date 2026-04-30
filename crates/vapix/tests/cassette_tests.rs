@@ -5,27 +5,29 @@ use libtest_mimic::{Arguments, Trial};
 use log::{warn, LevelFilter};
 use rs4a_cassette_testing::{Cassette, CassetteClient, DeviceInfo, Library};
 use rs4a_vapix::{
-    action1::{GetActionConfigurationsRequest, GetActionRulesRequest},
-    api_discovery_1::{Api, ApiListData, GetApiListRequest},
-    basic_device_info_1::{
-        GetAllPropertiesRequest, GetAllUnrestrictedPropertiesRequest, ProductType,
-        UnrestrictedProperties,
+    apis::{
+        action1::{GetActionConfigurationsRequest, GetActionRulesRequest},
+        api_discovery_1::{Api, ApiListData, GetApiListRequest},
+        basic_device_info_1::{
+            GetAllPropertiesRequest, GetAllUnrestrictedPropertiesRequest, ProductType,
+            UnrestrictedProperties,
+        },
+        discover::ApiState,
+        event1::GetEventInstancesRequest,
+        firmware_management_1,
+        firmware_management_1::UpgradeRequest,
+        network_settings_1::{GetNetworkInfoRequest, SetGlobalProxyConfigurationRequest},
+        parameter_management::{ImageResolution, ListRequest, NetworkSshEnabled, UpdateRequest},
+        remote_object_storage_1_beta::{
+            AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
+            DestinationId, ListDestinationsRequest, UpdateDestinationRequest,
+        },
+        siren_and_light_2_alpha::{
+            GetMaintenanceModeRequest, StartMaintenanceModeRequest, StopMaintenanceModeRequest,
+        },
+        system_ready_1::SystemReadyRequest,
     },
-    discover::ApiState,
-    event1::GetEventInstancesRequest,
-    firmware_management_1,
-    firmware_management_1::UpgradeRequest,
-    network_settings_1::{GetNetworkInfoRequest, SetGlobalProxyConfigurationRequest},
-    parameter_management::{ImageResolution, ListRequest, NetworkSshEnabled, UpdateRequest},
     protocol_helpers::{http, rest::ErrorKind},
-    remote_object_storage_1_beta::{
-        AzureDestination, CreateDestinationRequest, DeleteDestinationRequest, DestinationData,
-        DestinationId, ListDestinationsRequest, UpdateDestinationRequest,
-    },
-    siren_and_light_2_alpha::{
-        GetMaintenanceModeRequest, StartMaintenanceModeRequest, StopMaintenanceModeRequest,
-    },
-    system_ready_1::SystemReadyRequest,
     ClientBuilder,
 };
 use semver::VersionReq;
@@ -80,7 +82,11 @@ impl Prelude {
         self.version_matches(">=11")
     }
 
-    pub(crate) fn is_supported(&self, id: rs4a_vapix::api_discovery_1::ApiId, req: &str) -> bool {
+    pub(crate) fn is_supported(
+        &self,
+        id: rs4a_vapix::apis::api_discovery_1::ApiId,
+        req: &str,
+    ) -> bool {
         self.api_list.is_supported(id, req).unwrap()
     }
 
@@ -356,7 +362,7 @@ async fn action1_get_action_rules(client: &CassetteClient, _prelude: Option<Prel
 }
 
 async fn api_discovery_1_get_api_list(client: &CassetteClient, _: Option<Prelude>) {
-    use rs4a_vapix::{api_discovery_1::GetApiListRequest, network_settings_1};
+    use rs4a_vapix::apis::{api_discovery_1::GetApiListRequest, network_settings_1};
 
     let data = GetApiListRequest::default().send(client).await.unwrap();
     let Api { .. } = data
@@ -376,7 +382,7 @@ async fn api_discovery_1_get_api_list(client: &CassetteClient, _: Option<Prelude
 }
 
 async fn api_discovery_1_get_supported_versions(client: &CassetteClient, _: Option<Prelude>) {
-    use rs4a_vapix::api_discovery_1::GetSupportedVersionsRequest;
+    use rs4a_vapix::apis::api_discovery_1::GetSupportedVersionsRequest;
 
     let data = GetSupportedVersionsRequest::default()
         .send(client)
@@ -414,7 +420,7 @@ async fn basic_device_info_get_all_unrestricted_properties(
 }
 
 async fn device_configuration_discover(client: &CassetteClient, prelude: Option<Prelude>) {
-    use rs4a_vapix::discover::DiscoverRequest;
+    use rs4a_vapix::apis::discover::DiscoverRequest;
 
     if let Some(prelude) = prelude {
         if !prelude.supports_device_config() {
@@ -651,7 +657,7 @@ async fn parameter_management_update_network_ssh_enabled(
 }
 
 async fn pwdgrp_add_user_already_exists(client: &CassetteClient, _prelude: Option<Prelude>) {
-    use rs4a_vapix::pwdgrp::{AddUserRequest, Group, RemoveUserRequest, Role};
+    use rs4a_vapix::apis::pwdgrp::{AddUserRequest, Group, RemoveUserRequest, Role};
     let username = "cassettetest";
 
     AddUserRequest::new(username, "Good morning", Group::Users, Role::Viewer)
@@ -677,7 +683,7 @@ async fn pwdgrp_add_user_already_exists(client: &CassetteClient, _prelude: Optio
 }
 
 async fn pwdgrp_add_user_invalid_password(client: &CassetteClient, _prelude: Option<Prelude>) {
-    use rs4a_vapix::pwdgrp::{AddUserRequest, Group, Role};
+    use rs4a_vapix::apis::pwdgrp::{AddUserRequest, Group, Role};
 
     let err = AddUserRequest::new("testuser", "", Group::Users, Role::Viewer)
         .send(client)
@@ -691,7 +697,7 @@ async fn pwdgrp_add_user_invalid_password(client: &CassetteClient, _prelude: Opt
 }
 
 async fn pwdgrp_add_user_invalid_username(client: &CassetteClient, _prelude: Option<Prelude>) {
-    use rs4a_vapix::pwdgrp::{AddUserRequest, Group, Role};
+    use rs4a_vapix::apis::pwdgrp::{AddUserRequest, Group, Role};
 
     let err = AddUserRequest::new("user!", "Good morning", Group::Users, Role::Viewer)
         .send(client)
@@ -705,7 +711,7 @@ async fn pwdgrp_add_user_invalid_username(client: &CassetteClient, _prelude: Opt
 }
 
 async fn pwdgrp_remove_user_does_not_exist(client: &CassetteClient, _prelude: Option<Prelude>) {
-    use rs4a_vapix::pwdgrp::RemoveUserRequest;
+    use rs4a_vapix::apis::pwdgrp::RemoveUserRequest;
 
     let err = RemoveUserRequest::new("nonexistent_user")
         .send(client)
@@ -832,7 +838,7 @@ async fn siren_and_light_2_alpha_maintenance_mode_not_supported(
 }
 
 async fn ssh_1_crud(client: &CassetteClient, prelude: Option<Prelude>) {
-    use rs4a_vapix::ssh_1::{AddUserRequest, DeleteUserRequest, SetUserRequest};
+    use rs4a_vapix::apis::ssh_1::{AddUserRequest, DeleteUserRequest, SetUserRequest};
 
     if let Some(prelude) = &prelude {
         if !prelude.supports_device_config() {
@@ -858,7 +864,7 @@ async fn ssh_1_crud(client: &CassetteClient, prelude: Option<Prelude>) {
 }
 
 async fn ssh_1_set_user_does_not_exist(client: &CassetteClient, prelude: Option<Prelude>) {
-    use rs4a_vapix::ssh_1::SetUserRequest;
+    use rs4a_vapix::apis::ssh_1::SetUserRequest;
     if let Some(prelude) = &prelude {
         if !prelude.supports_device_config() {
             return;
@@ -879,7 +885,7 @@ async fn ssh_1_set_user_does_not_exist(client: &CassetteClient, prelude: Option<
 }
 
 async fn ssh_1_set_user_validation_error(client: &CassetteClient, prelude: Option<Prelude>) {
-    use rs4a_vapix::ssh_1::{AddUserRequest, DeleteUserRequest, SetUserRequest};
+    use rs4a_vapix::apis::ssh_1::{AddUserRequest, DeleteUserRequest, SetUserRequest};
 
     if let Some(prelude) = &prelude {
         if !prelude.supports_device_config() {
@@ -914,7 +920,7 @@ async fn ssh_1_set_user_validation_error(client: &CassetteClient, prelude: Optio
 
 async fn network_settings_1_get_network_info(client: &CassetteClient, prelude: Option<Prelude>) {
     if let Some(prelude) = prelude {
-        if prelude.is_supported(rs4a_vapix::network_settings_1::API_ID, ">=1.33") {
+        if prelude.is_supported(rs4a_vapix::apis::network_settings_1::API_ID, ">=1.33") {
             return;
         }
     }
@@ -928,7 +934,7 @@ async fn network_settings_1_set_global_proxy_configuration(
     prelude: Option<Prelude>,
 ) {
     if let Some(prelude) = prelude {
-        if prelude.is_supported(rs4a_vapix::network_settings_1::API_ID, "<1.33") {
+        if prelude.is_supported(rs4a_vapix::apis::network_settings_1::API_ID, "<1.33") {
             return;
         }
     }

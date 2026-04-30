@@ -5,7 +5,10 @@ use std::{
 
 use anyhow::Context;
 use log::info;
-use rs4a_vapix::firmware_management_1::{AutoCommit, FactoryDefaultMode};
+use rs4a_vapix::apis::{
+    basic_device_info_1::GetAllUnrestrictedPropertiesRequest,
+    firmware_management_1::{AutoCommit, FactoryDefaultMode},
+};
 use semver::{Version, VersionReq};
 
 #[derive(Clone, Debug, clap::Args)]
@@ -55,7 +58,7 @@ impl InstallCommand {
 
         info!("Querying device for model and version");
         let client = netloc.connect().await?;
-        let props = rs4a_vapix::basic_device_info_1::GetAllUnrestrictedPropertiesRequest::new()
+        let props = GetAllUnrestrictedPropertiesRequest::new()
             .send(&client)
             .await?
             .property_list;

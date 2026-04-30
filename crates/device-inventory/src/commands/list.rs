@@ -2,7 +2,7 @@ use std::collections::{hash_map::Entry, HashMap};
 
 use anyhow::Context;
 use log::warn;
-use rs4a_vapix::basic_device_info_1::{
+use rs4a_vapix::apis::basic_device_info_1::{
     AllProperties, GetAllPropertiesRequest, GetAllUnrestrictedPropertiesRequest,
     RestrictedProperties, UnrestrictedProperties,
 };

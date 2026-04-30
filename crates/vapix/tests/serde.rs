@@ -2,32 +2,34 @@ use std::time::Duration;
 
 use expect_test::expect_file;
 use rs4a_vapix::{
-    action1::{
-        AddActionConfigurationRequest, AddActionConfigurationResponse, AddActionRuleRequest,
-        Condition, GetActionConfigurationsRequest, GetActionRulesRequest,
+    apis::{
+        action1::{
+            AddActionConfigurationRequest, AddActionConfigurationResponse, AddActionRuleRequest,
+            Condition, GetActionConfigurationsRequest, GetActionRulesRequest,
+        },
+        basic_device_info_1,
+        basic_device_info_1::{AllPropertiesData, AllUnrestrictedPropertiesData, Architecture},
+        firmware_management_1,
+        firmware_management_1::UpgradeData,
+        system_ready_1::SystemreadyData,
     },
-    basic_device_info_1,
-    basic_device_info_1::{AllPropertiesData, AllUnrestrictedPropertiesData, Architecture},
-    firmware_management_1,
-    firmware_management_1::UpgradeData,
     protocol_helpers::{
         json_rpc::{parse_data, parse_data_lossless},
         soap::parse_soap,
     },
-    system_ready_1::SystemreadyData,
 };
 
 #[test]
 fn can_deserialize_action_1_examples() {
     let text =
-        include_str!("../src/services/action1/examples/add_action_configuration_response.xml");
+        include_str!("../src/apis/services/action1/examples/add_action_configuration_response.xml");
     let data = parse_soap::<AddActionConfigurationResponse>(text).unwrap();
     assert_eq!(data.configuration_id, 1);
 }
 
 #[test]
 fn can_deserialize_basic_device_info_1_examples() {
-    let text = include_str!("../src/axis_cgi/basic_device_info_1/get_all_properties_1_0.json");
+    let text = include_str!("../src/apis/axis_cgi/basic_device_info_1/get_all_properties_1_0.json");
     let property_list = parse_data_lossless::<AllPropertiesData>(text)
         .unwrap()
         .unwrap()
@@ -36,7 +38,7 @@ fn can_deserialize_basic_device_info_1_examples() {
     assert_eq!(property_list.unrestricted.prod_variant, None);
 
     let text = include_str!(
-        "../src/axis_cgi/basic_device_info_1/get_all_unrestricted_properties_2004_error_1_0.json"
+        "../src/apis/axis_cgi/basic_device_info_1/get_all_unrestricted_properties_2004_error_1_0.json"
     );
     let error = parse_data_lossless::<AllUnrestrictedPropertiesData>(text)
         .unwrap()
@@ -49,10 +51,11 @@ fn can_deserialize_basic_device_info_1_examples() {
 
 #[test]
 fn can_deserialize_firmware_management_1_examples() {
-    let text = include_str!("../src/axis_cgi/firmware_management_1/upgrade_1_0.json");
+    let text = include_str!("../src/apis/axis_cgi/firmware_management_1/upgrade_1_0.json");
     let UpgradeData { .. } = parse_data_lossless::<UpgradeData>(text).unwrap().unwrap();
 
-    let text = include_str!("../src/axis_cgi/firmware_management_1/upgrade_409_error_1_0.json");
+    let text =
+        include_str!("../src/apis/axis_cgi/firmware_management_1/upgrade_409_error_1_0.json");
     let error = parse_data_lossless::<UpgradeData>(text)
         .unwrap()
         .unwrap_err();
@@ -64,7 +67,7 @@ fn can_deserialize_firmware_management_1_examples() {
 
 #[test]
 fn can_deserialize_system_ready_1_examples() {
-    let text = include_str!("../src/axis_cgi/system_ready_1/system_ready_200.json");
+    let text = include_str!("../src/apis/axis_cgi/system_ready_1/system_ready_200.json");
     let data = parse_data::<SystemreadyData>(text).unwrap().unwrap();
     assert!(!data.needsetup);
 }

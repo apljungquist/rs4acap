@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use log::{debug, info};
-use rs4a_vapix::{
+use rs4a_vapix::apis::{
     firmware_management_1::FactoryDefaultRequest, system_ready_1::SystemReadyRequest,
 };
 use tokio::time::timeout;

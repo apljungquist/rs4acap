@@ -2,7 +2,7 @@ use std::{path::PathBuf, time::Duration};
 
 use anyhow::Context;
 use log::info;
-use rs4a_vapix::firmware_management_1::{
+use rs4a_vapix::apis::firmware_management_1::{
     AutoCommit, AutoRollback, FactoryDefaultMode, UpgradeRequest,
 };
 use tokio::time::timeout;
