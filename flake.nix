@@ -32,10 +32,25 @@
           overlays = [ (import rust-overlay) ];
         };
         rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+        rustPlatform = pkgs.makeRustPlatform {
+          rustc = rustToolchain;
+          cargo = rustToolchain;
+        };
+        buildWorkspaceMember = dir: pkgs.callPackage ./default.nix { inherit rustPlatform dir; };
       in
       {
 
         formatter = pkgs.nixfmt-rfc-style;
+
+        checks = self.packages.${system};
+
+        packages = {
+          cli4a = buildWorkspaceMember "cli4a";
+          device-finder = buildWorkspaceMember "device-finder";
+          device-inventory = buildWorkspaceMember "device-inventory";
+          device-manager = buildWorkspaceMember "device-manager";
+          firmware-inventory = buildWorkspaceMember "firmware-inventory";
+        };
 
         devShells.default = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [

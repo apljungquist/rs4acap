@@ -3,6 +3,7 @@ name = "device-inventory"
 version = "0.1.1"
 edition.workspace = true
 license = "MIT"
+description = "Utilities for tracking multiple devices"
 
 [lints]
 workspace = true
