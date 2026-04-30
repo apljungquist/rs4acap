@@ -10,8 +10,8 @@ use reqwest::{
 use url::{Host, Position, Url};
 
 use crate::{
+    apis::system_ready_1::SystemReadyRequest,
     http::{HttpClient, Request, Response},
-    system_ready_1::SystemReadyRequest,
 };
 
 #[derive(Clone)]

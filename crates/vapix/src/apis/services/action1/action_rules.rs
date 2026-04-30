@@ -159,10 +159,8 @@ impl GetActionRulesRequest {
 mod tests {
     use expect_test::expect;
 
-    use crate::{
-        protocol_helpers::soap::parse_soap,
-        services::action1::{action_rules::AddActionRuleResponse, GetActionRulesResponse},
-    };
+    use super::{AddActionRuleResponse, GetActionRulesResponse};
+    use crate::protocol_helpers::soap::parse_soap;
 
     #[test]
     fn can_deserialize_add_action_rule_200_response() {

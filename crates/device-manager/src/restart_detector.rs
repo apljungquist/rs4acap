@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use log::{debug, trace, warn};
-use rs4a_vapix::system_ready_1::{SystemReadyRequest, SystemreadyData};
+use rs4a_vapix::apis::system_ready_1::{SystemReadyRequest, SystemreadyData};
 use tokio::time::sleep;
 
 #[derive(Clone, Copy, Debug)]
