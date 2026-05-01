@@ -22,5 +22,8 @@ rustPlatform.buildRustPackage {
     "-p"
     cargoToml.package.name
   ];
-  doCheck = false;
+  cargoTestFlags = [
+    "-p"
+    cargoToml.package.name
+  ];
 }
