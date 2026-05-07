@@ -223,6 +223,7 @@ cassette_tests! {
     pwdgrp_remove_user_does_not_exist,
     remote_object_storage_1_beta_crud,
     siren_and_light_2_alpha_maintenance_mode_not_supported,
+    ssh_1_add_user_without_comment,
     ssh_1_crud,
     ssh_1_set_user_does_not_exist,
     ssh_1_set_user_validation_error,
@@ -835,6 +836,25 @@ async fn siren_and_light_2_alpha_maintenance_mode_not_supported(
     };
 
     assert_eq!(error.kind(), Some(ErrorKind::InternalError));
+}
+
+async fn ssh_1_add_user_without_comment(client: &CassetteClient, prelude: Option<Prelude>) {
+    use rs4a_vapix::apis::ssh_1::{AddUserRequest, DeleteUserRequest};
+
+    if let Some(prelude) = &prelude {
+        if !prelude.supports_device_config() {
+            return;
+        }
+    }
+
+    let username = "nocomment";
+
+    AddUserRequest::new(username, "Good morning")
+        .send(client)
+        .await
+        .unwrap();
+
+    DeleteUserRequest::new(username).send(client).await.unwrap();
 }
 
 async fn ssh_1_crud(client: &CassetteClient, prelude: Option<Prelude>) {
