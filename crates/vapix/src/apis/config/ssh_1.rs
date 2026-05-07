@@ -15,6 +15,7 @@ use crate::{
 
 #[derive(Serialize)]
 pub struct AddUserRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
     comment: Option<String>,
     password: String,
     username: String,
