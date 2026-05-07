@@ -7,6 +7,7 @@ use rs4a_vapix::{
         network_settings_1::{SetGlobalProxyConfigurationData, SetGlobalProxyConfigurationRequest},
         parameter_management, pwdgrp,
         pwdgrp::AddUserRequest,
+        ssh_1,
         system_ready_1::SystemReadyRequest,
     },
     protocol_helpers::http::Error,
@@ -55,17 +56,9 @@ fn parse_firmware_version(s: &str) -> anyhow::Result<Version> {
     Ok(Version::new(major, minor, patch))
 }
 
-async fn apply_setup_profile(client: &rs4a_vapix::Client) -> anyhow::Result<()> {
-    let data = GetAllUnrestrictedPropertiesRequest::new()
-        .send(client)
-        .await
-        .context("Failed to query firmware version")?;
-    let version = parse_firmware_version(&data.property_list.version)
-        .context("Failed to parse firmware version")?;
-    debug!("Detected firmware version: {version}");
-
+async fn apply_setup_profile(client: &rs4a_vapix::Client, version: &Version) -> anyhow::Result<()> {
     let allows_unsigned_toggle =
-        version >= Version::new(11, 2, 0) && version < Version::new(13, 0, 0);
+        *version >= Version::new(11, 2, 0) && *version < Version::new(13, 0, 0);
 
     if allows_unsigned_toggle {
         info!("Allowing unsigned ACAP applications...");
@@ -140,11 +133,29 @@ pub async fn initialize(netloc: &Netloc, profile: &Profile) -> anyhow::Result<()
 
     let client = netloc.connect().await?;
 
+    let data = GetAllUnrestrictedPropertiesRequest::new()
+        .send(&client)
+        .await
+        .context("Failed to query firmware version")?;
+    let version = parse_firmware_version(&data.property_list.version)
+        .context("Failed to parse firmware version")?;
+    debug!("Detected firmware version: {version}");
+
     info!("Enabling SSH...");
     parameter_management::UpdateRequest::default()
         .network_ssh_enabled(true)
         .send(&client)
         .await?;
+
+    if version >= Version::new(11, 0, 0) {
+        info!("Adding SSH user...");
+        ssh_1::AddUserRequest::new("ssh", &netloc.pass)
+            .send(&client)
+            .await
+            .context("Failed to add SSH user")?;
+    } else {
+        debug!("Skipping SSH user creation (not supported on firmware {version})");
+    }
 
     info!("Removing device from known_hosts...");
     match crate::ssh_keygen::remove_known_host(&netloc.host.to_string()) {
@@ -152,7 +163,7 @@ pub async fn initialize(netloc: &Netloc, profile: &Profile) -> anyhow::Result<()
         Err(e) => warn!("Failed to remove known_hosts entry: {e:?}"),
     }
 
-    apply_setup_profile(&client).await?;
+    apply_setup_profile(&client, &version).await?;
 
     if matches!(profile, Profile::Vlt) {
         // FIXME: Skip when not supported by firmware
