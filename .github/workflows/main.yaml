@@ -20,3 +20,5 @@ jobs:
         run: nix develop --ignore-env --command make
       - name: Run checks
         run: nix develop --ignore-env --command make check
+      - name: Check flake
+        run: nix flake check
