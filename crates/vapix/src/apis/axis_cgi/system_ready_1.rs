@@ -72,11 +72,7 @@ impl SystemreadyData {
     pub fn parse_preview_mode(&self) -> Result<Option<Duration>, std::num::ParseIntError> {
         self.previewmode
             .as_deref()
-            .map(|s| {
-                s.parse::<u64>()
-                    .map(Duration::from_secs)
-                    .map_err(Into::into)
-            })
+            .map(|s| s.parse::<u64>().map(Duration::from_secs))
             .transpose()
     }
 }
