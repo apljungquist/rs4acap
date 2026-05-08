@@ -39,17 +39,19 @@ impl GetCommand {
         let index = db.read_index()?;
         let matching: Vec<_> = index.keys().filter(|p| product.matches(p)).collect();
 
-        match matching.len() {
-            0 => bail!(
-                "No indexed products matched {product:?}. Run update-index first.",
+        let product = match matching.as_slice() {
+            [] => bail!("No indexed products matched {product:?}. Run update-index first.",),
+            [p] => *p,
+            pss => bail!(
+                "Product glob {product} matched {} products: {pss:?}. Use a more specific pattern.",
+                pss.len()
             ),
-            1 => {}
-            n => bail!(
-                "Product glob {product} matched {n} products: {matching:?}. Use a more specific pattern."
-            ),
-        }
+        };
 
-        let product = matching[0];
+        #[expect(
+            clippy::indexing_slicing,
+            reason = "product is one of the keys in the index"
+        )]
         let versions = &index[product];
 
         let best = versions

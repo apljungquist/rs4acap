@@ -69,7 +69,9 @@ impl GetImageRequest {
 
         let magic = b"\xFF\xD8\xFF";
         if !bytes.starts_with(magic) {
-            bail!("Expected magic bytes {magic:?}, but got {:?}", &bytes[..3])
+            #[expect(clippy::indexing_slicing, reason = "range is clipped to array length")]
+            let prefix = &bytes[..bytes.len().min(3)];
+            bail!("Expected magic bytes {magic:?}, but got {prefix:?}");
         }
 
         Ok(bytes)

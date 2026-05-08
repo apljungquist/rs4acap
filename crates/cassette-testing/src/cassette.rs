@@ -1,3 +1,5 @@
+#![allow(clippy::indexing_slicing, reason = "TODO: Improve this")]
+
 use std::{
     hash::{DefaultHasher, Hash, Hasher},
     sync::Mutex,

@@ -112,7 +112,7 @@ impl Table {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, reason = "TODO: Improve this")]
 async fn probe_device(
     offline: bool,
     fingerprint: String,

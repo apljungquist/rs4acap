@@ -32,7 +32,7 @@ impl ListCommand {
         let index = db.read_index()?;
         let matching: Vec<_> = index
             .keys()
-            .filter(|p| product.as_ref().map_or(true, |pat| pat.matches(p)))
+            .filter(|p| product.as_ref().is_none_or(|pat| pat.matches(p)))
             .collect();
 
         if matching.is_empty() {
@@ -41,6 +41,10 @@ impl ListCommand {
 
         let mut out = String::new();
         for product in &matching {
+            #[expect(
+                clippy::indexing_slicing,
+                reason = "product is one of the keys in the index"
+            )]
             let versions = &index[product.as_str()];
             let mut entries: Vec<_> = versions
                 .iter()

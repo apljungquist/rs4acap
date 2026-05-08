@@ -178,7 +178,7 @@ impl Library {
                     continue;
                 }
                 let is_referenced =
-                    referenced_hashes.map_or(false, |hashes| hashes.contains(name_str.as_ref()));
+                    referenced_hashes.is_some_and(|hashes| hashes.contains(name_str.as_ref()));
                 if !is_referenced {
                     log::info!("Removing unreferenced cassette: {sub_path:?}");
                     fs::remove_dir_all(&sub_path)?;
@@ -298,8 +298,9 @@ impl Manifest {
         if let Some(label) = matched {
             return label.to_string();
         }
-        if devices.len() == 1 {
-            return devices[0].clone();
+        // TODO: Reconsider the correct behavior when there are 0 or more than 1 devices.
+        if let [d] = devices {
+            return d.clone();
         }
         fallback
     }
