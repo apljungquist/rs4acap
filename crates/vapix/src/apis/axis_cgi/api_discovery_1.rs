@@ -24,7 +24,6 @@ impl ApiId {
     }
 }
 
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApiListData {
@@ -45,7 +44,6 @@ impl ApiListData {
     }
 }
 
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Api {
@@ -84,7 +82,6 @@ impl GetApiListRequest {
     }
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SupportedVersionsData {
@@ -133,7 +130,6 @@ impl Api {
     }
 }
 
-#[non_exhaustive]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ApiStatus {
     Official,

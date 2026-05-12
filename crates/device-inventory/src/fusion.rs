@@ -28,7 +28,6 @@ fn convert_architecture(a: Architecture) -> anyhow::Result<DeviceArchitecture> {
         Architecture::Armv7hf => Ok(DeviceArchitecture::Armv7hf),
         Architecture::Armv7l => Ok(DeviceArchitecture::Armv7l),
         Architecture::Mips => Ok(DeviceArchitecture::Mips),
-        _ => Err(anyhow::anyhow!("not implemented for {a:?}")),
     }
 }
 

@@ -34,7 +34,6 @@ where
 }
 
 // TODO: Consider parsing `bootid` as a UUID
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemreadyData {
