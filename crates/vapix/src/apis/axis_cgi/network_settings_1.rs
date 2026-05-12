@@ -85,7 +85,6 @@ impl SetGlobalProxyConfigurationRequest {
     }
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SetGlobalProxyConfigurationData {}
 
@@ -122,7 +121,6 @@ impl GetNetworkInfoRequest {
     }
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NetworkInfoData {
@@ -130,7 +128,6 @@ pub struct NetworkInfoData {
     pub devices: Vec<DeviceInfo>,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemInfo {
@@ -145,7 +142,6 @@ pub struct SystemInfo {
     pub global_proxies: Option<GlobalProxies>,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeviceSwitching {
@@ -155,7 +151,6 @@ pub struct DeviceSwitching {
     pub active_devices: Vec<String>,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Hostname {
@@ -164,7 +159,6 @@ pub struct Hostname {
     pub static_hostname: String,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Resolver {
@@ -179,7 +173,6 @@ pub struct Resolver {
     pub static_domain_name: String,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GlobalProxies {
@@ -188,7 +181,6 @@ pub struct GlobalProxies {
     pub no_proxy: String,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeviceInfo {
@@ -209,7 +201,6 @@ pub struct DeviceInfo {
     pub ipv6: Ipv6Info,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WiredInfo {
@@ -222,7 +213,6 @@ pub struct WiredInfo {
     pub dot1x: Dot1xInfo,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Dot1xInfo {
@@ -235,7 +225,6 @@ pub struct Dot1xInfo {
     pub macsec_secured: Option<bool>,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Dot1xConfiguration {
@@ -243,7 +232,6 @@ pub struct Dot1xConfiguration {
     pub params: Dot1xParams,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Dot1xParams {
@@ -267,7 +255,6 @@ pub struct Dot1xParams {
     pub mka_ckn: Option<String>,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Ipv4Info {
@@ -292,7 +279,6 @@ pub struct Ipv4Info {
     pub use_dhcp_static_routes: Option<bool>,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Ipv4Address {
@@ -304,7 +290,6 @@ pub struct Ipv4Address {
     pub broadcast: Option<String>,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StaticAddressConfiguration {
@@ -313,7 +298,6 @@ pub struct StaticAddressConfiguration {
     pub broadcast: String,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Ipv6Info {
@@ -321,7 +305,6 @@ pub struct Ipv6Info {
     pub addresses: Vec<Ipv6Address>,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Ipv6Address {

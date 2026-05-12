@@ -17,7 +17,6 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum ErrorKind {
     InvalidParameter = 1000,
     AccessForbidden = 2001,
@@ -73,7 +72,6 @@ where
     }
 }
 
-#[non_exhaustive]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ProductType {
     AirQualitySensor,
@@ -119,14 +117,12 @@ impl FromStr for ProductType {
     }
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AllUnrestrictedPropertiesData {
     pub property_list: UnrestrictedProperties,
 }
 
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct UnrestrictedProperties {
@@ -193,7 +189,6 @@ impl Default for GetAllUnrestrictedPropertiesRequest {
     }
 }
 
-#[non_exhaustive]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Architecture {
@@ -306,7 +301,6 @@ impl<'de> Deserialize<'de> for SocSerialNumber {
     }
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct RestrictedProperties {
@@ -339,7 +333,6 @@ pub struct AllProperties {
     pub restricted: RestrictedProperties,
 }
 
-#[non_exhaustive]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AllPropertiesData {

@@ -14,7 +14,6 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[non_exhaustive]
 pub enum ErrorKind {
     BadRequest = 400,
     NoPreviousFirmware = 404,
