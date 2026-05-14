@@ -1,0 +1,4 @@
+POST vapix/services
+Content-Type: application/soap+xml; charset=utf-8
+
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Body><RemoveActionRule xmlns="http://www.axis.com/vapix/ws/action1"><RuleID>9999</RuleID></RemoveActionRule></soap:Body></soap:Envelope>

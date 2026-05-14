@@ -119,6 +119,46 @@
     }
   },
   "cassettes": {
+    "action1_action_rule_crud": {
+      "19febe5cebfd74c4": [
+        "P8815-2@10.12.323"
+      ],
+      "24b56b0fb69c0bd5": [
+        "M1075-L@12.9.57"
+      ],
+      "423c2cf8902fff01": [
+        "P8815-2@11.11.192"
+      ],
+      "b9e6bbd2a49ed27a": [
+        "D4200-VE@12.9.57"
+      ]
+    },
+    "action1_add_action_rule_invalid_condition": {
+      "1cb4629d631ea49c": [
+        "P8815-2@11.11.192"
+      ],
+      "85236f3324231952": [
+        "M1075-L@12.9.57"
+      ],
+      "bfb04a75a06b5e03": [
+        "P8815-2@10.12.323"
+      ],
+      "faf0e96459c8908b": [
+        "D4200-VE@12.9.57"
+      ]
+    },
+    "action1_add_action_rule_unknown_configuration": {
+      "7e0da2865eeadca3": [
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57"
+      ],
+      "9ad3d2d57b31b504": [
+        "P8815-2@11.11.192"
+      ],
+      "a267536d5ba7cb1c": [
+        "P8815-2@10.12.323"
+      ]
+    },
     "action1_get_action_configurations": {
       "1d07af298275a304": [
         "P8815-2@10.12.323"
@@ -145,6 +185,30 @@
       ],
       "efea4adb3cd93a70": [
         "M1075-L@12.9.57"
+      ]
+    },
+    "action1_remove_action_configuration_unknown": {
+      "20168096dfa64b80": [
+        "P8815-2@10.12.323"
+      ],
+      "213a6ab10542a270": [
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57"
+      ],
+      "47ec464ec1e8edb8": [
+        "P8815-2@11.11.192"
+      ]
+    },
+    "action1_remove_action_rule_unknown": {
+      "1d03bf3bb923df83": [
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57"
+      ],
+      "92d0d289cd23f273": [
+        "P8815-2@10.12.323"
+      ],
+      "d69e8d3f93c8aed8": [
+        "P8815-2@11.11.192"
       ]
     },
     "api_discovery_1_get_api_list": {
