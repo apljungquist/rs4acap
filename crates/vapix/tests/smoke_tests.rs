@@ -5,7 +5,7 @@ use rs4a_vapix::{
     apis::{
         action1::{
             AddActionConfigurationRequest, AddActionRuleRequest, Condition,
-            GetActionConfigurationsRequest, GetActionRulesRequest,
+            GetActionConfigurationsRequest, GetActionRulesRequest, MessageContent, TopicExpression,
         },
         event1::GetEventInstancesRequest,
         recording_group_1::CreateRecordingGroupsRequest,
@@ -73,9 +73,10 @@ async fn action_1_add_and_get_returns_ok() {
     let action_rule_id =
         AddActionRuleRequest::new(action_rule_name.to_string(), action_configuration_id)
             .condition(Condition {
-                topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
-                message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#
-                    .to_string(),
+                topic_expression: TopicExpression::new("tns1:Device/tnsaxis:Status/SystemReady"),
+                message_content: MessageContent::new(
+                    r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#,
+                ),
             })
             .send(&client)
             .await
@@ -86,8 +87,7 @@ async fn action_1_add_and_get_returns_ok() {
         .send(&client)
         .await
         .unwrap()
-        .action_rules
-        .action_rule;
+        .action_rules;
 
     let action_rule = actions_rules
         .into_iter()

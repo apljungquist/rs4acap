@@ -26,8 +26,8 @@ impl<E> Error<E> {
         }
     }
 
-    /// Returns the inner service error if `self` is [`Error::Service`],
-    /// or panics with the actual variant for diagnostics.
+    /// Diagnostic helper intended for tests. Returns the inner service error if `self` is
+    /// [`Error::Service`], otherwise panics with the actual variant.
     #[track_caller]
     pub fn unwrap_service(self) -> E
     where

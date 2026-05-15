@@ -7,9 +7,9 @@ use rs4a_cassette_testing::{Cassette, CassetteClient, DeviceInfo, Library};
 use rs4a_vapix::{
     apis::{
         action1::{
-            AddActionConfigurationRequest, AddActionRuleRequest, Condition,
-            GetActionConfigurationsRequest, GetActionRulesRequest,
-            RemoveActionConfigurationRequest, RemoveActionRuleRequest,
+            AddActionConfigurationRequest, AddActionRuleRequest, Condition, FaultDetail,
+            GetActionConfigurationsRequest, GetActionRulesRequest, MessageContent,
+            RemoveActionConfigurationRequest, RemoveActionRuleRequest, TopicExpression,
         },
         api_discovery_1::{Api, ApiListData, GetApiListRequest},
         basic_device_info_1::{
@@ -31,7 +31,7 @@ use rs4a_vapix::{
         },
         system_ready_1::SystemReadyRequest,
     },
-    protocol_helpers::rest::ErrorKind,
+    protocol_helpers::{rest::ErrorKind, soap::FaultCode},
     ClientBuilder,
 };
 use semver::VersionReq;
@@ -137,6 +137,7 @@ cassette_tests! {
     action1_add_action_rule_invalid_topic,
     action1_add_action_rule_no_activation,
     action1_add_action_rule_unknown_configuration,
+    action1_add_action_rule_unknown_dialect,
     action1_get_action_configurations,
     action1_get_action_rules,
     action1_remove_action_configuration_in_use,
@@ -398,8 +399,10 @@ async fn action1_action_rule_crud(client: &CassetteClient, _prelude: Option<Prel
 
     let rule_id = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
         .condition(Condition {
-            topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
-            message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+            topic_expression: TopicExpression::new("tns1:Device/tnsaxis:Status/SystemReady"),
+            message_content: MessageContent::new(
+                r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#,
+            ),
         })
         .send(client)
         .await
@@ -410,8 +413,7 @@ async fn action1_action_rule_crud(client: &CassetteClient, _prelude: Option<Prel
         .send(client)
         .await
         .unwrap()
-        .action_rules
-        .action_rule;
+        .action_rules;
     assert!(rules.iter().any(|r| r.rule_id == rule_id));
 
     RemoveActionRuleRequest::new(rule_id)
@@ -423,8 +425,7 @@ async fn action1_action_rule_crud(client: &CassetteClient, _prelude: Option<Prel
         .send(client)
         .await
         .unwrap()
-        .action_rules
-        .action_rule;
+        .action_rules;
     assert!(!rules.iter().any(|r| r.rule_id == rule_id));
 
     RemoveActionConfigurationRequest::new(configuration_id)
@@ -443,21 +444,22 @@ async fn action1_add_action_rule_invalid_condition(
     // device where it has not yet started this condition cannot be matched.
     let error = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
         .condition(Condition {
-            topic_expression:
-                "tnsaxis:CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY".to_string(),
-            message_content: r#"boolean(//SimpleItem[@Name="active" and @Value="1"])"#.to_string(),
+            topic_expression: TopicExpression::new(
+                "tnsaxis:CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY",
+            ),
+            message_content: MessageContent::new(
+                r#"boolean(//SimpleItem[@Name="active" and @Value="1"])"#,
+            ),
         })
         .send(client)
         .await
         .unwrap_err();
 
-    // SOAP faults currently surface as decode errors because the helper does not parse
-    // `SOAP-ENV:Fault` distinctly from the success response shape.
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("could not match any property events"),
-        "Unexpected error: {error:?}"
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::InvalidConditionFilter,
     );
 
     RemoveActionConfigurationRequest::new(configuration_id)
@@ -470,23 +472,23 @@ async fn action1_add_action_rule_unknown_configuration(
     client: &CassetteClient,
     _prelude: Option<Prelude>,
 ) {
-    // No configuration is created — on a freshly initialised device any positive ID is unknown.
+    // No configuration is created — on a freshly initialized device any positive ID is unknown.
     let error = AddActionRuleRequest::new("cassette test rule".to_string(), 9999)
         .condition(Condition {
-            topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
-            message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+            topic_expression: TopicExpression::new("tns1:Device/tnsaxis:Status/SystemReady"),
+            message_content: MessageContent::new(
+                r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#,
+            ),
         })
         .send(client)
         .await
         .unwrap_err();
 
-    // SOAP faults currently surface as decode errors because the helper does not parse
-    // `SOAP-ENV:Fault` distinctly from the success response shape.
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("action configuration"),
-        "Unexpected error: {error:?}"
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::ActionConfigurationNotFound,
     );
 }
 
@@ -499,14 +501,11 @@ async fn action1_remove_action_configuration_unknown(
         .await
         .unwrap_err();
 
-    // SOAP faults currently surface as decode errors because the helper does not parse
-    // `SOAP-ENV:Fault` distinctly from the success response shape. The `<SOAP-ENV:Reason>`
-    // text is empty for this fault, so match on the WSDL-declared detail element name.
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("ActionConfigurationNotFoundFault"),
-        "Unexpected error: {error:?}"
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::ActionConfigurationNotFound,
     );
 }
 
@@ -516,14 +515,11 @@ async fn action1_remove_action_rule_unknown(client: &CassetteClient, _prelude: O
         .await
         .unwrap_err();
 
-    // SOAP faults currently surface as decode errors because the helper does not parse
-    // `SOAP-ENV:Fault` distinctly from the success response shape. Matching on the
-    // WSDL-declared detail element name is more reliable than the human-readable reason.
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("ActionRuleNotFoundFault"),
-        "Unexpected error: {error:?}"
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::ActionRuleNotFound,
     );
 }
 
@@ -540,12 +536,11 @@ async fn action1_add_action_configuration_parameters_mismatch(
         .await
         .unwrap_err();
 
-    // TODO: Propagate the correct, structured error
-    // Note: WSDL spells the element with a double `s` (`ParametersMissmatchFault`).
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("ParametersMissmatchFault"),
-        "Unexpected error: {error:?}"
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::ParametersMismatch,
     );
 }
 
@@ -558,11 +553,11 @@ async fn action1_add_action_configuration_unknown_template(
         .await
         .unwrap_err();
 
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("ActionTemplateNotFoundFault"),
-        "Unexpected error: {error:?}"
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::ActionTemplateNotFound,
     );
 }
 
@@ -574,18 +569,18 @@ async fn action1_add_action_rule_invalid_message_content(
 
     let error = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
         .condition(Condition {
-            topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
-            message_content: "not[valid[xpath".to_string(),
+            topic_expression: TopicExpression::new("tns1:Device/tnsaxis:Status/SystemReady"),
+            message_content: MessageContent::new("not[valid[xpath"),
         })
         .send(client)
         .await
         .unwrap_err();
 
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("InvalidMessageContentExpressionFault"),
-        "Unexpected error: {error:?}"
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::InvalidMessageContentExpression,
     );
 
     RemoveActionConfigurationRequest::new(configuration_id)
@@ -599,18 +594,20 @@ async fn action1_add_action_rule_invalid_topic(client: &CassetteClient, _prelude
 
     let error = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
         .condition(Condition {
-            topic_expression: "definitely not a topic !@#$".to_string(),
-            message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+            topic_expression: TopicExpression::new("definitely not a topic !@#$"),
+            message_content: MessageContent::new(
+                r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#,
+            ),
         })
         .send(client)
         .await
         .unwrap_err();
 
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("InvalidTopicExpressionFault"),
-        "Unexpected error: {error:?}"
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::InvalidTopicExpression,
     );
 
     RemoveActionConfigurationRequest::new(configuration_id)
@@ -629,13 +626,44 @@ async fn action1_add_action_rule_no_activation(client: &CassetteClient, _prelude
         .await
         .unwrap_err();
 
-    // The device responds with a generic `ter:InvalidArgs` fault rather than the WSDL-declared
-    // `InsufficientActivationRuleFault`, so match on the detail text instead.
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("occurrence violation in element Conditions"),
-        "Unexpected error: {error:?}"
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::InsufficientActivationRule,
+    );
+
+    RemoveActionConfigurationRequest::new(configuration_id)
+        .send(client)
+        .await
+        .unwrap();
+}
+
+async fn action1_add_action_rule_unknown_dialect(
+    client: &CassetteClient,
+    _prelude: Option<Prelude>,
+) {
+    let configuration_id = add_status_led_configuration(client).await;
+
+    let error = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
+        .condition(Condition {
+            topic_expression: TopicExpression::with_dialect(
+                "http://example.com/no-such-dialect",
+                "tns1:Device/tnsaxis:Status/SystemReady",
+            ),
+            message_content: MessageContent::new(
+                r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#,
+            ),
+        })
+        .send(client)
+        .await
+        .unwrap_err();
+
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::TopicExpressionDialectUnknown,
     );
 
     RemoveActionConfigurationRequest::new(configuration_id)
@@ -652,8 +680,10 @@ async fn action1_remove_action_configuration_in_use(
 
     let rule_id = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
         .condition(Condition {
-            topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
-            message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+            topic_expression: TopicExpression::new("tns1:Device/tnsaxis:Status/SystemReady"),
+            message_content: MessageContent::new(
+                r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#,
+            ),
         })
         .send(client)
         .await
@@ -665,13 +695,14 @@ async fn action1_remove_action_configuration_in_use(
         .await
         .unwrap_err();
 
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("ActionConfigurationIsInUseFault"),
-        "Unexpected error: {error:?}"
+    let fault = error.unwrap_service();
+    assert_eq!(fault.parse_code().unwrap(), FaultCode::Sender);
+    assert_eq!(
+        fault.parse_detail_as::<FaultDetail>().unwrap().unwrap(),
+        FaultDetail::ActionConfigurationIsInUse,
     );
 
+    // Clean up rule before configuration, so the next test runs against a fresh device.
     RemoveActionRuleRequest::new(rule_id)
         .send(client)
         .await
