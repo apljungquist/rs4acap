@@ -25,4 +25,30 @@ impl<E> Error<E> {
             Err(e) => Err(Self::Decode(e)),
         }
     }
+
+    /// Returns the inner service error if `self` is [`Error::Service`],
+    /// or panics with the actual variant for diagnostics.
+    #[track_caller]
+    pub fn unwrap_service(self) -> E
+    where
+        E: std::fmt::Debug,
+    {
+        match self {
+            Self::Service(e) => e,
+            other => panic!("Expected Service error but got {other:?}"),
+        }
+    }
+
+    /// Returns the inner service error if `self` is [`Error::Decode`],
+    /// or panics with the actual variant for diagnostics.
+    #[track_caller]
+    pub fn unwrap_decode(self) -> anyhow::Error
+    where
+        E: std::fmt::Debug,
+    {
+        match self {
+            Self::Decode(e) => e,
+            other => panic!("Expected Decode error but got {other:?}"),
+        }
+    }
 }
