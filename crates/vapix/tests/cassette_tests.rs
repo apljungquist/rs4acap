@@ -31,7 +31,7 @@ use rs4a_vapix::{
         },
         system_ready_1::SystemReadyRequest,
     },
-    protocol_helpers::{http, rest::ErrorKind},
+    protocol_helpers::rest::ErrorKind,
     ClientBuilder,
 };
 use semver::VersionReq;
@@ -448,9 +448,7 @@ async fn action1_add_action_rule_invalid_condition(
     // SOAP faults currently surface as decode errors because the helper does not parse
     // `SOAP-ENV:Fault` distinctly from the success response shape.
     // TODO: Propagate the correct, structured error
-    let http::Error::Decode(error) = error else {
-        panic!("Expected Decode error but got {error:?}");
-    };
+    let error = error.unwrap_decode();
     assert!(
         format!("{error:?}").contains("could not match any property events"),
         "Unexpected error: {error:?}"
@@ -479,9 +477,7 @@ async fn action1_add_action_rule_unknown_configuration(
     // SOAP faults currently surface as decode errors because the helper does not parse
     // `SOAP-ENV:Fault` distinctly from the success response shape.
     // TODO: Propagate the correct, structured error
-    let http::Error::Decode(error) = error else {
-        panic!("Expected Decode error but got {error:?}");
-    };
+    let error = error.unwrap_decode();
     assert!(
         format!("{error:?}").contains("action configuration"),
         "Unexpected error: {error:?}"
@@ -501,9 +497,7 @@ async fn action1_remove_action_configuration_unknown(
     // `SOAP-ENV:Fault` distinctly from the success response shape. The `<SOAP-ENV:Reason>`
     // text is empty for this fault, so match on the WSDL-declared detail element name.
     // TODO: Propagate the correct, structured error
-    let http::Error::Decode(error) = error else {
-        panic!("Expected Decode error but got {error:?}");
-    };
+    let error = error.unwrap_decode();
     assert!(
         format!("{error:?}").contains("ActionConfigurationNotFoundFault"),
         "Unexpected error: {error:?}"
@@ -520,9 +514,7 @@ async fn action1_remove_action_rule_unknown(client: &CassetteClient, _prelude: O
     // `SOAP-ENV:Fault` distinctly from the success response shape. Matching on the
     // WSDL-declared detail element name is more reliable than the human-readable reason.
     // TODO: Propagate the correct, structured error
-    let http::Error::Decode(error) = error else {
-        panic!("Expected Decode error but got {error:?}");
-    };
+    let error = error.unwrap_decode();
     assert!(
         format!("{error:?}").contains("ActionRuleNotFoundFault"),
         "Unexpected error: {error:?}"
@@ -632,9 +624,7 @@ async fn device_configuration_item_does_not_exist(
         .await
         .unwrap_err();
 
-    let http::Error::Service(error) = error else {
-        panic!("Expected Service error but got {error:?}");
-    };
+    let error = error.unwrap_service();
 
     assert_eq!(error.kind().unwrap(), ErrorKind::NotFound);
 }
@@ -658,9 +648,7 @@ async fn device_configuration_validation_error(client: &CassetteClient, prelude:
     .await
     .unwrap_err();
 
-    let http::Error::Service(error) = error else {
-        panic!("Expected Service error but got {error:?}");
-    };
+    let error = error.unwrap_service();
 
     assert_eq!(error.kind().unwrap(), ErrorKind::ValidationError);
 }
@@ -701,9 +689,7 @@ async fn device_configuration_item_already_exists(
     .await
     .unwrap_err();
 
-    let http::Error::Service(error) = error else {
-        panic!("Expected Service error but got {error:?}");
-    };
+    let error = error.unwrap_service();
 
     assert_eq!(error.kind().unwrap(), ErrorKind::AlreadyExists);
 
@@ -737,9 +723,7 @@ async fn firmware_management_1_upgrade_mismatch(
         .await
         .unwrap_err();
 
-    let http::Error::Service(error) = error else {
-        panic!("Expected Service error but got {error:?}");
-    };
+    let error = error.unwrap_service();
 
     assert_eq!(
         firmware_management_1::ErrorKind::try_from(error.code),
@@ -833,16 +817,14 @@ async fn pwdgrp_add_user_already_exists(client: &CassetteClient, _prelude: Optio
         .await
         .unwrap();
 
-    let err = AddUserRequest::new(username, "Good morning", Group::Users, Role::Viewer)
+    let error = AddUserRequest::new(username, "Good morning", Group::Users, Role::Viewer)
         .send(client)
         .await
         .unwrap_err();
 
-    let http::Error::Service(err) = err else {
-        panic!("Expected Service error but got {err:?}");
-    };
+    let error = error.unwrap_service();
     assert_eq!(
-        err.message(),
+        error.message(),
         "this user name already exists, consult the system log file"
     );
 
@@ -853,43 +835,37 @@ async fn pwdgrp_add_user_already_exists(client: &CassetteClient, _prelude: Optio
 async fn pwdgrp_add_user_invalid_password(client: &CassetteClient, _prelude: Option<Prelude>) {
     use rs4a_vapix::apis::pwdgrp::{AddUserRequest, Group, Role};
 
-    let err = AddUserRequest::new("testuser", "", Group::Users, Role::Viewer)
+    let error = AddUserRequest::new("testuser", "", Group::Users, Role::Viewer)
         .send(client)
         .await
         .unwrap_err();
 
-    let http::Error::Service(err) = err else {
-        panic!("Expected Service error but got {err:?}");
-    };
-    assert_eq!(err.message(), "invalid password");
+    let error = error.unwrap_service();
+    assert_eq!(error.message(), "invalid password");
 }
 
 async fn pwdgrp_add_user_invalid_username(client: &CassetteClient, _prelude: Option<Prelude>) {
     use rs4a_vapix::apis::pwdgrp::{AddUserRequest, Group, Role};
 
-    let err = AddUserRequest::new("user!", "Good morning", Group::Users, Role::Viewer)
+    let error = AddUserRequest::new("user!", "Good morning", Group::Users, Role::Viewer)
         .send(client)
         .await
         .unwrap_err();
 
-    let http::Error::Service(err) = err else {
-        panic!("Expected Service error but got {err:?}");
-    };
-    assert_eq!(err.message(), "account user name");
+    let error = error.unwrap_service();
+    assert_eq!(error.message(), "account user name");
 }
 
 async fn pwdgrp_remove_user_does_not_exist(client: &CassetteClient, _prelude: Option<Prelude>) {
     use rs4a_vapix::apis::pwdgrp::RemoveUserRequest;
 
-    let err = RemoveUserRequest::new("nonexistent_user")
+    let error = RemoveUserRequest::new("nonexistent_user")
         .send(client)
         .await
         .unwrap_err();
 
-    let http::Error::Service(err) = err else {
-        panic!("Expected Service error but got {err:?}");
-    };
-    assert_eq!(err.message(), "account user name");
+    let error = error.unwrap_service();
+    assert_eq!(error.message(), "account user name");
 }
 
 async fn remote_object_storage_1_beta_crud(client: &CassetteClient, prelude: Option<Prelude>) {
@@ -987,9 +963,7 @@ async fn siren_and_light_2_alpha_maintenance_mode_not_supported(
         .await
         .unwrap_err();
 
-    let http::Error::Service(error) = error else {
-        panic!("Expected Service error but got {error:?}");
-    };
+    let error = error.unwrap_service();
 
     assert_eq!(error.kind(), Some(ErrorKind::InternalError));
 
@@ -998,9 +972,7 @@ async fn siren_and_light_2_alpha_maintenance_mode_not_supported(
         .await
         .unwrap_err();
 
-    let http::Error::Service(error) = error else {
-        panic!("Expected Service error but got {error:?}");
-    };
+    let error = error.unwrap_service();
 
     assert_eq!(error.kind(), Some(ErrorKind::InternalError));
 }
@@ -1064,9 +1036,7 @@ async fn ssh_1_set_user_does_not_exist(client: &CassetteClient, prelude: Option<
         .await
         .unwrap_err();
 
-    let http::Error::Service(error) = error else {
-        panic!("Expected Service error but got {error:?}");
-    };
+    let error = error.unwrap_service();
 
     assert_eq!(error.kind().unwrap(), ErrorKind::NotFound);
 }
@@ -1095,9 +1065,7 @@ async fn ssh_1_set_user_validation_error(client: &CassetteClient, prelude: Optio
         .await
         .unwrap_err();
 
-    let http::Error::Service(error) = error else {
-        panic!("Expected Service error but got {error:?}");
-    };
+    let error = error.unwrap_service();
 
     assert_eq!(error.kind().unwrap(), ErrorKind::ValidationError);
 
