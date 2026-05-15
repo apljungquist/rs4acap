@@ -8,8 +8,8 @@ use rs4a_vapix::{
     apis::{
         action1::{
             AddActionConfigurationRequest, AddActionRuleRequest, Condition,
-            GetActionConfigurationsRequest, GetActionRulesRequest,
-            RemoveActionConfigurationRequest, RemoveActionRuleRequest,
+            GetActionConfigurationsRequest, GetActionRulesRequest, MessageContent,
+            RemoveActionConfigurationRequest, RemoveActionRuleRequest, TopicExpression,
         },
         api_discovery_1::{Api, ApiListData, GetApiListRequest},
         basic_device_info_1::{
@@ -392,8 +392,10 @@ async fn action1_action_rule_crud(client: &CassetteClient, _prelude: Option<Prel
 
     let rule_id = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
         .condition(Condition {
-            topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
-            message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+            topic_expression: TopicExpression::new("tns1:Device/tnsaxis:Status/SystemReady"),
+            message_content: MessageContent::new(
+                r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#,
+            ),
         })
         .send(client)
         .await
@@ -404,8 +406,7 @@ async fn action1_action_rule_crud(client: &CassetteClient, _prelude: Option<Prel
         .send(client)
         .await
         .unwrap()
-        .action_rules
-        .action_rule;
+        .action_rules;
     assert!(rules.iter().any(|r| r.rule_id == rule_id));
 
     RemoveActionRuleRequest::new(rule_id)
@@ -417,8 +418,7 @@ async fn action1_action_rule_crud(client: &CassetteClient, _prelude: Option<Prel
         .send(client)
         .await
         .unwrap()
-        .action_rules
-        .action_rule;
+        .action_rules;
     assert!(!rules.iter().any(|r| r.rule_id == rule_id));
 
     RemoveActionConfigurationRequest::new(configuration_id)
@@ -437,9 +437,12 @@ async fn action1_add_action_rule_invalid_condition(
     // device where it has not yet started this condition cannot be matched.
     let error = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
         .condition(Condition {
-            topic_expression:
-                "tnsaxis:CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY".to_string(),
-            message_content: r#"boolean(//SimpleItem[@Name="active" and @Value="1"])"#.to_string(),
+            topic_expression: TopicExpression::new(
+                "tnsaxis:CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY",
+            ),
+            message_content: MessageContent::new(
+                r#"boolean(//SimpleItem[@Name="active" and @Value="1"])"#,
+            ),
         })
         .send(client)
         .await
@@ -467,8 +470,10 @@ async fn action1_add_action_rule_unknown_configuration(
     // No configuration is created — on a freshly initialised device any positive ID is unknown.
     let error = AddActionRuleRequest::new("cassette test rule".to_string(), 9999)
         .condition(Condition {
-            topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
-            message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+            topic_expression: TopicExpression::new("tns1:Device/tnsaxis:Status/SystemReady"),
+            message_content: MessageContent::new(
+                r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#,
+            ),
         })
         .send(client)
         .await

@@ -5,7 +5,8 @@ use rs4a_vapix::{
     apis::{
         action1::{
             AddActionConfigurationRequest, AddActionConfigurationResponse, AddActionRuleRequest,
-            Condition, GetActionConfigurationsRequest, GetActionRulesRequest,
+            Condition, GetActionConfigurationsRequest, GetActionRulesRequest, MessageContent,
+            TopicExpression,
         },
         basic_device_info_1,
         basic_device_info_1::{AllPropertiesData, AllUnrestrictedPropertiesData, Architecture},
@@ -97,9 +98,10 @@ fn can_serialize_action_1_requests() {
     expect_file!["./snapshots/add_action_rule.xml"].assert_eq(
         &AddActionRuleRequest::new("My Action Rule".to_string(), 123)
             .condition(Condition {
-                topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
-                message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#
-                    .to_string(),
+                topic_expression: TopicExpression::new("tns1:Device/tnsaxis:Status/SystemReady"),
+                message_content: MessageContent::new(
+                    r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#,
+                ),
             })
             .into_envelope(),
     );
