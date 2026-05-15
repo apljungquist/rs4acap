@@ -1,10 +1,11 @@
 use std::convert::Infallible;
 
-use serde::Deserialize;
+use anyhow::Context;
+use serde::{de::IgnoredAny, Deserialize};
 
 use crate::{
     http::{HttpClient, Request},
-    protocol_helpers::{http::Error, soap, soap_http},
+    protocol_helpers::{http::Error, soap, soap_http, soap_http::SoapResponse},
 };
 
 const PATH: &str = "vapix/services";
@@ -93,6 +94,55 @@ impl AddActionRuleRequest {
 pub struct AddActionRuleResponse {
     #[serde(rename = "RuleID")]
     pub id: u16,
+}
+
+pub struct RemoveActionRuleRequest {
+    rule_id: u16,
+}
+
+impl RemoveActionRuleRequest {
+    pub fn new(rule_id: u16) -> Self {
+        Self { rule_id }
+    }
+
+    pub fn into_envelope(self) -> String {
+        let mut params = String::new();
+        params.push_str(r#"<RuleID>"#);
+        params.push_str(&self.rule_id.to_string());
+        params.push_str(r#"</RuleID>"#);
+        soap::envelope(NAMESPACE, "RemoveActionRule", Some(&params))
+    }
+
+    pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<(), Error<Infallible>> {
+        let request =
+            Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
+        let RemoveActionRuleResponse = soap_http::send_request(client, request).await?;
+        Ok(())
+    }
+}
+
+struct RemoveActionRuleResponse;
+
+// TODO: Consider making the `aa:RemoveActionRuleResponse` tag available to deserialization
+impl SoapResponse for RemoveActionRuleResponse {
+    fn from_envelope(s: &str) -> anyhow::Result<Self> {
+        // The body is empty, but the wrapper element must still be present and must be
+        // `RemoveActionRuleResponse` — anything else (e.g. a `SOAP-ENV:Fault`) should fail.
+        #[derive(Deserialize)]
+        #[serde(rename_all = "PascalCase")]
+        struct Envelope {
+            #[allow(dead_code, reason = "Required for shape validation")]
+            body: Body,
+        }
+        #[derive(Deserialize)]
+        struct Body {
+            #[serde(rename = "RemoveActionRuleResponse")]
+            _inner: IgnoredAny,
+        }
+        let Envelope { .. } = quick_xml::de::from_str(s)
+            .with_context(|| format!("Could not parse text; text: {s}"))?;
+        Ok(Self)
+    }
 }
 
 #[derive(Debug, Deserialize)]

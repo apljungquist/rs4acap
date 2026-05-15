@@ -1,10 +1,11 @@
 use std::convert::Infallible;
 
-use serde::{Deserialize, Serialize};
+use anyhow::Context;
+use serde::{de::IgnoredAny, Deserialize, Serialize};
 
 use crate::{
     http::{HttpClient, Request},
-    protocol_helpers::{http::Error, soap, soap_http},
+    protocol_helpers::{http::Error, soap, soap_http, soap_http::SoapResponse},
 };
 
 const PATH: &str = "vapix/services";
@@ -85,6 +86,55 @@ impl AddActionConfigurationRequest {
         let envelope = self.try_into_envelope().map_err(Error::Request)?;
         let request = Request::new(reqwest::Method::POST, PATH.to_string()).soap(envelope);
         soap_http::send_request(client, request).await
+    }
+}
+
+pub struct RemoveActionConfigurationRequest {
+    configuration_id: u16,
+}
+
+impl RemoveActionConfigurationRequest {
+    pub fn new(configuration_id: u16) -> Self {
+        Self { configuration_id }
+    }
+
+    pub fn into_envelope(self) -> String {
+        let mut params = String::new();
+        params.push_str(r#"<ConfigurationID>"#);
+        params.push_str(&self.configuration_id.to_string());
+        params.push_str(r#"</ConfigurationID>"#);
+        soap::envelope(NAMESPACE, "RemoveActionConfiguration", Some(&params))
+    }
+
+    pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<(), Error<Infallible>> {
+        let request =
+            Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
+        let RemoveActionConfigurationResponse = soap_http::send_request(client, request).await?;
+        Ok(())
+    }
+}
+
+struct RemoveActionConfigurationResponse;
+
+// TODO: Consider making the `aa:RemoveActionConfigurationResponse` tag available to deserialization
+impl SoapResponse for RemoveActionConfigurationResponse {
+    fn from_envelope(s: &str) -> anyhow::Result<Self> {
+        // The body is empty, but the wrapper element must still be present and must be
+        // `RemoveActionConfigurationResponse` — anything else (e.g. a `SOAP-ENV:Fault`) should fail.
+        #[derive(Deserialize)]
+        #[serde(rename_all = "PascalCase")]
+        struct Envelope {
+            #[allow(dead_code, reason = "Required for shape validation")]
+            body: Body,
+        }
+        #[derive(Deserialize)]
+        struct Body {
+            #[serde(rename = "RemoveActionConfigurationResponse")]
+            _inner: IgnoredAny,
+        }
+        let Envelope { .. } = quick_xml::de::from_str(s)
+            .with_context(|| format!("Could not parse text; text: {s}"))?;
+        Ok(Self)
     }
 }
 
