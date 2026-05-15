@@ -133,18 +133,84 @@
         "D4200-VE@12.9.57"
       ]
     },
-    "action1_add_action_rule_invalid_condition": {
-      "1cb4629d631ea49c": [
-        "P8815-2@11.11.192"
-      ],
-      "85236f3324231952": [
-        "M1075-L@12.9.57"
-      ],
-      "bfb04a75a06b5e03": [
+    "action1_add_action_configuration_parameters_mismatch": {
+      "488a407f7a2291eb": [
         "P8815-2@10.12.323"
       ],
-      "faf0e96459c8908b": [
+      "49f8eea9b017b7db": [
+        "P8815-2@11.11.192"
+      ],
+      "ff1b856eab00ec99": [
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57"
+      ]
+    },
+    "action1_add_action_configuration_unknown_template": {
+      "001fa688467b0f8e": [
+        "D4200-VE@12.9.57",
+        "M1075-L@12.9.57"
+      ],
+      "459ceadf91778915": [
+        "P8815-2@11.11.192"
+      ],
+      "7801dc2e217add15": [
+        "P8815-2@10.12.323"
+      ]
+    },
+    "action1_add_action_rule_invalid_condition": {
+      "179b2f7adaff1356": [
+        "P8815-2@10.12.323"
+      ],
+      "70e0cfc7818fcf77": [
         "D4200-VE@12.9.57"
+      ],
+      "976ca0cf25f77b7a": [
+        "M1075-L@12.9.57"
+      ],
+      "f6396a799b2ffb79": [
+        "P8815-2@11.11.192"
+      ]
+    },
+    "action1_add_action_rule_invalid_message_content": {
+      "3dfd0e9f596e7d91": [
+        "M1075-L@12.9.57"
+      ],
+      "3f0b584e938a8d0a": [
+        "P8815-2@10.12.323"
+      ],
+      "7abb002c4d09b78b": [
+        "D4200-VE@12.9.57"
+      ],
+      "9da75649bf26831f": [
+        "P8815-2@11.11.192"
+      ]
+    },
+    "action1_add_action_rule_invalid_topic": {
+      "70447c23754c5082": [
+        "D4200-VE@12.9.57"
+      ],
+      "80208d2b0bb4f79f": [
+        "P8815-2@10.12.323"
+      ],
+      "9df8b4b288e36729": [
+        "P8815-2@11.11.192"
+      ],
+      "b4d3e6a0389f29be": [
+        "M1075-L@12.9.57"
+      ]
+    },
+    "action1_add_action_rule_no_activation": {
+      "4fb76ef605adbbe7": [
+        "P8815-2@11.11.192"
+      ],
+      "816ff2647b9eb3c3": [
+        "D4200-VE@12.9.57"
+      ],
+      "ad9ca28362e906ae": [
+        "P8815-2@10.12.323"
+      ],
+      "d2d03699e4f62564": [
+        "M1075-L@12.9.57"
       ]
     },
     "action1_add_action_rule_unknown_configuration": {
@@ -185,6 +251,20 @@
       ],
       "efea4adb3cd93a70": [
         "M1075-L@12.9.57"
+      ]
+    },
+    "action1_remove_action_configuration_in_use": {
+      "1d47fa5ee4b45256": [
+        "P8815-2@11.11.192"
+      ],
+      "7cb1b816b3e93e51": [
+        "D4200-VE@12.9.57"
+      ],
+      "bf493be0a84c8fe8": [
+        "M1075-L@12.9.57"
+      ],
+      "d8d7dd875a697abf": [
+        "P8815-2@10.12.323"
       ]
     },
     "action1_remove_action_configuration_unknown": {

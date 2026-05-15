@@ -1,0 +1,4 @@
+POST vapix/services
+Content-Type: application/soap+xml; charset=utf-8
+
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Body><AddActionRule xmlns="http://www.axis.com/vapix/ws/action1"><NewActionRule xmlns:tns1="http://www.onvif.org/ver10/topics" xmlns:tnsaxis="http://www.axis.com/2009/event/topics"><Name>cassette test rule</Name><Enabled>true</Enabled><Conditions><Condition><TopicExpression Dialect="http://docs.oasis-open.org/wsn/t-1/TopicExpression/Concrete" xmlns="http://docs.oasis-open.org/wsn/b-2">definitely not a topic !@#$</TopicExpression><MessageContent Dialect="http://www.onvif.org/ver10/tev/messageContentFilter/ItemFilter" xmlns="http://docs.oasis-open.org/wsn/b-2">boolean(//SimpleItem[@Name="ready" and @Value="1"])</MessageContent></Condition></Conditions><PrimaryAction>5</PrimaryAction></NewActionRule></AddActionRule></soap:Body></soap:Envelope>

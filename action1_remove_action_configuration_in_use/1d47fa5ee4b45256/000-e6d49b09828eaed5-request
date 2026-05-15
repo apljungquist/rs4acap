@@ -1,0 +1,4 @@
+POST vapix/services
+Content-Type: application/soap+xml; charset=utf-8
+
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Body><AddActionConfiguration xmlns="http://www.axis.com/vapix/ws/action1"><NewActionConfiguration><TemplateToken>com.axis.action.fixed.ledcontrol</TemplateToken><Parameters><Parameter Name="led" Value="statusled"/><Parameter Name="color" Value="green,none"/><Parameter Name="duration" Value="1"/><Parameter Name="interval" Value="250"/></Parameters></NewActionConfiguration></AddActionConfiguration></soap:Body></soap:Envelope>
