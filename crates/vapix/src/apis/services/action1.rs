@@ -6,9 +6,9 @@ mod action_rules;
 
 pub use action_configurations::{
     AddActionConfigurationRequest, AddActionConfigurationResponse, GetActionConfigurationsRequest,
-    GetActionConfigurationsResponse,
+    GetActionConfigurationsResponse, RemoveActionConfigurationRequest,
 };
 pub use action_rules::{
     AddActionRuleRequest, AddActionRuleResponse, Condition, GetActionRulesRequest,
-    GetActionRulesResponse,
+    GetActionRulesResponse, RemoveActionRuleRequest,
 };

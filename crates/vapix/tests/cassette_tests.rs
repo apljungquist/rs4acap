@@ -6,7 +6,11 @@ use log::{warn, LevelFilter};
 use rs4a_cassette_testing::{Cassette, CassetteClient, DeviceInfo, Library};
 use rs4a_vapix::{
     apis::{
-        action1::{GetActionConfigurationsRequest, GetActionRulesRequest},
+        action1::{
+            AddActionConfigurationRequest, AddActionRuleRequest, Condition,
+            GetActionConfigurationsRequest, GetActionRulesRequest,
+            RemoveActionConfigurationRequest, RemoveActionRuleRequest,
+        },
         api_discovery_1::{Api, ApiListData, GetApiListRequest},
         basic_device_info_1::{
             GetAllPropertiesRequest, GetAllUnrestrictedPropertiesRequest, ProductType,
@@ -125,8 +129,13 @@ macro_rules! cassette_tests {
 }
 
 cassette_tests! {
+    action1_action_rule_crud,
+    action1_add_action_rule_invalid_condition,
+    action1_add_action_rule_unknown_configuration,
     action1_get_action_configurations,
     action1_get_action_rules,
+    action1_remove_action_configuration_unknown,
+    action1_remove_action_rule_unknown,
     api_discovery_1_get_api_list,
     api_discovery_1_get_supported_versions,
     network_settings_1_get_network_info => [
@@ -360,6 +369,164 @@ async fn action1_get_action_configurations(client: &CassetteClient, _prelude: Op
 
 async fn action1_get_action_rules(client: &CassetteClient, _prelude: Option<Prelude>) {
     GetActionRulesRequest.send(client).await.unwrap();
+}
+
+async fn add_status_led_configuration(client: &CassetteClient) -> u16 {
+    AddActionConfigurationRequest::new("com.axis.action.fixed.ledcontrol")
+        .param("led", "statusled")
+        .param("color", "green,none")
+        .param("duration", "1")
+        .param("interval", "250")
+        .send(client)
+        .await
+        .unwrap()
+        .configuration_id
+}
+
+// The instability of `GetActionRulesResponse.action_rules` hides when devices are equivalent.
+// Furthermore, that different devices likely have different action rules hides when create and
+// remove have equivalent behavior.
+// TODO: Consider finding a way around these shortcomings
+async fn action1_action_rule_crud(client: &CassetteClient, _prelude: Option<Prelude>) {
+    let configuration_id = add_status_led_configuration(client).await;
+
+    let rule_id = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
+        .condition(Condition {
+            topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
+            message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+        })
+        .send(client)
+        .await
+        .unwrap()
+        .id;
+
+    let rules = GetActionRulesRequest::new()
+        .send(client)
+        .await
+        .unwrap()
+        .action_rules
+        .action_rule;
+    assert!(rules.iter().any(|r| r.rule_id == rule_id));
+
+    RemoveActionRuleRequest::new(rule_id)
+        .send(client)
+        .await
+        .unwrap();
+
+    let rules = GetActionRulesRequest::new()
+        .send(client)
+        .await
+        .unwrap()
+        .action_rules
+        .action_rule;
+    assert!(!rules.iter().any(|r| r.rule_id == rule_id));
+
+    RemoveActionConfigurationRequest::new(configuration_id)
+        .send(client)
+        .await
+        .unwrap();
+}
+
+async fn action1_add_action_rule_invalid_condition(
+    client: &CassetteClient,
+    _prelude: Option<Prelude>,
+) {
+    let configuration_id = add_status_led_configuration(client).await;
+
+    // ObjectAnalytics topics are only declared once the ACAP app is running, so on a
+    // device where it has not yet started this condition cannot be matched.
+    let error = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
+        .condition(Condition {
+            topic_expression:
+                "tnsaxis:CameraApplicationPlatform/ObjectAnalytics/Device1ScenarioANY".to_string(),
+            message_content: r#"boolean(//SimpleItem[@Name="active" and @Value="1"])"#.to_string(),
+        })
+        .send(client)
+        .await
+        .unwrap_err();
+
+    // SOAP faults currently surface as decode errors because the helper does not parse
+    // `SOAP-ENV:Fault` distinctly from the success response shape.
+    // TODO: Propagate the correct, structured error
+    let http::Error::Decode(error) = error else {
+        panic!("Expected Decode error but got {error:?}");
+    };
+    assert!(
+        format!("{error:?}").contains("could not match any property events"),
+        "Unexpected error: {error:?}"
+    );
+
+    RemoveActionConfigurationRequest::new(configuration_id)
+        .send(client)
+        .await
+        .unwrap();
+}
+
+async fn action1_add_action_rule_unknown_configuration(
+    client: &CassetteClient,
+    _prelude: Option<Prelude>,
+) {
+    // No configuration is created — on a freshly initialised device any positive ID is unknown.
+    let error = AddActionRuleRequest::new("cassette test rule".to_string(), 9999)
+        .condition(Condition {
+            topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
+            message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+        })
+        .send(client)
+        .await
+        .unwrap_err();
+
+    // SOAP faults currently surface as decode errors because the helper does not parse
+    // `SOAP-ENV:Fault` distinctly from the success response shape.
+    // TODO: Propagate the correct, structured error
+    let http::Error::Decode(error) = error else {
+        panic!("Expected Decode error but got {error:?}");
+    };
+    assert!(
+        format!("{error:?}").contains("action configuration"),
+        "Unexpected error: {error:?}"
+    );
+}
+
+async fn action1_remove_action_configuration_unknown(
+    client: &CassetteClient,
+    _prelude: Option<Prelude>,
+) {
+    let error = RemoveActionConfigurationRequest::new(9999)
+        .send(client)
+        .await
+        .unwrap_err();
+
+    // SOAP faults currently surface as decode errors because the helper does not parse
+    // `SOAP-ENV:Fault` distinctly from the success response shape. The `<SOAP-ENV:Reason>`
+    // text is empty for this fault, so match on the WSDL-declared detail element name.
+    // TODO: Propagate the correct, structured error
+    let http::Error::Decode(error) = error else {
+        panic!("Expected Decode error but got {error:?}");
+    };
+    assert!(
+        format!("{error:?}").contains("ActionConfigurationNotFoundFault"),
+        "Unexpected error: {error:?}"
+    );
+}
+
+async fn action1_remove_action_rule_unknown(client: &CassetteClient, _prelude: Option<Prelude>) {
+    let error = RemoveActionRuleRequest::new(9999)
+        .send(client)
+        .await
+        .unwrap_err();
+
+    // SOAP faults currently surface as decode errors because the helper does not parse
+    // `SOAP-ENV:Fault` distinctly from the success response shape. Matching on the
+    // WSDL-declared detail element name is more reliable than the human-readable reason.
+    // TODO: Propagate the correct, structured error
+    let http::Error::Decode(error) = error else {
+        panic!("Expected Decode error but got {error:?}");
+    };
+    assert!(
+        format!("{error:?}").contains("ActionRuleNotFoundFault"),
+        "Unexpected error: {error:?}"
+    );
 }
 
 async fn api_discovery_1_get_api_list(client: &CassetteClient, _: Option<Prelude>) {
