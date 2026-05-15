@@ -130,10 +130,16 @@ macro_rules! cassette_tests {
 
 cassette_tests! {
     action1_action_rule_crud,
+    action1_add_action_configuration_parameters_mismatch,
+    action1_add_action_configuration_unknown_template,
     action1_add_action_rule_invalid_condition,
+    action1_add_action_rule_invalid_message_content,
+    action1_add_action_rule_invalid_topic,
+    action1_add_action_rule_no_activation,
     action1_add_action_rule_unknown_configuration,
     action1_get_action_configurations,
     action1_get_action_rules,
+    action1_remove_action_configuration_in_use,
     action1_remove_action_configuration_unknown,
     action1_remove_action_rule_unknown,
     api_discovery_1_get_api_list,
@@ -519,6 +525,161 @@ async fn action1_remove_action_rule_unknown(client: &CassetteClient, _prelude: O
         format!("{error:?}").contains("ActionRuleNotFoundFault"),
         "Unexpected error: {error:?}"
     );
+}
+
+async fn action1_add_action_configuration_parameters_mismatch(
+    client: &CassetteClient,
+    _prelude: Option<Prelude>,
+) {
+    // Omitting the required `led` parameter for the ledcontrol template.
+    let error = AddActionConfigurationRequest::new("com.axis.action.fixed.ledcontrol")
+        .param("color", "green,none")
+        .param("duration", "1")
+        .param("interval", "250")
+        .send(client)
+        .await
+        .unwrap_err();
+
+    // TODO: Propagate the correct, structured error
+    // Note: WSDL spells the element with a double `s` (`ParametersMissmatchFault`).
+    let error = error.unwrap_decode();
+    assert!(
+        format!("{error:?}").contains("ParametersMissmatchFault"),
+        "Unexpected error: {error:?}"
+    );
+}
+
+async fn action1_add_action_configuration_unknown_template(
+    client: &CassetteClient,
+    _prelude: Option<Prelude>,
+) {
+    let error = AddActionConfigurationRequest::new("com.bogus.nonexistent")
+        .send(client)
+        .await
+        .unwrap_err();
+
+    // TODO: Propagate the correct, structured error
+    let error = error.unwrap_decode();
+    assert!(
+        format!("{error:?}").contains("ActionTemplateNotFoundFault"),
+        "Unexpected error: {error:?}"
+    );
+}
+
+async fn action1_add_action_rule_invalid_message_content(
+    client: &CassetteClient,
+    _prelude: Option<Prelude>,
+) {
+    let configuration_id = add_status_led_configuration(client).await;
+
+    let error = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
+        .condition(Condition {
+            topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
+            message_content: "not[valid[xpath".to_string(),
+        })
+        .send(client)
+        .await
+        .unwrap_err();
+
+    // TODO: Propagate the correct, structured error
+    let error = error.unwrap_decode();
+    assert!(
+        format!("{error:?}").contains("InvalidMessageContentExpressionFault"),
+        "Unexpected error: {error:?}"
+    );
+
+    RemoveActionConfigurationRequest::new(configuration_id)
+        .send(client)
+        .await
+        .unwrap();
+}
+
+async fn action1_add_action_rule_invalid_topic(client: &CassetteClient, _prelude: Option<Prelude>) {
+    let configuration_id = add_status_led_configuration(client).await;
+
+    let error = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
+        .condition(Condition {
+            topic_expression: "definitely not a topic !@#$".to_string(),
+            message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+        })
+        .send(client)
+        .await
+        .unwrap_err();
+
+    // TODO: Propagate the correct, structured error
+    let error = error.unwrap_decode();
+    assert!(
+        format!("{error:?}").contains("InvalidTopicExpressionFault"),
+        "Unexpected error: {error:?}"
+    );
+
+    RemoveActionConfigurationRequest::new(configuration_id)
+        .send(client)
+        .await
+        .unwrap();
+}
+
+async fn action1_add_action_rule_no_activation(client: &CassetteClient, _prelude: Option<Prelude>) {
+    let configuration_id = add_status_led_configuration(client).await;
+
+    // Neither `<Conditions>` (no `.condition()` calls) nor a `<StartEvent>` — per the WSDL the
+    // server should reject a rule that can never fire.
+    let error = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
+        .send(client)
+        .await
+        .unwrap_err();
+
+    // The device responds with a generic `ter:InvalidArgs` fault rather than the WSDL-declared
+    // `InsufficientActivationRuleFault`, so match on the detail text instead.
+    // TODO: Propagate the correct, structured error
+    let error = error.unwrap_decode();
+    assert!(
+        format!("{error:?}").contains("occurrence violation in element Conditions"),
+        "Unexpected error: {error:?}"
+    );
+
+    RemoveActionConfigurationRequest::new(configuration_id)
+        .send(client)
+        .await
+        .unwrap();
+}
+
+async fn action1_remove_action_configuration_in_use(
+    client: &CassetteClient,
+    _prelude: Option<Prelude>,
+) {
+    let configuration_id = add_status_led_configuration(client).await;
+
+    let rule_id = AddActionRuleRequest::new("cassette test rule".to_string(), configuration_id)
+        .condition(Condition {
+            topic_expression: "tns1:Device/tnsaxis:Status/SystemReady".to_string(),
+            message_content: r#"boolean(//SimpleItem[@Name="ready" and @Value="1"])"#.to_string(),
+        })
+        .send(client)
+        .await
+        .unwrap()
+        .id;
+
+    let error = RemoveActionConfigurationRequest::new(configuration_id)
+        .send(client)
+        .await
+        .unwrap_err();
+
+    // TODO: Propagate the correct, structured error
+    let error = error.unwrap_decode();
+    assert!(
+        format!("{error:?}").contains("ActionConfigurationIsInUseFault"),
+        "Unexpected error: {error:?}"
+    );
+
+    RemoveActionRuleRequest::new(rule_id)
+        .send(client)
+        .await
+        .unwrap();
+    RemoveActionConfigurationRequest::new(configuration_id)
+        .send(client)
+        .await
+        .unwrap();
 }
 
 async fn api_discovery_1_get_api_list(client: &CassetteClient, _: Option<Prelude>) {
