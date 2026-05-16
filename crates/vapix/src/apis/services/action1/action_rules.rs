@@ -1,11 +1,8 @@
-use std::convert::Infallible;
-
-use anyhow::Context;
-use serde::{de::IgnoredAny, Deserialize};
+use serde::Deserialize;
 
 use crate::{
     http::{HttpClient, Request},
-    protocol_helpers::{http::Error, soap, soap_http, soap_http::SoapResponse},
+    protocol_helpers::{http::Error, soap, soap_http},
 };
 
 const PATH: &str = "vapix/services";
@@ -82,7 +79,7 @@ impl AddActionRuleRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<AddActionRuleResponse, Error<Infallible>> {
+    ) -> Result<AddActionRuleResponse, Error<soap::Error>> {
         let request =
             Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
         soap_http::send_request(client, request).await
@@ -113,36 +110,18 @@ impl RemoveActionRuleRequest {
         soap::envelope(NAMESPACE, "RemoveActionRule", Some(&params))
     }
 
-    pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<(), Error<Infallible>> {
+    pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<(), Error<soap::Error>> {
         let request =
             Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
-        let RemoveActionRuleResponse = soap_http::send_request(client, request).await?;
+        let RemoveActionRuleResponse::Ok = soap_http::send_request(client, request).await?;
         Ok(())
     }
 }
 
-struct RemoveActionRuleResponse;
-
-// TODO: Consider making the `aa:RemoveActionRuleResponse` tag available to deserialization
-impl SoapResponse for RemoveActionRuleResponse {
-    fn from_envelope(s: &str) -> anyhow::Result<Self> {
-        // The body is empty, but the wrapper element must still be present and must be
-        // `RemoveActionRuleResponse` — anything else (e.g. a `SOAP-ENV:Fault`) should fail.
-        #[derive(Deserialize)]
-        #[serde(rename_all = "PascalCase")]
-        struct Envelope {
-            #[allow(dead_code, reason = "Required for shape validation")]
-            body: Body,
-        }
-        #[derive(Deserialize)]
-        struct Body {
-            #[serde(rename = "RemoveActionRuleResponse")]
-            _inner: IgnoredAny,
-        }
-        let Envelope { .. } = quick_xml::de::from_str(s)
-            .with_context(|| format!("Could not parse text; text: {s}"))?;
-        Ok(Self)
-    }
+#[derive(Deserialize)]
+enum RemoveActionRuleResponse {
+    #[serde(rename = "RemoveActionRuleResponse")]
+    Ok,
 }
 
 #[derive(Debug, Deserialize)]
@@ -198,7 +177,7 @@ impl GetActionRulesRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<GetActionRulesResponse, Error<Infallible>> {
+    ) -> Result<GetActionRulesResponse, Error<soap::Error>> {
         let request =
             Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
         soap_http::send_request(client, request).await
@@ -215,21 +194,21 @@ mod tests {
     #[test]
     fn can_deserialize_add_action_rule_200_response() {
         let text = include_str!("examples/add_action_rule_200_response.xml");
-        let data = parse_soap::<AddActionRuleResponse>(text).unwrap();
+        let data = parse_soap::<AddActionRuleResponse>(text).unwrap().unwrap();
         assert_eq!(1, data.id);
     }
 
     #[test]
     fn can_deserialize_get_action_rules_200_empty_response() {
         let text = include_str!("examples/get_action_rules_200_empty.xml");
-        let data = parse_soap::<GetActionRulesResponse>(text).unwrap();
+        let data = parse_soap::<GetActionRulesResponse>(text).unwrap().unwrap();
         assert!(data.action_rules.action_rule.is_empty());
     }
 
     #[test]
     fn can_deserialize_get_action_rules_200_response_with_conditions() {
         let text = include_str!("examples/get_action_rules_200_conditions.xml");
-        let data = parse_soap::<GetActionRulesResponse>(text).unwrap();
+        let data = parse_soap::<GetActionRulesResponse>(text).unwrap().unwrap();
         expect![[r#"
             ActionRules {
                 action_rule: [
@@ -258,7 +237,7 @@ mod tests {
     #[test]
     fn can_deserialize_get_action_rules_200_response_with_start_event() {
         let text = include_str!("examples/get_action_rules_200_start_event.xml");
-        let data = parse_soap::<GetActionRulesResponse>(text).unwrap();
+        let data = parse_soap::<GetActionRulesResponse>(text).unwrap().unwrap();
         expect![[r#"
             ActionRules {
                 action_rule: [

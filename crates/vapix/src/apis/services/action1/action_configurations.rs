@@ -1,11 +1,8 @@
-use std::convert::Infallible;
-
-use anyhow::Context;
-use serde::{de::IgnoredAny, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     http::{HttpClient, Request},
-    protocol_helpers::{http::Error, soap, soap_http, soap_http::SoapResponse},
+    protocol_helpers::{http::Error, soap, soap_http},
 };
 
 const PATH: &str = "vapix/services";
@@ -82,7 +79,7 @@ impl AddActionConfigurationRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<AddActionConfigurationResponse, Error<Infallible>> {
+    ) -> Result<AddActionConfigurationResponse, Error<soap::Error>> {
         let envelope = self.try_into_envelope().map_err(Error::Request)?;
         let request = Request::new(reqwest::Method::POST, PATH.to_string()).soap(envelope);
         soap_http::send_request(client, request).await
@@ -106,36 +103,22 @@ impl RemoveActionConfigurationRequest {
         soap::envelope(NAMESPACE, "RemoveActionConfiguration", Some(&params))
     }
 
-    pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<(), Error<Infallible>> {
+    pub async fn send(self, client: &(impl HttpClient + Sync)) -> Result<(), Error<soap::Error>> {
         let request =
             Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
-        let RemoveActionConfigurationResponse = soap_http::send_request(client, request).await?;
+        let RemoveActionConfigurationResponse::Ok =
+            soap_http::send_request(client, request).await?;
         Ok(())
     }
 }
 
-struct RemoveActionConfigurationResponse;
-
-// TODO: Consider making the `aa:RemoveActionConfigurationResponse` tag available to deserialization
-impl SoapResponse for RemoveActionConfigurationResponse {
-    fn from_envelope(s: &str) -> anyhow::Result<Self> {
-        // The body is empty, but the wrapper element must still be present and must be
-        // `RemoveActionConfigurationResponse` — anything else (e.g. a `SOAP-ENV:Fault`) should fail.
-        #[derive(Deserialize)]
-        #[serde(rename_all = "PascalCase")]
-        struct Envelope {
-            #[allow(dead_code, reason = "Required for shape validation")]
-            body: Body,
-        }
-        #[derive(Deserialize)]
-        struct Body {
-            #[serde(rename = "RemoveActionConfigurationResponse")]
-            _inner: IgnoredAny,
-        }
-        let Envelope { .. } = quick_xml::de::from_str(s)
-            .with_context(|| format!("Could not parse text; text: {s}"))?;
-        Ok(Self)
-    }
+// quick-xml-de matches enum variant names (after `#[serde(rename)]`) against the XML
+// element name, giving us strict body-child-name validation through the blanket
+// `SoapResponse for T: Deserialize` impl.
+#[derive(Debug, Deserialize)]
+enum RemoveActionConfigurationResponse {
+    #[serde(rename = "RemoveActionConfigurationResponse")]
+    Ok,
 }
 
 #[derive(Debug, Deserialize)]
@@ -191,7 +174,7 @@ impl GetActionConfigurationsRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<GetActionConfigurationsResponse, Error<Infallible>> {
+    ) -> Result<GetActionConfigurationsResponse, Error<soap::Error>> {
         let request =
             Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
         soap_http::send_request(client, request).await
@@ -206,14 +189,18 @@ mod tests {
     #[test]
     fn can_deserialize_add_action_configuration_response() {
         let text = include_str!("examples/add_action_configuration_response.xml");
-        let data = parse_soap::<AddActionConfigurationResponse>(text).unwrap();
+        let data = parse_soap::<AddActionConfigurationResponse>(text)
+            .unwrap()
+            .unwrap();
         assert_eq!(1, data.configuration_id);
     }
 
     #[test]
     fn can_deserialize_get_action_configurations_response() {
         let text = include_str!("examples/get_action_configurations_200_response.xml");
-        let data = parse_soap::<GetActionConfigurationsResponse>(text).unwrap();
+        let data = parse_soap::<GetActionConfigurationsResponse>(text)
+            .unwrap()
+            .unwrap();
         assert_eq!(0, data.action_configurations.action_configuration.len());
     }
 }

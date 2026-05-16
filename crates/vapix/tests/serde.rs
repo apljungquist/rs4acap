@@ -23,7 +23,9 @@ use rs4a_vapix::{
 fn can_deserialize_action_1_examples() {
     let text =
         include_str!("../src/apis/services/action1/examples/add_action_configuration_response.xml");
-    let data = parse_soap::<AddActionConfigurationResponse>(text).unwrap();
+    let data = parse_soap::<AddActionConfigurationResponse>(text)
+        .unwrap()
+        .unwrap();
     assert_eq!(data.configuration_id, 1);
 }
 

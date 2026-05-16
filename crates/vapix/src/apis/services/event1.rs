@@ -2,8 +2,6 @@
 //!
 //! [event service API]: https://developer.axis.com/vapix/network-video/event-and-action-services
 
-use std::convert::Infallible;
-
 use quick_xml::{events::Event, Reader};
 
 use crate::{
@@ -23,7 +21,7 @@ pub struct EventInstances {
 }
 
 impl SoapResponse for EventInstances {
-    fn from_envelope(s: &str) -> anyhow::Result<Self> {
+    fn from_envelope(s: &str) -> anyhow::Result<Result<Self, soap::Error>> {
         let mut message_instances = Vec::new();
         let mut reader = Reader::from_str(s);
         let mut stack: Vec<String> = Vec::new();
@@ -54,7 +52,7 @@ impl SoapResponse for EventInstances {
             }
             buf.clear();
         }
-        Ok(Self { message_instances })
+        Ok(Ok(Self { message_instances }))
     }
 }
 
@@ -77,7 +75,7 @@ impl GetEventInstancesRequest {
     pub async fn send(
         self,
         client: &(impl HttpClient + Sync),
-    ) -> Result<EventInstances, Error<Infallible>> {
+    ) -> Result<EventInstances, Error<soap::Error>> {
         let request =
             Request::new(reqwest::Method::POST, PATH.to_string()).soap(self.into_envelope());
         soap_http::send_request(client, request).await

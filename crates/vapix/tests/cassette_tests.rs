@@ -451,14 +451,8 @@ async fn action1_add_action_rule_invalid_condition(
         .await
         .unwrap_err();
 
-    // SOAP faults currently surface as decode errors because the helper does not parse
-    // `SOAP-ENV:Fault` distinctly from the success response shape.
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("could not match any property events"),
-        "Unexpected error: {error:?}"
-    );
+    let error = error.unwrap_service();
+    assert_eq!(error.detail, "InvalidConditionFilterFault");
 
     RemoveActionConfigurationRequest::new(configuration_id)
         .send(client)
@@ -480,14 +474,8 @@ async fn action1_add_action_rule_unknown_configuration(
         .await
         .unwrap_err();
 
-    // SOAP faults currently surface as decode errors because the helper does not parse
-    // `SOAP-ENV:Fault` distinctly from the success response shape.
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("action configuration"),
-        "Unexpected error: {error:?}"
-    );
+    let error = error.unwrap_service();
+    assert_eq!(error.detail, "ActionConfigurationNotFoundFault");
 }
 
 async fn action1_remove_action_configuration_unknown(
@@ -499,15 +487,8 @@ async fn action1_remove_action_configuration_unknown(
         .await
         .unwrap_err();
 
-    // SOAP faults currently surface as decode errors because the helper does not parse
-    // `SOAP-ENV:Fault` distinctly from the success response shape. The `<SOAP-ENV:Reason>`
-    // text is empty for this fault, so match on the WSDL-declared detail element name.
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("ActionConfigurationNotFoundFault"),
-        "Unexpected error: {error:?}"
-    );
+    let error = error.unwrap_service();
+    assert_eq!(error.detail, "ActionConfigurationNotFoundFault");
 }
 
 async fn action1_remove_action_rule_unknown(client: &CassetteClient, _prelude: Option<Prelude>) {
@@ -516,15 +497,8 @@ async fn action1_remove_action_rule_unknown(client: &CassetteClient, _prelude: O
         .await
         .unwrap_err();
 
-    // SOAP faults currently surface as decode errors because the helper does not parse
-    // `SOAP-ENV:Fault` distinctly from the success response shape. Matching on the
-    // WSDL-declared detail element name is more reliable than the human-readable reason.
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("ActionRuleNotFoundFault"),
-        "Unexpected error: {error:?}"
-    );
+    let error = error.unwrap_service();
+    assert_eq!(error.detail, "ActionRuleNotFoundFault");
 }
 
 async fn action1_add_action_configuration_parameters_mismatch(
@@ -540,13 +514,9 @@ async fn action1_add_action_configuration_parameters_mismatch(
         .await
         .unwrap_err();
 
-    // TODO: Propagate the correct, structured error
     // Note: WSDL spells the element with a double `s` (`ParametersMissmatchFault`).
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("ParametersMissmatchFault"),
-        "Unexpected error: {error:?}"
-    );
+    let error = error.unwrap_service();
+    assert_eq!(error.detail, "ParametersMissmatchFault");
 }
 
 async fn action1_add_action_configuration_unknown_template(
@@ -558,12 +528,8 @@ async fn action1_add_action_configuration_unknown_template(
         .await
         .unwrap_err();
 
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("ActionTemplateNotFoundFault"),
-        "Unexpected error: {error:?}"
-    );
+    let error = error.unwrap_service();
+    assert_eq!(error.detail, "ActionTemplateNotFoundFault");
 }
 
 async fn action1_add_action_rule_invalid_message_content(
@@ -581,12 +547,8 @@ async fn action1_add_action_rule_invalid_message_content(
         .await
         .unwrap_err();
 
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("InvalidMessageContentExpressionFault"),
-        "Unexpected error: {error:?}"
-    );
+    let error = error.unwrap_service();
+    assert_eq!(error.detail, "InvalidMessageContentExpressionFault");
 
     RemoveActionConfigurationRequest::new(configuration_id)
         .send(client)
@@ -606,12 +568,8 @@ async fn action1_add_action_rule_invalid_topic(client: &CassetteClient, _prelude
         .await
         .unwrap_err();
 
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("InvalidTopicExpressionFault"),
-        "Unexpected error: {error:?}"
-    );
+    let error = error.unwrap_service();
+    assert_eq!(error.detail, "InvalidTopicExpressionFault");
 
     RemoveActionConfigurationRequest::new(configuration_id)
         .send(client)
@@ -630,13 +588,9 @@ async fn action1_add_action_rule_no_activation(client: &CassetteClient, _prelude
         .unwrap_err();
 
     // The device responds with a generic `ter:InvalidArgs` fault rather than the WSDL-declared
-    // `InsufficientActivationRuleFault`, so match on the detail text instead.
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("occurrence violation in element Conditions"),
-        "Unexpected error: {error:?}"
-    );
+    // `InsufficientActivationRuleFault`, so the detail element is just `Text`.
+    let error = error.unwrap_service();
+    assert_eq!(error.detail, "Text");
 
     RemoveActionConfigurationRequest::new(configuration_id)
         .send(client)
@@ -665,12 +619,8 @@ async fn action1_remove_action_configuration_in_use(
         .await
         .unwrap_err();
 
-    // TODO: Propagate the correct, structured error
-    let error = error.unwrap_decode();
-    assert!(
-        format!("{error:?}").contains("ActionConfigurationIsInUseFault"),
-        "Unexpected error: {error:?}"
-    );
+    let error = error.unwrap_service();
+    assert_eq!(error.detail, "ActionConfigurationIsInUseFault");
 
     RemoveActionRuleRequest::new(rule_id)
         .send(client)
