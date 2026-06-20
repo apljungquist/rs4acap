@@ -1,17 +1,31 @@
 //! A drop-in replacement for the acap-build python script
 use std::{
-    env,
     fmt::{Display, Formatter},
     fs,
     path::PathBuf,
     process::Command,
 };
 
-use acap_build::{AppBuilder, Architecture};
+use acap_build::AppBuilder;
 use anyhow::Context;
 use clap::{Parser, ValueEnum};
 use log::debug;
 use tempdir::TempDir;
+
+#[derive(Clone, Copy, Debug, ValueEnum)]
+pub enum Architecture {
+    Aarch64,
+    Armv7hf,
+}
+
+impl From<Architecture> for acap_build::Architecture {
+    fn from(value: Architecture) -> Self {
+        match value {
+            Architecture::Aarch64 => Self::Aarch64,
+            Architecture::Armv7hf => Self::Armv7hf,
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, ValueEnum)]
 #[clap(rename_all = "kebab-case")]
@@ -43,6 +57,8 @@ struct Cli {
     /// May be specified multiple times
     #[clap(long, short)]
     additional_file: Vec<PathBuf>,
+    #[clap(long, env = "OECORE_TARGET_ARCH")]
+    oecore_target_arch: Architecture,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -53,6 +69,7 @@ fn main() -> anyhow::Result<()> {
         build,
         manifest,
         additional_file,
+        oecore_target_arch,
     } = Cli::parse();
     match build {
         BuildOption::Make => assert!(Command::new("make")
@@ -64,11 +81,15 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    let arch: Architecture = env::var("OECORE_TARGET_ARCH")?.parse()?;
     let manifest = path.join(&manifest);
 
     let staging_dir = TempDir::new_in(&path, "acap-build")?;
-    let mut builder = AppBuilder::new(true, staging_dir.path(), &manifest, arch)?;
+    let mut builder = AppBuilder::new(
+        true,
+        staging_dir.path(),
+        &manifest,
+        oecore_target_arch.into(),
+    )?;
 
     for name in builder.mandatory_files() {
         builder.add(&path.join(name))?;
