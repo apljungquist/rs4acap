@@ -53,6 +53,7 @@ check_format_rs:
 ## _
 check_generated_files: \
 	Cargo.lock \
+	snapshots/acap-build-docs \
 	snapshots/cli4a-docs \
 	snapshots/device-finder-docs \
 	snapshots/device-inventory-docs \
@@ -74,12 +75,22 @@ check_lint:
 		-Dwarnings
 .PHONY: check_lint
 
+# I have a vague memory of cassettes being less reproducible when order is preserved because the
+# server returns JSON with inconsistent field ordering. So when I ran into ordering issues due
+# to workspace feature unification I took a shortcut and split the test execution.
+# TODO: Investigate if cassette tests can be made to run with `serde_json/preserve_order`
+
 ## _
 check_tests:
 	cargo test \
 		--all-targets \
 		--locked \
-		--workspace
+		--workspace \
+		--exclude acap-build
+	cargo test \
+		--all-targets \
+		--locked \
+		-p acap-build
 .PHONY: check_tests
 
 ## Fixes

@@ -1,0 +1,15 @@
++ acap-build -h
+Usage: acap-build [OPTIONS] <PATH>
+
+Arguments:
+  <PATH>  
+
+Options:
+  -b, --build <BUILD>
+          Build tool, if any, to run before packaging [default: make] [possible values: make, no-build]
+  -m, --manifest <MANIFEST>
+          Location of the manifest relative to the path argument [default: manifest.json]
+  -a, --additional-file <ADDITIONAL_FILE>
+          Additional files to include in the package. May be specified multiple times
+  -h, --help
+          Print help
