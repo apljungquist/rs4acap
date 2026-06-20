@@ -279,6 +279,7 @@ impl<'a> AppBuilder<'a> {
             app_name,
             ..
         } = &self;
+        // TODO: Consider pushing environment variable fetching to dependant
         let mtime = match env::var_os("SOURCE_DATE_EPOCH") {
             Some(v) => v.into_string().map_err(|e| anyhow!("{e:?}"))?,
             None => String::from_utf8(Command::new("date").arg("+%s").output()?.stdout)?,

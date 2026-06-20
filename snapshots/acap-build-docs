@@ -1,5 +1,5 @@
 + acap-build -h
-Usage: acap-build [OPTIONS] <PATH>
+Usage: acap-build [OPTIONS] --oecore-target-arch <OECORE_TARGET_ARCH> <PATH>
 
 Arguments:
   <PATH>  
@@ -11,5 +11,7 @@ Options:
           Location of the manifest relative to the path argument [default: manifest.json]
   -a, --additional-file <ADDITIONAL_FILE>
           Additional files to include in the package. May be specified multiple times
+      --oecore-target-arch <OECORE_TARGET_ARCH>
+          [env: OECORE_TARGET_ARCH=] [possible values: aarch64, armv7hf]
   -h, --help
           Print help
