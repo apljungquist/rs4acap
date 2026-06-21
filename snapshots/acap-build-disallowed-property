@@ -1,0 +1,7 @@
++ acap-build --build no-build .
+Error: validating manifest against schema
+
+Caused by:
+    Manifest failed schema validation:
+    - Additional properties are not allowed ('unexpectedField' was unexpected) (at schema root)
++ :

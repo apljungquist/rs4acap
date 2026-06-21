@@ -36,7 +36,8 @@
           rustc = rustToolchain;
           cargo = rustToolchain;
         };
-        buildWorkspaceMember = dir: pkgs.callPackage ./default.nix { inherit rustPlatform dir; };
+        buildWorkspaceMember = dir: pkgs.callPackage ./nix/default.nix { inherit rustPlatform dir; };
+        acap-native-sdk = pkgs.callPackage ./nix/acap-native-sdk.nix { };
       in
       {
 
@@ -45,6 +46,7 @@
         checks = self.packages.${system};
 
         packages = {
+          inherit acap-native-sdk;
           cli4a = buildWorkspaceMember "cli4a";
           device-finder = buildWorkspaceMember "device-finder";
           device-inventory = buildWorkspaceMember "device-inventory";
@@ -68,6 +70,9 @@
             export PATH="$PATH:$HOME/.cargo/bin"
             # Tell rust-analyzer where to find the standard library
             export RUST_SRC_PATH="${rustToolchain}/lib/rustlib/src/rust/library"
+            # Some aspects of the SDK are known to break when extracted to a location different from `/opt/axis`:
+            # - `acap-build`
+            export ACAP_SDK_LOCATION="${acap-native-sdk}"
           '';
         };
       }

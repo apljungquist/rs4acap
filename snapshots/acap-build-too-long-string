@@ -1,0 +1,7 @@
++ acap-build --build no-build .
+Error: validating manifest against schema
+
+Caused by:
+    Manifest failed schema validation:
+    - "validation_should_reject_long_app_names" is longer than 26 characters (at /acapPackageConf/setup/appName)
++ :

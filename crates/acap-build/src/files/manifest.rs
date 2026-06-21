@@ -48,6 +48,10 @@ impl Manifest {
         Ok(manifest)
     }
 
+    pub(crate) fn as_value(&self) -> &Value {
+        &self.0
+    }
+
     pub(crate) fn as_object(&self) -> json_ext::Result<&Map<String, Value>> {
         self.0.try_to_object()
     }

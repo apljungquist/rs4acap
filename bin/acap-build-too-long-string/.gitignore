@@ -1,0 +1,8 @@
+package.conf
+package.conf.orig
+param.conf
+*.eap
+*.eap.old
+*_LICENSE.txt
+tmp*
+target/

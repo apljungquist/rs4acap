@@ -32,6 +32,9 @@ impl RunWith for std::process::Command {
         self.stdout(std::process::Stdio::piped());
         debug!("Spawning child {self:#?}...");
         let mut child = spawn(self)?;
+        // PANICS:
+        // `expect` will never panic because we configured `Stdio::piped()` above, so the child
+        // has a stdout handle, and this function is the only place that takes it.
         let stdout = child
             .stdout
             .take()

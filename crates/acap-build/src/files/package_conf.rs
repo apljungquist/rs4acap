@@ -35,6 +35,8 @@ impl PackageConf {
             .collect();
 
         let flat_manifest = flattened(manifest.as_object()?.clone());
+        // PANICS:
+        // `expect` will never panic because the regex is a hard-coded literal known to be valid.
         let valid_vendor_url =
             Regex::new("(?:(?:http|https)://)?(.+)").expect("Hard-coded regex is valid");
         for (path, value) in flat_manifest {
@@ -55,6 +57,9 @@ impl PackageConf {
                     let Some(caps) = valid_vendor_url.captures(v) else {
                         bail!("Expected vendor url to match regex {:?}", valid_vendor_url)
                     };
+                    // PANICS:
+                    // `expect` will never panic because the hard-coded regex has a non-optional
+                    // capture group 1, which any successful match populates.
                     let domain_name = caps
                         .get(1)
                         .expect("Hard coded regex as exactly one capture group")
