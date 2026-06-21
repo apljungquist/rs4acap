@@ -1,0 +1,14 @@
+{
+    "schemaVersion": "1.7.1",
+    "unexpectedField": "validation should reject additional properties",
+    "acapPackageConf": {
+        "setup": {
+            "appName": "my_app",
+            "embeddedSdkVersion": "3.0",
+            "runMode": "never",
+            "user": { "group": "sdk", "username": "sdk" },
+            "vendor": "Test",
+            "version": "1.0.0"
+        }
+    }
+}

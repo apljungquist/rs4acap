@@ -11,7 +11,11 @@ Options:
           Location of the manifest relative to the path argument [default: manifest.json]
   -a, --additional-file <ADDITIONAL_FILE>
           Additional files to include in the package. May be specified multiple times
+      --disable-manifest-validation
+          Disable validation of manifest file against manifest schema
       --oecore-target-arch <OECORE_TARGET_ARCH>
           [env: OECORE_TARGET_ARCH=] [possible values: aarch64, armv7hf]
+      --acap-sdk-location <ACAP_SDK_LOCATION>
+          [env: ACAP_SDK_LOCATION=] [default: /opt/axis/]
   -h, --help
           Print help

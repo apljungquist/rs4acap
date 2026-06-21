@@ -6,7 +6,7 @@ use std::{
     process::Command,
 };
 
-use acap_build::AppBuilder;
+use acap_build::{AppBuilder, SchemaSource};
 use anyhow::Context;
 use clap::{Parser, ValueEnum};
 use log::debug;
@@ -57,8 +57,13 @@ struct Cli {
     /// May be specified multiple times
     #[clap(long, short)]
     additional_file: Vec<PathBuf>,
+    /// Disable validation of manifest file against manifest schema.
+    #[clap(long)]
+    disable_manifest_validation: bool,
     #[clap(long, env = "OECORE_TARGET_ARCH")]
     oecore_target_arch: Architecture,
+    #[clap(long, env = "ACAP_SDK_LOCATION", default_value = "/opt/axis/")]
+    acap_sdk_location: PathBuf,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -69,8 +74,16 @@ fn main() -> anyhow::Result<()> {
         build,
         manifest,
         additional_file,
+        disable_manifest_validation,
         oecore_target_arch,
+        acap_sdk_location,
     } = Cli::parse();
+
+    let schema = if disable_manifest_validation {
+        SchemaSource::None
+    } else {
+        SchemaSource::Resolve(acap_sdk_location)
+    };
     match build {
         BuildOption::Make => assert!(Command::new("make")
             .status()
@@ -91,6 +104,8 @@ fn main() -> anyhow::Result<()> {
         oecore_target_arch.into(),
     )?;
 
+    builder.schema(schema);
+
     for name in builder.mandatory_files() {
         builder.add(&path.join(name))?;
     }
@@ -107,10 +122,26 @@ fn main() -> anyhow::Result<()> {
     }
 
     let eap_file_name = builder.build()?;
-    fs::copy(
-        staging_dir.path().join(&eap_file_name),
-        path.join(&eap_file_name),
-    )?;
+    let eap_file_path = path.join(&eap_file_name);
+    fs::copy(staging_dir.path().join(&eap_file_name), &eap_file_path)?;
+
+    println!("{}", eap_file_path.display());
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use clap::CommandFactory;
+
+    use super::*;
+
+    fn cmd() -> clap::Command {
+        Cli::command()
+    }
+
+    #[test]
+    fn cli_is_valid() {
+        cmd().debug_assert();
+    }
 }

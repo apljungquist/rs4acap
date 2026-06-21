@@ -1,0 +1,31 @@
+{
+    "schemaVersion": "1.7.0",
+    "acapPackageConf": {
+        "setup": {
+            "appName": "example_app",
+            "appId": "0",
+            "architecture": "all",
+            "embeddedSdkVersion": "3.0",
+            "friendlyName": "Example App",
+            "user": { "username": "sdk", "group": "sdk" },
+            "runMode": "never",
+            "runOptions": "example run options",
+            "vendor": "example vendor",
+            "version": "2.3.5-alpha+2026"
+        },
+        "installation": { "postInstallScript": "post-install.sh" },
+        "uninstallation": { "preUninstallScript": "pre-uninstall.sh" },
+        "configuration": {
+            "settingPage": "index.html",
+            "httpConfig": [
+                { "type": "fastCgi", "name": "my-fast-cgi", "access": "admin" },
+                { "type": "transferCgi", "name": "my-transfer-cgi", "access": "operator" },
+                { "type": "directory", "access": "viewer" }
+            ],
+            "paramConfig": [
+                { "name": "MyParameterWith1HellaTrickyName_", "default": "yes", "type": "bool:no,yes" }
+            ]
+        },
+        "copyProtection": { "method": "none" }
+    }
+}

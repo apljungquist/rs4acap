@@ -1,0 +1,14 @@
+{
+    "schemaVersion": "1.7.1",
+    "acapPackageConf": {
+        "setup": {
+            "appName": "validation_should_reject_long_app_names",
+            "embeddedSdkVersion": "3.0",
+            "runMode": "never",
+            "user": { "group": "sdk", "username": "sdk" },
+            "vendor": "Test",
+            "vendorUrl": "not a url",
+            "version": "1.0.0"
+        }
+    }
+}

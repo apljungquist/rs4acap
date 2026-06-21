@@ -2,13 +2,16 @@
 name = "acap-build"
 version = "0.0.0"
 edition = "2021"
+readme = "README.md"
+license = "MIT"
+description = "Utilities for creating Embedded Application Packages (EAPs)"
+homepage = "https://github.com/apljungquist/rs4acap"
 
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
-dirs = { workspace = true }
 env_logger = { workspace = true }
-glob = { workspace = true }
+jsonschema = { workspace = true }
 log = { workspace = true }
 semver = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -16,3 +19,6 @@ serde_json = { workspace = true, features = ["preserve_order"] }
 tempfile = { workspace = true }
 regex = { workspace = true }
 tempdir = { workspace = true }
+
+[dev-dependencies]
+expect-test.workspace = true

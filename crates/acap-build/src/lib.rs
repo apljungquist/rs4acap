@@ -14,7 +14,7 @@ use std::{
 
 use anyhow::{anyhow, bail, Context};
 use command_utils::RunWith;
-use log::{debug, info};
+use log::debug;
 use semver::Version;
 use serde_json::Value;
 
@@ -24,8 +24,11 @@ use crate::files::{
 
 mod command_utils;
 mod json_ext;
+mod schema;
 
 mod files;
+
+pub use schema::SchemaSource;
 
 // TODO: Find a better way to support reproducible builds
 fn copy<P: AsRef<Path>, Q: AsRef<Path>>(
@@ -120,6 +123,7 @@ pub struct AppBuilder<'a> {
     default_architecture: Architecture,
     app_name: String,
     acap_build_impl: AcapBuildImpl,
+    schema: SchemaSource,
 }
 
 impl<'a> AppBuilder<'a> {
@@ -140,6 +144,7 @@ impl<'a> AppBuilder<'a> {
             files: Vec::new(),
             default_architecture,
             acap_build_impl: AcapBuildImpl::default(),
+            schema: Default::default(),
         })
     }
 
@@ -148,6 +153,14 @@ impl<'a> AppBuilder<'a> {
     /// Defaults to [`AcapBuildImpl::Equivalent`].
     pub fn implementation(&mut self, acap_build_impl: AcapBuildImpl) -> &mut Self {
         self.acap_build_impl = acap_build_impl;
+        self
+    }
+
+    /// Select how to validate the application manifest before building the EAP.
+    ///
+    /// Defaults to [`SchemaSource::None`]
+    pub fn schema(&mut self, schema: SchemaSource) -> &mut Self {
+        self.schema = schema;
         self
     }
 
@@ -213,14 +226,27 @@ impl<'a> AppBuilder<'a> {
                 self.build_foreign()
             }
             AcapBuildImpl::Equivalent => {
-                // TODO: Implement validation.
-                info!("Bypassing acap-build, manifest will not be validated");
+                debug!("Bypassing acap-build");
                 self.build_native()
             }
         }
     }
 
     fn build_foreign(self) -> anyhow::Result<OsString> {
+        // The SDK's `acap-build` has no `--schema`, and would otherwise re-validate against its
+        // version-matched schema. So for `File`, validate against the caller-supplied schema here
+        // and tell the SDK to skip its own pass; for `None`, just tell the SDK to skip; for
+        // `Resolve`, let the SDK do its own version-matched validation.
+        let skip_sdk_revalidation = match &self.schema {
+            SchemaSource::Resolve(_) => false,
+            SchemaSource::None => true,
+            SchemaSource::File(_) => {
+                schema::validate(self.manifest.as_value(), &self.schema)
+                    .context("validating manifest against schema")?;
+                true
+            }
+        };
+
         let Self {
             staging_dir,
             default_architecture,
@@ -234,7 +260,10 @@ impl<'a> AppBuilder<'a> {
 
         let mut acap_build = Command::new("acap-build");
         acap_build.args(["--build", "no-build"]);
-        for file in self.additional_files() {
+        if skip_sdk_revalidation {
+            acap_build.arg("--disable-manifest-validation");
+        }
+        for file in self.section_2_files() {
             acap_build.args(["--additional-file", file]);
         }
         acap_build.arg(".");
@@ -271,6 +300,11 @@ impl<'a> AppBuilder<'a> {
     }
 
     fn build_native(self) -> anyhow::Result<OsString> {
+        // Unlike the reference implementation, which delegates to the SDK's `acap-build`, the
+        // native path must validate the manifest itself.
+        schema::validate(self.manifest.as_value(), &self.schema)
+            .context("validating manifest against schema")?;
+
         let Self {
             staging_dir,
             manifest,
@@ -423,14 +457,7 @@ impl<'a> AppBuilder<'a> {
     }
 
     fn section_4_files(&self) -> Vec<&str> {
-        ["html", "declarations", "lib", "cgi.conf"]
-            .into_iter()
-            .collect()
-    }
-
-    /// Additional files for the reference implementation.
-    fn additional_files(&self) -> Vec<&str> {
-        self.section_2_files()
+        vec!["html", "declarations", "lib", "cgi.conf"]
     }
 
     /// Other files for the `package.conf` file.

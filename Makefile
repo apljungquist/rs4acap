@@ -56,6 +56,8 @@ check_format_rs:
 check_generated_files: \
 	Cargo.lock \
 	snapshots/acap-build-docs \
+	snapshots/acap-build-disallowed-property \
+	snapshots/acap-build-too-long-string \
 	snapshots/cli4a-docs \
 	snapshots/device-finder-docs \
 	snapshots/device-inventory-docs \
@@ -125,6 +127,10 @@ fix_lint:
 Cargo.lock: $(wildcard crates/*/Cargo.toml)
 	cargo metadata --format-version=1 > /dev/null
 
+# The `acap-build` snapshot tests need the ACAP Native SDK. This Makefile assumes
+# it is already installed and, if it is not at the default `/opt/axis`, that
+# `ACAP_SDK_LOCATION` points at it. The Nix dev shell and `bin/create-venv.sh`
+# both set this up; see the README for details.
 snapshots/%: bin/%.sh .FORCE
 	cargo build --bins
 	PATH=$$(pwd)/target/debug:$$PATH \
