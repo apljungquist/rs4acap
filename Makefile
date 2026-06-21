@@ -16,7 +16,12 @@ help:
 ## Checks
 ## ------
 
-check: check_build check_docs check_format check_generated_files check_lint check_tests
+## _
+check: check_t3 check_format_nix check_generated_files check_tests
+.PHONY: check
+
+check_t3: check_build check_docs check_format_rs check_generated_files_t3 check_lint check_tests_t3
+.PHONY: check_t3
 
 ## _
 check_build:
@@ -54,10 +59,16 @@ check_format_rs:
 
 ## _
 check_generated_files: \
+	check_generated_files_t3 \
+	snapshots/acap-build-disallowed-property \
+	snapshots/acap-build-too-long-string
+	git update-index -q --refresh
+	git --no-pager diff --exit-code HEAD -- $^
+.PHONY: check_generated_files
+
+check_generated_files_t3: \
 	Cargo.lock \
 	snapshots/acap-build-docs \
-	snapshots/acap-build-disallowed-property \
-	snapshots/acap-build-too-long-string \
 	snapshots/cli4a-docs \
 	snapshots/device-finder-docs \
 	snapshots/device-inventory-docs \
@@ -66,7 +77,7 @@ check_generated_files: \
 	snapshots/firmware-inventory-docs
 	git update-index -q --refresh
 	git --no-pager diff --exit-code HEAD -- $^
-.PHONY: check_generated_files
+.PHONY: check_generated_files_t3
 
 ## _
 check_lint:
@@ -85,17 +96,20 @@ check_lint:
 # TODO: Investigate if cassette tests can be made to run with `serde_json/preserve_order`
 
 ## _
-check_tests:
-	cargo test \
-		--all-targets \
-		--locked \
-		--workspace \
-		--exclude acap-build
+check_tests: check_tests_t3
 	cargo test \
 		--all-targets \
 		--locked \
 		-p acap-build
 .PHONY: check_tests
+
+check_tests_t3:
+	cargo test \
+		--all-targets \
+		--locked \
+		--workspace \
+		--exclude acap-build
+.PHONY: check_tests_t3
 
 ## Fixes
 ## -----

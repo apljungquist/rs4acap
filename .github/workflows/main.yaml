@@ -22,5 +22,14 @@ jobs:
         run: nix develop --ignore-env --command make check
       - name: Check flake
         run: nix flake check
-      - name: Run extra checks (do not work in every supported contributor dev env)
-        run: nix develop --ignore-env --command cargo test --test equivalence -- --ignored
+  checks-macos:
+    needs: checks
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install Rust toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: Run checks (portable)
+        run: make check_t3

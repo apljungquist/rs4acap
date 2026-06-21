@@ -25,7 +25,7 @@ fn copy_dir(src: &Path, dst: &Path) {
 
 // TODO: Add facilities for comparing with upstream automatically
 // TODO: Make `acap-build` compatible with all supported dev environments of this propject
-#[ignore = "does not work on macOS"]
+#[ignore = "requires a tier 2 developer environment"]
 #[test]
 fn example_app_output_matches_snapshot() {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
