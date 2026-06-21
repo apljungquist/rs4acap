@@ -50,6 +50,8 @@ check_format_rs:
 		--config imports_granularity=Crate,group_imports=StdExternalCrate
 .PHONY: check_format_rs
 
+# TODO: Ensure unstaged files cause this to fail
+
 ## _
 check_generated_files: \
 	Cargo.lock \
