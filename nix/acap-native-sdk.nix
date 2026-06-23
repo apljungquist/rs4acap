@@ -105,6 +105,6 @@ stdenvNoCC.mkDerivation {
   meta = {
     description = "ACAP Native SDK, extracted from the official Docker images";
     homepage = "https://github.com/AxisCommunications/acap-native-sdk";
-    platforms = lib.platforms.linux;
+    platforms = lib.platforms.all;
   };
 }
