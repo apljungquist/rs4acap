@@ -1,5 +1,6 @@
 /.idea/
 /.direnv/
+/crates/fimage/tests/fimages/
 /target/
 /venv/
 /init-env.sh

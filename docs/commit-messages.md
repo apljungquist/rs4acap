@@ -14,9 +14,9 @@ Commit messages ...
 | dm    | device-manager        |                    |
 | dut   | rs4a-dut              |                    |
 | fi    | firmware-inventory    |                    |
+| fim   | fimage                |                    |
 | vapix | rs4a-vapix            | v                  |
 | ct    | rs4a-cassette-testing |                    |
 | vlt   | rs4a-vlt              |                    |
-
 
 [^1]: https://www.conventionalcommits.org/en/v1.0.0/
