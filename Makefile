@@ -74,6 +74,7 @@ check_generated_files_t3: \
 	snapshots/device-inventory-docs \
 	snapshots/device-inventory-smoke-test \
 	snapshots/device-manager-docs \
+	snapshots/fimage-docs \
 	snapshots/firmware-inventory-docs
 	git update-index -q --refresh
 	git --no-pager diff --exit-code HEAD -- $^

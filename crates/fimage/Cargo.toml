@@ -1,0 +1,33 @@
+[package]
+name = "rs4a-fimage"
+version = "0.1.0"
+edition.workspace = true
+license = "MIT"
+description = "Utilities for inspecting firmware images"
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "fimage"
+path = "src/main.rs"
+
+[[test]]
+name = "fimages"
+harness = false
+
+[dependencies]
+anyhow = { workspace = true }
+chrono = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+flate2 = { workspace = true }
+ruzstd = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+tar = { workspace = true }
+
+rs4a-bin-utils = { workspace = true }
+
+[dev-dependencies]
+glob = { workspace = true }
+libtest-mimic = { workspace = true }

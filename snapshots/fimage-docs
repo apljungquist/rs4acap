@@ -1,0 +1,39 @@
++ unset RUST_LOG
++ fimage help
+Usage: fimage <COMMAND>
+
+Commands:
+  extract  Extract a firmware image into a directory
+  inspect  Print identifying metadata read from a firmware image on disk
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
++ fimage help extract
+Extract a firmware image into a directory
+
+Usage: fimage extract <IMAGE> [DIRECTORY]
+
+Arguments:
+  <IMAGE>
+          Path to a firmware image, i.e. a `.bin` file
+
+  [DIRECTORY]
+          Directory to extract into.
+          
+          Defaults to a directory in the current working directory named after the image.
+
+Options:
+  -h, --help
+          Print help (see a summary with '-h')
++ fimage help inspect
+Print identifying metadata read from a firmware image on disk
+
+Usage: fimage inspect [OPTIONS] <IMAGE>
+
+Arguments:
+  <IMAGE>  Path to a firmware image, i.e. a `.bin` file
+
+Options:
+      --json  Print the metadata as JSON
+  -h, --help  Print help
