@@ -1,24 +1,10 @@
 _Utilities for creating Embedded Application Packages (EAPs)_
 
-This is a replacement for the `acap-build` python script in the ACAP Native SDK.
+This is a drop-replacement for the `acap-build` python script in the ACAP Native SDK.
 
 This package improves on the upstream tool by:
 1. Enabling `acap-build` to be installed without the rest of the SDK.
 2. Enabling apps to be built with the SDK in a location different from `/opt/axis/`.
-3. Enabling other development tools to use `acap-build` as a library.
-
-<!--
-These requirements are driven by the work on `cargo-acap-build` in AxisCommunications/acap-rs.
--->
-
-To that end this package provides both:
-- A binary crate designed as a bit-exact drop-in replacement for the upstream script.
-- A library crate designed for use by other development tools.
-
-<!--
-The binary serves one more purpose;
-it pressures the library to support everything users of the upstream tool are accustomed to.
--->
 
 ## What "drop-in replacement" means
 

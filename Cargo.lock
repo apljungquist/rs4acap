@@ -10,12 +10,8 @@ dependencies = [
  "clap",
  "env_logger",
  "expect-test",
- "jsonschema",
  "log",
- "regex",
- "semver",
- "serde",
- "serde_json",
+ "rs4a-eap",
  "tempdir",
  "tempfile",
 ]
@@ -2286,6 +2282,19 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "url",
+]
+
+[[package]]
+name = "rs4a-eap"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "jsonschema",
+ "log",
+ "regex",
+ "semver",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

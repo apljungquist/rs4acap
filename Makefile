@@ -101,7 +101,8 @@ check_tests: check_tests_t3
 	cargo test \
 		--all-targets \
 		--locked \
-		-p acap-build
+		-p acap-build \
+		-p rs4a-eap
 .PHONY: check_tests
 
 check_tests_t3:
@@ -109,7 +110,8 @@ check_tests_t3:
 		--all-targets \
 		--locked \
 		--workspace \
-		--exclude acap-build
+		--exclude acap-build \
+		--exclude rs4a-eap
 .PHONY: check_tests_t3
 
 ## Fixes
