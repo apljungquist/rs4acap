@@ -30,6 +30,11 @@ mod files;
 
 pub use schema::SchemaSource;
 
+/// The location where the ACAP SDK is installed by default.
+///
+/// Used as the default location for resolving manifest schemas; see [`SchemaSource::Resolve`].
+pub const DEFAULT_ACAP_SDK_LOCATION: &str = "/opt/axis/";
+
 // TODO: Find a better way to support reproducible builds
 fn copy<P: AsRef<Path>, Q: AsRef<Path>>(
     src: P,
@@ -83,16 +88,8 @@ fn copy_recursively(src: &Path, dst: &Path, copy_permissions: bool) -> anyhow::R
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AcapBuildImpl {
-    /// Delegate to the foreign (upstream) `acap-build` program.
-    Reference,
     /// Use the native, equivalent implementation.
     Equivalent,
-}
-
-impl Default for AcapBuildImpl {
-    fn default() -> Self {
-        Self::Equivalent
-    }
 }
 
 impl FromStr for AcapBuildImpl {
@@ -100,9 +97,8 @@ impl FromStr for AcapBuildImpl {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "reference" => Ok(Self::Reference),
             "equivalent" => Ok(Self::Equivalent),
-            _ => bail!("Expected 'reference' or 'equivalent', but found {s:?}"),
+            _ => bail!("Expected 'equivalent', but found {s:?}"),
         }
     }
 }
@@ -135,7 +131,7 @@ impl<'a> AppBuilder<'a> {
             app_name,
             files: Vec::new(),
             default_architecture,
-            acap_build_impl: AcapBuildImpl::default(),
+            acap_build_impl: AcapBuildImpl::Equivalent,
             schema: Default::default(),
         })
     }
@@ -213,10 +209,6 @@ impl<'a> AppBuilder<'a> {
     /// Build the EAP and return its path.
     pub fn build(self) -> anyhow::Result<OsString> {
         match self.acap_build_impl {
-            AcapBuildImpl::Reference => {
-                debug!("Using acap-build");
-                self.build_foreign()
-            }
             AcapBuildImpl::Equivalent => {
                 debug!("Bypassing acap-build");
                 self.build_native()
@@ -224,76 +216,7 @@ impl<'a> AppBuilder<'a> {
         }
     }
 
-    fn build_foreign(self) -> anyhow::Result<OsString> {
-        // The SDK's `acap-build` has no `--schema`, and would otherwise re-validate against its
-        // version-matched schema. So for `File`, validate against the caller-supplied schema here
-        // and tell the SDK to skip its own pass; for `None`, just tell the SDK to skip; for
-        // `Resolve`, let the SDK do its own version-matched validation.
-        let skip_sdk_revalidation = match &self.schema {
-            SchemaSource::Resolve(_) => false,
-            SchemaSource::None => true,
-            SchemaSource::File(_) => {
-                schema::validate(self.manifest.as_value(), &self.schema)
-                    .context("validating manifest against schema")?;
-                true
-            }
-        };
-
-        let Self {
-            staging_dir,
-            default_architecture,
-            manifest,
-            ..
-        } = &self;
-
-        fs::File::create_new(staging_dir.join("manifest.json"))
-            .context("creating manifest.json")?
-            .write_all(manifest.try_to_string()?.as_bytes())?;
-
-        let mut acap_build = Command::new("acap-build");
-        acap_build.args(["--build", "no-build"]);
-        if skip_sdk_revalidation {
-            acap_build.arg("--disable-manifest-validation");
-        }
-        for file in self.section_2_files() {
-            acap_build.args(["--additional-file", file]);
-        }
-        acap_build.arg(".");
-
-        let mut sh = Command::new("sh");
-        sh.current_dir(staging_dir);
-
-        let env_setup = match default_architecture {
-            Architecture::Aarch64 => "environment-setup-cortexa53-crypto-poky-linux",
-            Architecture::Armv7hf => "environment-setup-cortexa9hf-neon-poky-linux-gnueabi",
-        };
-        sh.args([
-            "-c",
-            &format!(". /opt/axis/acapsdk/{env_setup} && {acap_build:?}"),
-        ]);
-        sh.run_with_logged_stdout()?;
-
-        let mut apps = Vec::new();
-        for entry in fs::read_dir(staging_dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if let Some(extension) = path.extension() {
-                if extension.to_str() == Some("eap") {
-                    apps.push(path);
-                }
-            }
-        }
-        let mut apps = apps.into_iter();
-        let app = apps.next().context("Expected at least one artifact")?;
-        if let Some(second) = apps.next() {
-            bail!("Built at least one unexpected .eap file {second:?}")
-        }
-        Ok(app.file_name().context("file has no name")?.to_os_string())
-    }
-
     fn build_native(self) -> anyhow::Result<OsString> {
-        // Unlike the reference implementation, which delegates to the SDK's `acap-build`, the
-        // native path must validate the manifest itself.
         schema::validate(self.manifest.as_value(), &self.schema)
             .context("validating manifest against schema")?;
 
@@ -404,7 +327,7 @@ impl<'a> AppBuilder<'a> {
         Ok(OsString::from(eap_file_name))
     }
 
-    // These sections are probably relevant only for the equivalent and reference implementations;
+    // These sections are probably relevant only for the equivalent implementation;
     // Once unpacked on device the order of files or the reason they were included is not important
     // (even though some files are nonetheless treated specially).
     // The sections don't have any semantics, they are just partitions that can be composed to
