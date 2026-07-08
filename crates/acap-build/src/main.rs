@@ -4,12 +4,13 @@ use std::{
     fs,
     path::PathBuf,
     process::Command,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use anyhow::Context;
 use clap::{Parser, ValueEnum};
 use log::debug;
-use rs4a_eap::{AppBuilder, SchemaSource};
+use rs4a_eap::{AppBuilder, Mtime, SchemaSource};
 use tempdir::TempDir;
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -68,6 +69,15 @@ struct Cli {
         default_value = rs4a_eap::DEFAULT_ACAP_SDK_LOCATION
     )]
     acap_sdk_location: PathBuf,
+    /// Time to stamp on every archive member, in seconds after the Unix epoch.
+    ///
+    /// Defaults to the current time.
+    #[clap(long, env = "SOURCE_DATE_EPOCH", value_parser = parse_mtime)]
+    source_date_epoch: Option<Mtime>,
+}
+
+fn parse_mtime(s: &str) -> anyhow::Result<Mtime> {
+    s.trim().parse::<u64>()?.try_into()
 }
 
 fn main() -> anyhow::Result<()> {
@@ -81,12 +91,26 @@ fn main() -> anyhow::Result<()> {
         disable_manifest_validation,
         oecore_target_arch,
         acap_sdk_location,
+        source_date_epoch,
     } = Cli::parse();
 
     let schema = if disable_manifest_validation {
         SchemaSource::None
     } else {
         SchemaSource::Resolve(acap_sdk_location)
+    };
+
+    // Reading the clock here, and the environment via clap, keeps the library deterministic
+    // given its inputs. Falling back to the current time matches the upstream tool.
+    let mtime = match source_date_epoch {
+        Some(value) => value,
+        None => Mtime::try_from(
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .context("reading current time")?
+                .as_secs(),
+        )
+        .context("converting current time")?,
     };
     match build {
         BuildOption::Make => assert!(Command::new("make")
@@ -109,6 +133,7 @@ fn main() -> anyhow::Result<()> {
     )?;
 
     builder.schema(schema);
+    builder.mtime(mtime);
 
     for name in builder.mandatory_files() {
         builder.add(&path.join(name))?;
