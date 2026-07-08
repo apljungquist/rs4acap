@@ -17,5 +17,7 @@ Options:
           [env: OECORE_TARGET_ARCH=] [possible values: aarch64, armv7hf]
       --acap-sdk-location <ACAP_SDK_LOCATION>
           [env: ACAP_SDK_LOCATION=] [default: /opt/axis/]
+      --source-date-epoch <SOURCE_DATE_EPOCH>
+          Time to stamp on every archive member, in seconds after the Unix epoch [env: SOURCE_DATE_EPOCH=]
   -h, --help
-          Print help
+          Print help (see more with '--help')

@@ -2,7 +2,6 @@
 //! Library for creating Embedded Application Packages (EAPs).
 use std::{
     collections::HashSet,
-    env,
     ffi::OsString,
     fs,
     io::Write,
@@ -12,7 +11,7 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{bail, ensure, Context};
 use command_utils::RunWith;
 use log::debug;
 use semver::Version;
@@ -34,6 +33,36 @@ pub use schema::SchemaSource;
 ///
 /// Used as the default location for resolving manifest schemas; see [`SchemaSource::Resolve`].
 pub const DEFAULT_ACAP_SDK_LOCATION: &str = "/opt/axis/";
+
+/// A modification time, in seconds after the Unix epoch, that the tar headers in the EAP can
+/// represent.
+///
+/// The 12-byte numeric header fields hold 11 octal digits; GNU tar silently encodes larger
+/// values with its base-256 extension, which not every unpacker understands, so conversion
+/// fails for values above [`Self::MAX`].
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Mtime(u64);
+
+impl Mtime {
+    /// The largest value that the tar headers can portably represent.
+    pub const MAX: Self = Self((1 << 33) - 1);
+}
+
+impl TryFrom<u64> for Mtime {
+    type Error = anyhow::Error;
+
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        // A larger value is almost always a millisecond timestamp; catching it here gives a
+        // targeted error where GNU tar would silently encode it in base-256.
+        ensure!(
+            value <= Self::MAX.0,
+            "{value} does not fit in the tar headers' 11 octal digits (max {}); if it is in \
+             milliseconds, convert it to seconds",
+            Self::MAX.0
+        );
+        Ok(Self(value))
+    }
+}
 
 // TODO: Find a better way to support reproducible builds
 fn copy<P: AsRef<Path>, Q: AsRef<Path>>(
@@ -112,6 +141,7 @@ pub struct AppBuilder<'a> {
     app_name: String,
     acap_build_impl: AcapBuildImpl,
     schema: SchemaSource,
+    mtime: Mtime,
 }
 
 impl<'a> AppBuilder<'a> {
@@ -133,6 +163,7 @@ impl<'a> AppBuilder<'a> {
             default_architecture,
             acap_build_impl: AcapBuildImpl::Equivalent,
             schema: Default::default(),
+            mtime: Mtime::default(),
         })
     }
 
@@ -149,6 +180,16 @@ impl<'a> AppBuilder<'a> {
     /// Defaults to [`SchemaSource::None`]
     pub fn schema(&mut self, schema: SchemaSource) -> &mut Self {
         self.schema = schema;
+        self
+    }
+
+    /// Set the modification time stamped on every archive member.
+    ///
+    /// Defaults to the Unix epoch. Reading this from the environment (e.g. from
+    /// `SOURCE_DATE_EPOCH`) or the clock is left to the caller so that the library stays
+    /// deterministic given its inputs.
+    pub fn mtime(&mut self, mtime: Mtime) -> &mut Self {
+        self.mtime = mtime;
         self
     }
 
@@ -228,11 +269,6 @@ impl<'a> AppBuilder<'a> {
             app_name,
             ..
         } = &self;
-        // TODO: Consider pushing environment variable fetching to dependant
-        let mtime = match env::var_os("SOURCE_DATE_EPOCH") {
-            Some(v) => v.into_string().map_err(|e| anyhow!("{e:?}"))?,
-            None => String::from_utf8(Command::new("date").arg("+%s").output()?.stdout)?,
-        };
 
         // Compute file name
         let package_name = match manifest.try_find_friendly_name() {
@@ -296,7 +332,7 @@ impl<'a> AppBuilder<'a> {
             .args(["--file", &eap_file_name])
             .args(["--format", "gnu"])
             .args(["--group", "0"])
-            .args(["--mtime", &format!("@{mtime}")])
+            .args(["--mtime", &format!("@{}", self.mtime.0)])
             .args(["--owner", "0"])
             .args(["--sort", "name"])
             .args(["--use-compress-program", "gzip --no-name -9"])
@@ -440,6 +476,12 @@ impl FromStr for Architecture {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mtime_can_be_constructed_only_from_values_that_fit_in_the_headers() {
+        let Mtime(_) = Mtime::try_from(Mtime::MAX.0).unwrap();
+        assert!(Mtime::try_from(Mtime::MAX.0 + 1).is_err());
+    }
 
     #[test]
     fn copy_recreates_symlinks() {
