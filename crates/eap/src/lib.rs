@@ -6,7 +6,7 @@ use std::{
     ffi::OsString,
     fs,
     io::Write,
-    os::unix::fs::PermissionsExt,
+    os::unix::fs::{symlink, PermissionsExt},
     path::{Path, PathBuf},
     process::Command,
     str::FromStr,
@@ -42,18 +42,10 @@ fn copy<P: AsRef<Path>, Q: AsRef<Path>>(
         bail!("Path already exists {dst:?}");
     }
     if src.is_symlink() {
-        // FIXME: Copy symlink in Rust
-        let mut cp = Command::new("cp");
-
-        if copy_permissions {
-            cp.arg("--preserve=mode");
-        }
-
-        cp.arg("-dn").arg(src.as_os_str()).arg(dst.as_os_str());
-
-        if !cp.status()?.success() {
-            bail!("Failed to copy symlink: {}", src.display());
-        }
+        // Recreate the symlink rather than following it. A symlink's own mode is not portably
+        // settable, so `copy_permissions` does not apply here.
+        let target = fs::read_link(src)?;
+        symlink(target, dst)?;
     } else if copy_permissions {
         fs::copy(src, dst)?;
     } else {
@@ -518,6 +510,27 @@ impl FromStr for Architecture {
             "aarch64" => Ok(Self::Aarch64),
             "arm" => Ok(Self::Armv7hf),
             _ => Err(anyhow::anyhow!("Unrecognized variant {s}")),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn copy_recreates_symlinks() {
+        for copy_permissions in [false, true] {
+            let dir = tempfile::tempdir().unwrap();
+            fs::write(dir.path().join("target.txt"), "hello").unwrap();
+            let src = dir.path().join("link.txt");
+            symlink("target.txt", &src).unwrap();
+
+            let dst = dir.path().join("copy.txt");
+            copy(&src, &dst, copy_permissions).unwrap();
+
+            assert!(dst.symlink_metadata().unwrap().file_type().is_symlink());
+            assert_eq!(fs::read_link(&dst).unwrap(), Path::new("target.txt"));
         }
     }
 }
