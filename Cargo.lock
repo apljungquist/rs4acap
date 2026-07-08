@@ -2289,7 +2289,6 @@ name = "rs4a-eap"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "expect-test",
  "jsonschema",
  "log",
  "regex",
