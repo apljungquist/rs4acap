@@ -6,10 +6,10 @@ use std::{
     process::Command,
 };
 
-use acap_build::{AppBuilder, SchemaSource};
 use anyhow::Context;
 use clap::{Parser, ValueEnum};
 use log::debug;
+use rs4a_eap::{AppBuilder, SchemaSource};
 use tempdir::TempDir;
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -18,7 +18,7 @@ pub enum Architecture {
     Armv7hf,
 }
 
-impl From<Architecture> for acap_build::Architecture {
+impl From<Architecture> for rs4a_eap::Architecture {
     fn from(value: Architecture) -> Self {
         match value {
             Architecture::Aarch64 => Self::Aarch64,

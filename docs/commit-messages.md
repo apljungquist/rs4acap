@@ -13,6 +13,7 @@ Commit messages ...
 | di    | device-inventory      | device-inventory   |
 | dm    | device-manager        |                    |
 | dut   | rs4a-dut              |                    |
+| eap   | rs4a-eap              |                    |
 | fi    | firmware-inventory    |                    |
 | fim   | fimage                |                    |
 | vapix | rs4a-vapix            | v                  |

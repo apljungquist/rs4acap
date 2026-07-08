@@ -1,6 +1,6 @@
 [package]
-name = "acap-build"
-version = "0.0.0"
+name = "rs4a-eap"
+version = "0.1.0"
 edition = "2021"
 readme = "README.md"
 license = "MIT"
@@ -9,13 +9,12 @@ homepage = "https://github.com/apljungquist/rs4acap"
 
 [dependencies]
 anyhow = { workspace = true }
-clap = { workspace = true, features = ["derive", "env"] }
-env_logger = { workspace = true }
+jsonschema = { workspace = true }
 log = { workspace = true }
-tempfile = { workspace = true }
-tempdir = { workspace = true }
-
-rs4a-eap.workspace = true
+semver = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+regex = { workspace = true }
 
 [dev-dependencies]
 expect-test.workspace = true
