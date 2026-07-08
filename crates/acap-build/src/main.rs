@@ -62,7 +62,11 @@ struct Cli {
     disable_manifest_validation: bool,
     #[clap(long, env = "OECORE_TARGET_ARCH")]
     oecore_target_arch: Architecture,
-    #[clap(long, env = "ACAP_SDK_LOCATION", default_value = "/opt/axis/")]
+    #[clap(
+        long,
+        env = "ACAP_SDK_LOCATION",
+        default_value = rs4a_eap::DEFAULT_ACAP_SDK_LOCATION
+    )]
     acap_sdk_location: PathBuf,
 }
 
