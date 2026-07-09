@@ -12,10 +12,15 @@
       "selected_firmware": "11.11.169",
       "started_at": "2025-10-04T10:42:30.000Z",
       "loanable": {
-        "model": "AXIS P8815-2",
-        "internal_ip": "10.20.41.10:11060",
-        "external_ip": "192.168.1.60",
-        "id": 184
+        "device_map_id": 90,
+        "model": "AXIS Q8752-E",
+        "display_name": "",
+        "internal_ip": "10.20.41.10:13108",
+        "external_ip": "192.168.2.43",
+        "image_url": "images/devices/AXIS_Q8752-E.png",
+        "type": "Bispectral Zoom PTZ Camera",
+        "id": 1234,
+        "portcast_device": null
       },
       "meta": []
     }

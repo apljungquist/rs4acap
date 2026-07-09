@@ -12,10 +12,15 @@
       "selected_firmware": "12.7.53",
       "started_at": "2025-11-15T12:20:41.000Z",
       "loanable": {
+        "device_map_id": 90,
         "model": "AXIS D2210-VE",
+        "display_name": "",
         "internal_ip": "10.20.41.10:12095",
         "external_ip": "192.168.2.95",
-        "id": 851
+        "image_url": "images/devices/AXIS_Q8752-E.png",
+        "type": "Radar",
+        "id": 851,
+        "portcast_device": null
       },
       "meta": [
         "Since the radar is mounted indoors, we will provide you with a pre-recorded data file for testing.",

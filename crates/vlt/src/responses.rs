@@ -3,9 +3,10 @@ use std::{
     fmt::{Display, Formatter},
     net::Ipv4Addr,
     path::PathBuf,
+    str::FromStr,
 };
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use chrono::{DateTime, SecondsFormat, Utc};
 use serde::{ser::SerializeSeq, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
@@ -203,25 +204,72 @@ where
 pub struct ExternalIp(Ipv4Addr);
 
 impl ExternalIp {
-    fn port_suffix(&self) -> u16 {
-        let external = self.0;
-        let [_, _, o2, o3] = external.octets();
-        1_000 * o2 as u16 + o3 as u16
+    pub fn to_bits(&self) -> u32 {
+        self.0.to_bits()
+    }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(try_from = "String")]
+pub struct InternalIp {
+    host: Ipv4Addr,
+    base_port: u16,
+}
+
+impl InternalIp {
+    fn forwarded_port(&self, protocol_index: u8) -> u16 {
+        // Replace the first digit of `self.base_port` with `protocol_index`
+        let scale = 10u16.pow(self.base_port.checked_ilog10().unwrap_or(0));
+        let suffix = self.base_port % scale;
+        protocol_index as u16 * scale + suffix
     }
 
     /// Returns the port forwarded to port 80.
     pub fn http_port(&self) -> u16 {
-        10_000 + self.port_suffix()
+        self.forwarded_port(1)
     }
 
     /// Returns the port forwarded to port 443.
     pub fn https_port(&self) -> u16 {
-        40_000 + self.port_suffix()
+        self.forwarded_port(4)
     }
 
     /// Returns the port forwarded to port 22.
     pub fn ssh_port(&self) -> u16 {
-        20_000 + self.port_suffix()
+        self.forwarded_port(2)
+    }
+
+    /// Returns the port forwarded to port 554.
+    pub fn rtsp_port(&self) -> u16 {
+        self.forwarded_port(3)
+    }
+}
+
+impl Display for InternalIp {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.host, self.base_port)
+    }
+}
+
+impl Serialize for InternalIp {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.collect_str(self) // uses your Display impl
+    }
+}
+
+impl TryFrom<String> for InternalIp {
+    type Error = anyhow::Error;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        let (host, port) = s
+            .rsplit_once(':')
+            .ok_or_else(|| anyhow!("Internal IP `{s}` has no port"))?;
+        let base_port = port
+            .parse()
+            .context("Internal IP `{s}` has an invalide port")?;
+        let host =
+            Ipv4Addr::from_str(host).context("Internal IP `{s}` has an invalid IP address")?;
+        Ok(Self { host, base_port })
     }
 }
 
@@ -247,8 +295,7 @@ pub struct Device {
     #[serde(serialize_with = "serialize_datetime_array")]
     pub booked: Vec<DateTime<Utc>>,
     /// Despite it's name, the device is not accessible from the internet at this IP.
-    /// But it can be used to infer connect options such as ports.
-    /// However, it is best to refrain from connecting to these devices since they may be in use.
+    /// It only serves as a stable per-device identifier.
     pub external_ip: ExternalIp,
     pub firmware_version: FirmwareVersion,
     pub id: LoanableId,
@@ -274,7 +321,7 @@ impl Device {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct NewLoanable {
     pub id: LoanableId,
-    pub internal_ip: String,
+    pub internal_ip: InternalIp,
     pub model: String,
 }
 
@@ -322,31 +369,19 @@ impl Loan {
         Host::Ipv4(Ipv4Addr::from([195, 60, 68, 14]))
     }
 
-    fn base_port(&self) -> anyhow::Result<u16> {
-        let (_, port) = self
-            .loanable
-            .internal_ip
-            .split_once(':')
-            .context("Internal IP has no port")?;
-        let port: u16 = port
-            .parse()
-            .context("Internal IP port is not a valid port number")?;
-        Ok(port)
-    }
-
     /// Returns the port forwarded to port 80.
     pub fn http_port(&self) -> u16 {
-        self.base_port().unwrap()
+        self.loanable.internal_ip.http_port()
     }
 
     /// Returns the port forwarded to port 443.
     pub fn https_port(&self) -> u16 {
-        self.base_port().unwrap() + 30_000
+        self.loanable.internal_ip.https_port()
     }
 
     /// Returns the port forwarded to port 22.
     pub fn ssh_port(&self) -> u16 {
-        self.base_port().unwrap() + 10_000
+        self.loanable.internal_ip.ssh_port()
     }
 }
 
@@ -369,7 +404,7 @@ pub struct Loanable {
     pub external_ip: ExternalIp,
     pub id: LoanableId,
     pub image_url: PathBuf,
-    pub internal_ip: String,
+    pub internal_ip: InternalIp,
     pub model: String,
     portcast_device: Option<PortcastDevice>,
     pub r#type: String,
@@ -387,5 +422,29 @@ impl LoanableId {
 impl Display for LoanableId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn internal_ip(s: &str) -> InternalIp {
+        InternalIp::try_from(s.to_string()).unwrap()
+    }
+
+    #[test]
+    fn ports_are_computed_correctly_on_example() {
+        let ip = internal_ip("10.20.41.10:11060");
+        assert_eq!(ip.http_port(), 11060);
+        assert_eq!(ip.ssh_port(), 21060);
+        assert_eq!(ip.rtsp_port(), 31060);
+        assert_eq!(ip.https_port(), 41060);
+    }
+
+    #[test]
+    fn parsing_rejects_strings_without_a_valid_port() {
+        let () = assert!(InternalIp::try_from("10.20.41.10".to_string()).is_err());
+        let () = assert!(InternalIp::try_from("10.20.41.10:bogus".to_string()).is_err());
     }
 }

@@ -557,7 +557,11 @@ pub fn loan_fingerprint(d: &Loan) -> String {
 }
 
 pub fn other_fingerprint(d: &rs4a_vlt::responses::Device) -> String {
-    format!("{}:{}", d.host(), d.external_ip.http_port())
+    // Fingerprints calculated with this method will not match fingerprints calculated with another
+    // method for the same device, so the device would show up twice if present among VLT devices
+    // and some other inventory.
+    // TODO: Removal VLT devices that are not borrowed from device-inventory
+    format!("{}:{}", d.host(), d.external_ip.to_bits())
 }
 
 pub fn mdns_fingerprint(d: &mdns_source::Device) -> String {
