@@ -336,22 +336,17 @@ impl Loan {
 
     /// Returns the port forwarded to port 80.
     pub fn http_port(&self) -> u16 {
-        let from_suffix = self.loanable.external_ip.http_port();
-        if cfg!(debug_assertions) {
-            let from_base_port = self.base_port().unwrap();
-            debug_assert_eq!(from_base_port, from_suffix);
-        }
-        from_suffix
+        self.base_port().unwrap()
     }
 
     /// Returns the port forwarded to port 443.
     pub fn https_port(&self) -> u16 {
-        self.loanable.external_ip.https_port()
+        self.base_port().unwrap() + 30_000
     }
 
     /// Returns the port forwarded to port 22.
     pub fn ssh_port(&self) -> u16 {
-        self.loanable.external_ip.ssh_port()
+        self.base_port().unwrap() + 10_000
     }
 }
 
@@ -367,12 +362,17 @@ impl Display for LoanId {
 #[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Loanable {
+    pub device_map_id: u32,
+    pub display_name: String,
     /// Despite it's name, the device is not accessible from the internet at this IP.
     /// Consider using [`Loan::host`] instead.
     pub external_ip: ExternalIp,
-    pub internal_ip: String,
     pub id: LoanableId,
+    pub image_url: PathBuf,
+    pub internal_ip: String,
     pub model: String,
+    portcast_device: Option<PortcastDevice>,
+    pub r#type: String,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
