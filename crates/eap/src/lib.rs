@@ -7,12 +7,10 @@ use std::{
     io::Write,
     os::unix::fs::{symlink, PermissionsExt},
     path::{Path, PathBuf},
-    process::Command,
     str::FromStr,
 };
 
 use anyhow::{bail, ensure, Context};
-use command_utils::RunWith;
 use log::debug;
 use semver::Version;
 use serde_json::Value;
@@ -21,6 +19,7 @@ use crate::files::{
     cgi_conf::CgiConf, manifest::Manifest, package_conf::PackageConf, param_conf::ParamConf,
 };
 
+mod archive;
 mod command_utils;
 mod json_ext;
 mod schema;
@@ -28,6 +27,8 @@ mod schema;
 mod files;
 
 pub use schema::SchemaSource;
+
+use crate::archive::EquivalentArchiveBuilder;
 
 /// The location where the ACAP SDK is installed by default.
 ///
@@ -327,37 +328,24 @@ impl<'a> AppBuilder<'a> {
         fs::set_permissions(&manifest_file, permissions)?;
 
         // Create the archive
-        let mut tar = Command::new("tar");
-        tar.args(["--exclude", "*~"])
-            .args(["--file", &eap_file_name])
-            .args(["--format", "gnu"])
-            .args(["--group", "0"])
-            .args(["--mtime", &format!("@{}", self.mtime.0)])
-            .args(["--owner", "0"])
-            .args(["--sort", "name"])
-            .args(["--use-compress-program", "gzip --no-name -9"])
-            .arg("--create")
-            .arg("--numeric-owner")
-            .arg("--exclude-vcs");
+        let mut tar = EquivalentArchiveBuilder::new(staging_dir, &eap_file_name, self.mtime);
 
         for name in self.section_1_files() {
             if staging_dir.join(name).symlink_metadata().is_ok() {
-                tar.arg(name);
+                tar.file(name);
             }
         }
 
-        tar.args(self.other_files());
+        tar.files(self.other_files().as_slice());
 
         // TODO: Consider implementing support for `httpd.conf.local.*` and `mime.types.local.*`.
 
         for name in self.section_4_files() {
             if staging_dir.join(name).symlink_metadata().is_ok() {
-                tar.arg(name);
+                tar.file(name);
             }
         }
 
-        tar.arg("--verbose");
-        tar.current_dir(staging_dir);
         tar.run_with_logged_stdout()?;
 
         Ok(OsString::from(eap_file_name))
