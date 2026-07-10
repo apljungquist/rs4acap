@@ -27,6 +27,13 @@ The non-reproducible examples are:
 - using-opencv
 - utility-libraries/openssl_curl_example: probably because `libcrypto.so` is not reproducible.
 
+In addition, `tests/fuzz.rs` generates small, random application directories and, when
+`ACAP_BUILD_FUZZ_REFERENCE` is set (with the upstream `acap-build` on the `PATH`), checks that
+building them produces a byte-identical `.eap`. Ordinary `cargo test` runs build a single input
+from a fixed seed and only assert that it packages, so the test is fast and needs no SDK; set
+`ACAP_BUILD_FUZZ_CASES` to a case count to fuzz for real and `ACAP_BUILD_FUZZ_SEED` to vary or
+reproduce the inputs.
+
 ## Known issues
 
 - The binary calls `tar`, which causes several issues:

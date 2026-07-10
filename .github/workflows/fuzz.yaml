@@ -1,0 +1,27 @@
+name: "Fuzz"
+on:
+  workflow_dispatch:
+    inputs:
+      cases:
+        description: "Number of random inputs to try"
+        default: "256"
+        required: false
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: Install the reference acap-build
+        run: |
+          sudo install -d -o "$(id -un)" /opt/axis
+          bin/install-reference-sdk.sh
+          sudo apt-get update
+          sudo apt-get install --yes python3-jsonschema
+      - name: Fuzz
+        env:
+          ACAP_SDK_LOCATION: /opt/axis
+          ACAP_BUILD_FUZZ_CASES: ${{ inputs.cases || '256' }}
+        run: cargo test --locked -p acap-build --test fuzz -- --ignored --nocapture
