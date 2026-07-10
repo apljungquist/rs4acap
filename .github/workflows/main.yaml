@@ -21,6 +21,7 @@ jobs:
       - name: Run checks
         run: nix develop --ignore-env --command make check
       - name: Check flake
+        if: github.event_name == 'push'
         run: nix flake check
   checks-macos:
     needs: checks
