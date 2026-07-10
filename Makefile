@@ -114,6 +114,11 @@ check_tests_t3:
 		--exclude rs4a-eap
 .PHONY: check_tests_t3
 
+check_tests_mac_os: init-env.sh
+	. ./init-env.sh && \
+	export PATH="/opt/homebrew/opt/gnu-tar/libexec/gnubin:${PATH}" && \
+	cargo test -p acap-build -- --ignored
+
 ## Fixes
 ## -----
 
@@ -143,6 +148,9 @@ fix_lint:
 
 Cargo.lock: $(wildcard crates/*/Cargo.toml)
 	cargo metadata --format-version=1 > /dev/null
+
+init-env.sh: bin/create-venv.sh
+	@<
 
 # The `acap-build` snapshot tests need the ACAP Native SDK. This Makefile assumes
 # it is already installed and, if it is not at the default `/opt/axis`, that
