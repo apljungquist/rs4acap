@@ -25,7 +25,7 @@ impl Manifest {
             schema_version.push_str(".0");
         }
         let schema_version = semver::Version::parse(&schema_version)?;
-        if schema_version > semver::Version::new(1, 3, 0) {
+        if schema_version >= semver::Version::new(1, 3, 0) {
             let setup = manifest.try_find_setup_mut()?;
             if let Some(a) = setup.get("architecture") {
                 if a != "all" && a != architecture.nickname() {
@@ -132,5 +132,56 @@ impl Manifest {
             Serializer::with_formatter(&mut data, PrettyFormatter::with_indent(b"    "));
         self.0.serialize(&mut serializer)?;
         Ok(String::from_utf8(data)?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn architecture_is_added_from_schema_version_1_3() {
+        for schema_version in ["1.3", "1.3.0", "1.4"] {
+            let manifest = Manifest::new(
+                json!({
+                    "schemaVersion": schema_version,
+                    "acapPackageConf": {
+                        "setup": {
+                            "appName": "a",
+                            "runMode": "never",
+                            "version": "0.0.0"
+                        }
+                    }
+                }),
+                Architecture::Aarch64,
+            )
+            .unwrap();
+            assert_eq!(
+                manifest.try_find_architecture().ok(),
+                Some("aarch64"),
+                "schemaVersion {schema_version:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn architecture_is_not_added_before_schema_version_1_3() {
+        let manifest = Manifest::new(
+            json!({
+                "schemaVersion": "1.2",
+                "acapPackageConf": {
+                    "setup": {
+                        "appName": "a",
+                        "runMode": "never",
+                        "version": "0.0.0"
+                    }
+                }
+            }),
+            Architecture::Aarch64,
+        )
+        .unwrap();
+        manifest.try_find_architecture().unwrap_err();
     }
 }

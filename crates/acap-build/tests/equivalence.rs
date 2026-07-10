@@ -23,21 +23,20 @@ fn copy_dir(src: &Path, dst: &Path) {
     }
 }
 
-// TODO: Add facilities for comparing with upstream automatically
-// TODO: Make `acap-build` compatible with all supported dev environments of this propject
-#[ignore = "requires a tier 2 developer environment"]
-#[test]
-fn example_app_output_matches_snapshot() {
+/// Build the app in `tests/data/<name>` and return the exit code of the build together with a
+/// checksum of the produced EAP.
+fn build_and_checksum(name: &str, extra_args: &[&str]) -> (Option<i32>, String) {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let fixture = Path::new(manifest_dir).join("tests/data/example_app");
+    let fixture = Path::new(manifest_dir).join("tests/data").join(name);
 
     // Build in a scratch copy so the generated files don't pollute the fixture.
     let scratch = tempfile::tempdir().unwrap();
-    let app = scratch.path().join("example_app");
+    let app = scratch.path().join(name);
     copy_dir(&fixture, &app);
 
     let output = Command::new(env!("CARGO_BIN_EXE_acap-build"))
         .args(["--build", "no-build"])
+        .args(extra_args)
         .arg(&app)
         .env("SOURCE_DATE_EPOCH", "0")
         .env("OECORE_TARGET_ARCH", "aarch64")
@@ -48,7 +47,7 @@ fn example_app_output_matches_snapshot() {
     let eap_file_path = PathBuf::from(String::from_utf8(output.stdout).unwrap().trim());
     assert!(
         output.status.success(),
-        "acap-built existed with {}: {eap_file_path:?}",
+        "acap-build exited with {}: {eap_file_path:?}",
         output.status
     );
 
@@ -58,8 +57,14 @@ fn example_app_output_matches_snapshot() {
         .unwrap();
     let mut hasher = DefaultHasher::new();
     contents.hash(&mut hasher);
-    let checksum = format!("{:016x}", hasher.finish());
+    (output.status.code(), format!("{:016x}", hasher.finish()))
+}
 
+// TODO: Add facilities for comparing with upstream automatically
+// TODO: Make `acap-build` compatible with all supported dev environments of this propject
+#[ignore = "requires a tier 2 developer environment"]
+#[test]
+fn example_app_output_matches_snapshot() {
     // TODO: Also assert other properties of the output, such as name and location of artefacts
     expect![[r#"
         (
@@ -69,5 +74,24 @@ fn example_app_output_matches_snapshot() {
             "ee74935e2c809417",
         )
     "#]]
-    .assert_debug_eq(&(output.status.code(), checksum));
+    .assert_debug_eq(&build_and_checksum("example_app", &[]));
+}
+
+#[ignore = "requires a tier 2 developer environment"]
+#[test]
+fn schema_1_3_app_output_matches_snapshot() {
+    // Validation is disabled because that is how the example was built when it was found.
+    // TODO: Look into whether it can be enabled to stay close to the idealized model
+    expect![[r#"
+        (
+            Some(
+                0,
+            ),
+            "246baeeded73541b",
+        )
+    "#]]
+    .assert_debug_eq(&build_and_checksum(
+        "schema_1_3_app",
+        &["--disable-manifest-validation"],
+    ));
 }
