@@ -253,7 +253,7 @@ impl Display for InternalIp {
 
 impl Serialize for InternalIp {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.collect_str(self) // uses your Display impl
+        serializer.collect_str(self)
     }
 }
 
@@ -295,7 +295,6 @@ pub struct Device {
     #[serde(serialize_with = "serialize_datetime_array")]
     pub booked: Vec<DateTime<Utc>>,
     /// Despite it's name, the device is not accessible from the internet at this IP.
-    /// It only serves as a stable per-device identifier.
     pub external_ip: ExternalIp,
     pub firmware_version: FirmwareVersion,
     pub id: LoanableId,
