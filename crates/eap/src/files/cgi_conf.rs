@@ -26,6 +26,13 @@ impl CgiConf {
             Err(e) => return Err(e.into()),
         };
 
+        // note that a non-empty httpConfig with only directory entries still
+        // produces a file, albeit an empty one.
+        if conf.is_empty() {
+            debug!("Skipping cgi.conf, httpConfig is empty");
+            return Ok(None);
+        }
+
         let mut entries = Vec::new();
         for obj in conf.iter() {
             let obj = obj.try_to_object()?;
@@ -62,5 +69,50 @@ impl Display for CgiConf {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{json, Value};
+
+    use super::*;
+    use crate::Architecture;
+
+    fn manifest_with_http_config(http_config: Value) -> Manifest {
+        Manifest::new(
+            json!({
+                "schemaVersion": "1.3",
+                "acapPackageConf": {
+                    "setup": {
+                        "appName": "a",
+                        "runMode": "never",
+                        "version": "0.0.0"
+                    },
+                    "configuration": {
+                        "httpConfig": http_config
+                    }
+                }
+            }),
+            Architecture::Aarch64,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn cgi_conf_is_omitted_when_http_config_is_empty() {
+        let manifest = manifest_with_http_config(json!([]));
+        assert!(CgiConf::new(&manifest).unwrap().is_none());
+    }
+
+    #[test]
+    fn cgi_conf_is_empty_but_present_when_http_config_has_only_directory_entries() {
+        // Unlike an empty httpConfig, one containing only directory entries still produces a
+        // file, albeit an empty one, in both implementations.
+        let manifest = manifest_with_http_config(json!([
+            {"type": "directory", "name": "html", "access": "viewer"}
+        ]));
+        let conf = CgiConf::new(&manifest).unwrap().unwrap();
+        assert_eq!(conf.to_string(), "");
     }
 }

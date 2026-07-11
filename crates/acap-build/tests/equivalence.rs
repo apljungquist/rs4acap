@@ -114,3 +114,41 @@ fn non_ascii_app_output_matches_snapshot() {
         &["--disable-manifest-validation"],
     ));
 }
+
+#[ignore = "requires a tier 2 developer environment"]
+#[test]
+fn empty_http_config_app_output_matches_snapshot() {
+    // Validation is disabled because that is how the example was built when it was found.
+    // TODO: Look into whether it can be enabled to stay close to the idealized model
+    expect![[r#"
+        (
+            Some(
+                0,
+            ),
+            "7080805ecf289485",
+        )
+    "#]]
+    .assert_debug_eq(&build_and_checksum(
+        "empty_http_config_app",
+        &["--disable-manifest-validation"],
+    ));
+}
+
+#[ignore = "requires a tier 2 developer environment"]
+#[test]
+fn directory_http_config_app_output_matches_snapshot() {
+    // Validation is disabled because that is how the example was built when it was found.
+    // TODO: Look into whether it can be enabled to stay close to the idealized model
+    expect![[r#"
+        (
+            Some(
+                0,
+            ),
+            "e8d8187330c90010",
+        )
+    "#]]
+    .assert_debug_eq(&build_and_checksum(
+        "directory_http_config_app",
+        &["--disable-manifest-validation"],
+    ));
+}
