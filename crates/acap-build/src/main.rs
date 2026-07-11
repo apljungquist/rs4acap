@@ -16,6 +16,7 @@ use tempdir::TempDir;
 #[derive(Clone, Copy, Debug, ValueEnum)]
 pub enum Architecture {
     Aarch64,
+    #[value(name = "arm")]
     Armv7hf,
 }
 
