@@ -131,8 +131,28 @@ impl Manifest {
         let mut serializer =
             Serializer::with_formatter(&mut data, PrettyFormatter::with_indent(b"    "));
         self.0.serialize(&mut serializer)?;
-        Ok(String::from_utf8(data)?)
+        Ok(ensure_ascii(&String::from_utf8(data)?))
     }
+}
+
+/// Escape non-ASCII characters the way Python's `json.dump` does with its default
+/// `ensure_ascii=True`: as `\uXXXX` sequences of UTF-16 code units, lowercase hex.
+///
+/// In serialized JSON non-ASCII characters can only occur inside string literals, so escaping
+/// them anywhere in the document is equivalent to escaping them during serialization.
+fn ensure_ascii(json: &str) -> String {
+    let mut escaped = String::with_capacity(json.len());
+    let mut buf = [0u16; 2];
+    for c in json.chars() {
+        if c.is_ascii() {
+            escaped.push(c);
+        } else {
+            for unit in c.encode_utf16(&mut buf) {
+                escaped.push_str(&format!("\\u{unit:04x}"));
+            }
+        }
+    }
+    escaped
 }
 
 #[cfg(test)]
@@ -140,6 +160,16 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+
+    #[test]
+    fn ensure_ascii_escapes_like_python_json_dump() {
+        // Matches `json.dumps("Åπ🦀")`.
+        assert_eq!(
+            ensure_ascii("\"\u{c5}\u{3c0}\u{1f980}\""),
+            "\"\\u00c5\\u03c0\\ud83e\\udd80\""
+        );
+        assert_eq!(ensure_ascii("\"ascii\""), "\"ascii\"");
+    }
 
     #[test]
     fn architecture_is_added_from_schema_version_1_3() {
@@ -183,5 +213,39 @@ mod tests {
         )
         .unwrap();
         manifest.try_find_architecture().unwrap_err();
+    }
+
+    #[test]
+    fn try_to_string_escapes_non_ascii() {
+        let manifest = Manifest::new(
+            json!({
+                "schemaVersion": "1.3",
+                "acapPackageConf": {
+                    "setup": {
+                        "appName": "a",
+                        "friendlyName": "\u{c5}pp \u{3a9}",
+                        "runMode": "never",
+                        "version": "0.0.0"
+                    }
+                }
+            }),
+            Architecture::Aarch64,
+        )
+        .unwrap();
+        assert_eq!(
+            manifest.try_to_string().unwrap(),
+            r#"{
+    "schemaVersion": "1.3",
+    "acapPackageConf": {
+        "setup": {
+            "appName": "a",
+            "friendlyName": "\u00c5pp \u03a9",
+            "runMode": "never",
+            "version": "0.0.0",
+            "architecture": "aarch64"
+        }
+    }
+}"#
+        );
     }
 }

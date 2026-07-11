@@ -55,6 +55,7 @@ edition = "2021"
 [workspace.lints.clippy]
 indexing_slicing = "warn"
 allow_attributes_without_reason = "warn"
+non_ascii_literal = "warn"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
