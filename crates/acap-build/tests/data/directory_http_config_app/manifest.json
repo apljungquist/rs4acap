@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.3",
+  "acapPackageConf": {
+    "setup": {
+      "appName": "a",
+      "runMode": "never",
+      "version": "0.0.0"
+    },
+    "configuration": {
+      "httpConfig": [
+        {
+          "type": "directory",
+          "name": "html",
+          "access": "viewer"
+        }
+      ]
+    }
+  }
+}
