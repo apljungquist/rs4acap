@@ -102,7 +102,8 @@ check_tests: check_tests_t3
 		--all-targets \
 		--locked \
 		-p acap-build \
-		-p rs4a-eap
+		-p rs4a-eap \
+		-- --ignored
 .PHONY: check_tests
 
 check_tests_t3:

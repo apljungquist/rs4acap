@@ -95,3 +95,22 @@ fn schema_1_3_app_output_matches_snapshot() {
         &["--disable-manifest-validation"],
     ));
 }
+
+#[ignore = "requires a tier 2 developer environment"]
+#[test]
+fn non_ascii_app_output_matches_snapshot() {
+    // Validation is disabled because that is how the example was built when it was found.
+    // TODO: Look into whether it can be enabled to stay close to the idealized model
+    expect![[r#"
+        (
+            Some(
+                0,
+            ),
+            "2306cff73c24e010",
+        )
+    "#]]
+    .assert_debug_eq(&build_and_checksum(
+        "non_ascii_app",
+        &["--disable-manifest-validation"],
+    ));
+}
