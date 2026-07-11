@@ -1,0 +1,12 @@
+{
+  "name": "ACAP Native SDK 12 aarch64",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "args": {
+      // Keep the version in sync with:
+      // - nix/acap-native-sdk.nix
+      // - bin/create-venv.sh
+      "TAG": "12.1.0-aarch64-ubuntu24.04"
+    }
+  }
+}

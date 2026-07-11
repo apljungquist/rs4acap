@@ -10,6 +10,11 @@
 # digest with `docker manifest inspect --verbose <image>:<tag>`), set the
 # corresponding `sha256` to `lib.fakeHash`, run `nix build .#acap-native-sdk`,
 # and copy the hash Nix reports back into this file.
+#
+# Keep the version in sync with:
+# - .devcontainer/acap-native-sdk-12-aarch64/devcontainer.json
+# - .devcontainer/acap-native-sdk-12-armv7hf/devcontainer.json
+# - bin/create-venv.sh
 {
   lib,
   stdenvNoCC,
