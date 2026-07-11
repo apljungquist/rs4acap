@@ -1,0 +1,9 @@
+{
+  "name": "ACAP Native SDK 13 aarch64",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "args": {
+      "TAG": "13.0.0-preview-aarch64-ubuntu25.10"
+    }
+  }
+}

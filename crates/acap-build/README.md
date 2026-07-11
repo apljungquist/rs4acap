@@ -17,6 +17,11 @@ There are aspects in which the observable behavior is expected to differ, notabl
 
 ### How this is tested
 
+The upstream `acap-build` can be run using the dev containers in
+`.devcontainer/`, e.g. to build the apps in `tests/data/` and compare the
+output to that of the port. There is one dev container per combination of
+SDK version and target architecture.
+
 In addition to the cargo integration tests and snapshot tests iin this repository
 the bit-exactness has been manually verified on all reproducible apps from:
 - `AxisCommunications/acap-rs@176d669ec37a5fe35764461d1f23494d3d3822b2`

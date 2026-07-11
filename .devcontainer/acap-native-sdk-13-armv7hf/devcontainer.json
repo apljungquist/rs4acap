@@ -1,0 +1,9 @@
+{
+  "name": "ACAP Native SDK 13 armv7hf",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "args": {
+      "TAG": "13.0.0-preview-armv7hf-ubuntu25.10"
+    }
+  }
+}

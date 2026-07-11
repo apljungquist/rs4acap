@@ -6,7 +6,10 @@
 #     . init-env.sh                 # activate (run `deactivate` to undo)
 set -eu
 
-# Keep these in sync with nix/acap-native-sdk.nix.
+# Keep these in sync with:
+# - .devcontainer/acap-native-sdk-12-aarch64/devcontainer.json
+# - .devcontainer/acap-native-sdk-12-armv7hf/devcontainer.json
+# - nix/acap-native-sdk.nix.
 SDK_IMAGE="axisecp/acap-native-sdk"
 SDK_VERSION="12.1.0"
 SDK_UBUNTU="ubuntu24.04"
