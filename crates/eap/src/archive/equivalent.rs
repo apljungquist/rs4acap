@@ -55,7 +55,6 @@ impl EquivalentArchiveBuilder {
         Self(Command::new("tar")).init(staging_dir, eap_file_name, mtime, true)
     }
 
-    #[expect(dead_code, reason = "Will be used in the next commit")]
     #[cfg(test)]
     pub fn new_portable_without_compression(
         staging_dir: &Path,
@@ -63,11 +62,6 @@ impl EquivalentArchiveBuilder {
         mtime: Mtime,
     ) -> Option<Self> {
         gnu_tar().map(|p| Self(Command::new(p)).init(staging_dir, eap_file_name, mtime, false))
-    }
-
-    pub fn file(&mut self, name: &str) -> &mut Self {
-        self.0.arg(name);
-        self
     }
 
     pub fn files(&mut self, files: &[&str]) -> &mut Self {

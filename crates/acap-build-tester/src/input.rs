@@ -8,7 +8,7 @@ use proptest::{
     prelude::{BoxedStrategy, Just, Strategy},
     prop_oneof,
 };
-use rs4a_eap::{Mtime, DEFAULT_ACAP_SDK_LOCATION};
+use rs4a_eap::{AcapBuildImpl, Mtime, DEFAULT_ACAP_SDK_LOCATION};
 
 use crate::source::Source;
 
@@ -50,6 +50,7 @@ pub fn arbitrary_input(oecore_target_arch: Architecture) -> BoxedStrategy<Input>
                 source_date_epoch: Some(
                     Mtime::try_from(epoch).expect("generated values fit in the tar headers"),
                 ),
+                acap_build_impl: AcapBuildImpl::Equivalent,
             },
             source,
         })

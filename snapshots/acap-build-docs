@@ -19,5 +19,7 @@ Options:
           [env: ACAP_SDK_LOCATION=] [default: /opt/axis/]
       --source-date-epoch <SOURCE_DATE_EPOCH>
           Time to stamp on every archive member, in seconds after the Unix epoch [env: SOURCE_DATE_EPOCH=]
+      --impl <ACAP_BUILD_IMPL>
+          Implementation used to package the EAP [env: ACAP_BUILD_IMPL=] [default: equivalent] [possible values: equivalent, compatible]
   -h, --help
           Print help (see more with '--help')

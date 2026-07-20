@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
+unset ACAP_BUILD_IMPL
 unset ACAP_SDK_LOCATION
 unset SOURCE_DATE_EPOCH
 

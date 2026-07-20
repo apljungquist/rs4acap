@@ -27,6 +27,7 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
         oecore_target_arch,
         acap_sdk_location: _,
         source_date_epoch,
+        acap_build_impl: _,
     } = cli;
 
     let mut command = Command::new("acap-build");

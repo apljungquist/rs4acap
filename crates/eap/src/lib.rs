@@ -3,6 +3,7 @@
 use std::{
     collections::HashSet,
     ffi::OsString,
+    fmt::Display,
     fs,
     io::Write,
     os::unix::fs::{symlink, PermissionsExt},
@@ -28,7 +29,7 @@ mod files;
 
 pub use schema::SchemaSource;
 
-use crate::archive::EquivalentArchiveBuilder;
+use crate::archive::{CompatibleArchiveBuilder, EquivalentArchiveBuilder};
 
 /// The location where the ACAP SDK is installed by default.
 ///
@@ -38,14 +39,14 @@ pub const DEFAULT_ACAP_SDK_LOCATION: &str = "/opt/axis/";
 /// A modification time, in seconds after the Unix epoch, that the tar headers in the EAP can
 /// represent.
 ///
-/// The 12-byte numeric header fields hold 11 octal digits; GNU tar silently encodes larger
+/// The 12-byte mtime header field holds 11 octal digits; GNU tar silently encodes larger
 /// values with its base-256 extension, which not every unpacker understands, so conversion
 /// fails for values above [`Self::MAX`].
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Mtime(u64);
 
 impl Mtime {
-    /// The largest value that the tar headers can portably represent.
+    /// The largest value that the mtime header field can portably represent.
     pub const MAX: Self = Self((1 << 33) - 1);
 }
 
@@ -122,10 +123,30 @@ fn copy_recursively(src: &Path, dst: &Path, copy_permissions: bool) -> anyhow::R
     Ok(())
 }
 
+/// The implementation used to package the EAP.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
 pub enum AcapBuildImpl {
-    /// Use the native, equivalent implementation.
+    /// Produces artifacts bit-identical to those produced by the reference implementation.
+    ///
+    /// Requires a GNU-compatible `tar` and `gzip` on the `PATH`.
+    ///
+    /// Bit-exactness depends on the versions of `tar` and `gzip` that are resolved, so the
+    /// artifacts are not identical across platforms.
     Equivalent,
+    /// Produces artifacts that may not be bit-identical but nonetheless work.
+    ///
+    /// Requires no external programs.
+    Compatible,
+}
+
+impl Display for AcapBuildImpl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AcapBuildImpl::Equivalent => write!(f, "equivalent"),
+            AcapBuildImpl::Compatible => write!(f, "compatible"),
+        }
+    }
 }
 
 impl FromStr for AcapBuildImpl {
@@ -134,7 +155,8 @@ impl FromStr for AcapBuildImpl {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "equivalent" => Ok(Self::Equivalent),
-            _ => bail!("Expected 'equivalent', but found {s:?}"),
+            "compatible" => Ok(Self::Compatible),
+            _ => bail!("Expected 'equivalent' or 'compatible', but found {s:?}"),
         }
     }
 }
@@ -256,15 +278,29 @@ impl<'a> AppBuilder<'a> {
 
     /// Build the EAP and return its path.
     pub fn build(self) -> anyhow::Result<OsString> {
+        debug!(
+            "Building EAP using the {:?} implementation",
+            self.acap_build_impl
+        );
+        let (eap_file_name, operands) = self.stage()?;
         match self.acap_build_impl {
             AcapBuildImpl::Equivalent => {
-                debug!("Bypassing acap-build");
-                self.build_native()
+                let mut tar =
+                    EquivalentArchiveBuilder::new(self.staging_dir, &eap_file_name, self.mtime);
+                tar.files(&operands);
+                tar.run_with_logged_output()?;
+            }
+            AcapBuildImpl::Compatible => {
+                let mut tar =
+                    CompatibleArchiveBuilder::new(self.staging_dir, &eap_file_name, self.mtime);
+                tar.files(&operands);
+                tar.finish()?;
             }
         }
+        Ok(OsString::from(eap_file_name))
     }
 
-    fn build_native(self) -> anyhow::Result<OsString> {
+    fn stage(&self) -> anyhow::Result<(String, Vec<&str>)> {
         schema::validate(self.manifest.as_value(), &self.schema)
             .context("validating manifest against schema")?;
 
@@ -333,28 +369,17 @@ impl<'a> AppBuilder<'a> {
         permissions.set_mode(0o600);
         fs::set_permissions(&manifest_file, permissions)?;
 
-        // Create the archive
-        let mut tar = EquivalentArchiveBuilder::new(staging_dir, &eap_file_name, self.mtime);
-
-        for name in self.section_1_files() {
-            if staging_dir.join(name).symlink_metadata().is_ok() {
-                tar.file(name);
-            }
-        }
-
-        tar.files(self.other_files().as_slice());
-
         // TODO: Consider implementing support for `httpd.conf.local.*` and `mime.types.local.*`.
+        let exists = |name: &&str| staging_dir.join(name).symlink_metadata().is_ok();
+        let operands = self
+            .section_1_files()
+            .into_iter()
+            .filter(exists)
+            .chain(self.other_files())
+            .chain(self.section_4_files().into_iter().filter(exists))
+            .collect();
 
-        for name in self.section_4_files() {
-            if staging_dir.join(name).symlink_metadata().is_ok() {
-                tar.file(name);
-            }
-        }
-
-        tar.run_with_logged_output()?;
-
-        Ok(OsString::from(eap_file_name))
+        Ok((eap_file_name, operands))
     }
 
     // These sections are probably relevant only for the equivalent implementation;
@@ -475,6 +500,19 @@ mod tests {
     fn mtime_can_be_constructed_only_from_values_that_fit_in_the_headers() {
         let Mtime(_) = Mtime::try_from(Mtime::MAX.0).unwrap();
         assert!(Mtime::try_from(Mtime::MAX.0 + 1).is_err());
+    }
+
+    #[test]
+    fn acap_build_impl_round_trips_through_string() {
+        for variant in [AcapBuildImpl::Equivalent, AcapBuildImpl::Compatible] {
+            assert_eq!(
+                variant.to_string().parse::<AcapBuildImpl>().unwrap(),
+                variant
+            );
+        }
+        for s in ["equivalent", "compatible"] {
+            assert_eq!(s.parse::<AcapBuildImpl>().unwrap().to_string(), s);
+        }
     }
 
     #[test]

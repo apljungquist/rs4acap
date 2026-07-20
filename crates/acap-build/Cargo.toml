@@ -15,7 +15,7 @@ log = { workspace = true }
 tempfile = { workspace = true }
 tempdir = { workspace = true }
 
-rs4a-eap.workspace = true
+rs4a-eap = { workspace = true, features = ["clap"] }
 
 [dev-dependencies]
 expect-test.workspace = true
