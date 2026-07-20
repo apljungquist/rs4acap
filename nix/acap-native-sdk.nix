@@ -24,7 +24,7 @@
   jq,
 }:
 let
-  version = "12.1.0";
+  version = "12.11.0";
   ubuntuTag = "ubuntu24.04";
 
   # The SDK images are published for amd64 hosts only; the `armv7hf`/`aarch64`
@@ -47,13 +47,13 @@ let
   images = [
     (pullSdk {
       targetArch = "armv7hf";
-      imageDigest = "sha256:b39c18c81bb7cb5cca04833a1f2e29f559b75171d79cd296a416a3b44899539f";
-      sha256 = "sha256-P6sERcnCiiraNGd+i3jb5LQR9asksYnN7e8uxtGC9Aw=";
+      imageDigest = "sha256:355a328268d0184bc7085646fee5c9bdab7e2dd0fe8952029828a68392fc3b61";
+      sha256 = "sha256-MDclOr/sJIJ1GFgo5fT9dfVII6fMvH+OMWGjReeemF4=";
     })
     (pullSdk {
       targetArch = "aarch64";
-      imageDigest = "sha256:59fbff8af293c253db76b7d3d5703af6eef34c9c32c7210f5f4a1fababfaa516";
-      sha256 = "sha256-i+3DnKVbPZNxUUjPUvCAa64V8PGWTC/GeRCsX6DI9tU=";
+      imageDigest = "sha256:44c54f65c5a1475020274520582b7a22d88505c61902c369c97bd81db98725db";
+      sha256 = "sha256-21bt/SixxmOVzfpGp2ooyDKfa7+Lxz72ZFfwclEhyOc=";
     })
   ];
 in

@@ -13,7 +13,7 @@ set -eu
 # - .github/workflows/main.yaml
 # - nix/acap-native-sdk.nix.
 SDK_IMAGE="axisecp/acap-native-sdk"
-SDK_VERSION="12.1.0"
+SDK_VERSION="12.11.0"
 SDK_UBUNTU="ubuntu24.04"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

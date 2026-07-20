@@ -25,8 +25,8 @@ jobs:
           # - bin/create-venv.sh
           # - nix/acap-native-sdk.nix
           # TODO: Add the SDK 13 environments when acap-build is compatible with them
-          - 12.1.0-aarch64-ubuntu24.04
-          - 12.1.0-armv7hf-ubuntu24.04
+          - 12.11.0-aarch64-ubuntu24.04
+          - 12.11.0-armv7hf-ubuntu24.04
     steps:
       - uses: actions/checkout@v4
         with:

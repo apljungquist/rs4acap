@@ -8,7 +8,7 @@
       // - .github/workflows/main.yaml
       // - nix/acap-native-sdk.nix
       // - bin/create-venv.sh
-      "TAG": "12.1.0-aarch64-ubuntu24.04"
+      "TAG": "12.11.0-aarch64-ubuntu24.04"
     }
   }
 }
