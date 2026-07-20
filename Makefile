@@ -13,6 +13,13 @@
 help:
 	@mkhelp $(firstword $(MAKEFILE_LIST))
 
+## Compare the output from building example apps
+replay_equivalence_examples:
+	cargo run --locked -p rs4a-acap-build-tester -- \
+		replay \
+		crates/acap-build/tests/data
+.PHONY: replay_equivalence_examples
+
 ## Checks
 ## ------
 
@@ -102,6 +109,7 @@ check_tests: check_tests_t3
 		--all-targets \
 		--locked \
 		-p acap-build \
+		-p rs4a-acap-build-tester \
 		-p rs4a-eap \
 		-- --ignored
 .PHONY: check_tests
@@ -112,6 +120,7 @@ check_tests_t3:
 		--locked \
 		--workspace \
 		--exclude acap-build \
+		--exclude rs4a-acap-build-tester \
 		--exclude rs4a-eap
 .PHONY: check_tests_t3
 

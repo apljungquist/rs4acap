@@ -4,6 +4,7 @@
     "dockerfile": "../Dockerfile",
     "args": {
       // Keep the version in sync with:
+      // - .github/workflows/main.yaml
       // - nix/acap-native-sdk.nix
       // - bin/create-venv.sh
       "TAG": "12.1.0-aarch64-ubuntu24.04"
