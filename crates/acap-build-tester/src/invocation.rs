@@ -25,6 +25,7 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
         additional_file,
         disable_manifest_validation,
         oecore_target_arch,
+        axis_os_version,
         acap_sdk_location: _,
         source_date_epoch,
         acap_build_impl: _,
@@ -40,6 +41,10 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
             .expect("no architecture variant is skipped")
             .get_name(),
     );
+    match &axis_os_version {
+        Some(version) => command.env("AXIS_OS_VERSION", version),
+        None => command.env_remove("AXIS_OS_VERSION"),
+    };
     match source_date_epoch {
         Some(epoch) => command.env("SOURCE_DATE_EPOCH", u64::from(epoch).to_string()),
         None => command.env_remove("SOURCE_DATE_EPOCH"),

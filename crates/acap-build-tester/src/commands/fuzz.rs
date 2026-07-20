@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use acap_build::{Architecture, Cli};
 use anyhow::{bail, Context};
 use proptest::test_runner::{Config, RngAlgorithm, TestCaseError, TestError, TestRng, TestRunner};
@@ -65,6 +67,9 @@ pub struct FuzzCommand {
     /// Seed for the random number generator.
     #[clap(long, env = "ACAP_BUILD_FUZZ_SEED", default_value_t = 0)]
     seed: u64,
+    /// Directory to save the (shrunk) failing example to, as a replay example.
+    #[clap(long)]
+    save_failing: Option<PathBuf>,
 }
 
 impl FuzzCommand {
@@ -73,11 +78,17 @@ impl FuzzCommand {
             oecore_target_arch,
             cases,
             seed,
+            save_failing,
         } = self;
 
         match fuzz(oecore_target_arch, cases, seed).map_err(|e| *e) {
             Ok(()) => Ok(()),
             Err(TestError::Fail(reason, input)) => {
+                if let Some(dir) = &save_failing {
+                    input
+                        .save_to(dir)
+                        .with_context(|| format!("saving failing example to {dir:?}"))?;
+                }
                 bail!("Property violated by {input:#?}:\n{reason}")
             }
             Err(e @ TestError::Abort(_)) => bail!("Fuzzing aborted: {e}"),

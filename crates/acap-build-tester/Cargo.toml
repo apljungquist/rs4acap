@@ -10,6 +10,7 @@ clap = { workspace = true, features = ["derive", "env"] }
 env_logger = { workspace = true }
 libtest-mimic = { workspace = true }
 proptest = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
 

@@ -2264,6 +2264,7 @@ dependencies = [
  "libtest-mimic",
  "proptest",
  "rs4a-eap",
+ "serde",
  "serde_json",
  "tempfile",
 ]

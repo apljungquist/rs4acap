@@ -3,12 +3,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use acap_build::{Architecture, BuildOption, Cli};
+use acap_build::{Architecture, Cli};
 use anyhow::{bail, ensure, Context};
 use libtest_mimic::{Arguments, Failed, Trial};
-use rs4a_eap::{AcapBuildImpl, Mtime, DEFAULT_ACAP_SDK_LOCATION};
 
-use crate::invocation::{build_with_candidate, build_with_reference};
+use crate::{
+    input::load_invocation,
+    invocation::{build_with_candidate, build_with_reference},
+};
 
 fn copy_dir(src: &Path, dst: &Path) -> anyhow::Result<()> {
     fs::create_dir_all(dst)?;
@@ -36,23 +38,17 @@ fn scratch_copy(app_dir: &Path) -> anyhow::Result<(tempfile::TempDir, PathBuf)> 
     Ok((scratch, app))
 }
 
-fn check(app_dir: PathBuf, oecore_target_arch: Architecture) -> anyhow::Result<()> {
+fn check(
+    app_dir: PathBuf,
+    oecore_target_arch: Architecture,
+    axis_os_version: Option<String>,
+) -> anyhow::Result<()> {
     let (_candidate_scratch, candidate_app) = scratch_copy(&app_dir)?;
     let (_reference_scratch, reference_app) = scratch_copy(&app_dir)?;
 
-    // Both implementations receive the same inputs, except for the directory they build in.
-    let cli = Cli {
-        path: candidate_app,
-        build: BuildOption::NoBuild,
-        manifest: PathBuf::from("manifest.json"),
-        // TODO: Enable storing arguments alongside examples
-        additional_file: Vec::new(),
-        disable_manifest_validation: true,
-        oecore_target_arch,
-        acap_sdk_location: PathBuf::from(DEFAULT_ACAP_SDK_LOCATION),
-        source_date_epoch: Some(Mtime::default()),
-        acap_build_impl: AcapBuildImpl::Equivalent,
-    };
+    // Both implementations receive the same inputs, except for the directory they build in. The
+    // invocation is read from the example itself, falling back to the ambient environment.
+    let cli = load_invocation(&app_dir, candidate_app, oecore_target_arch, axis_os_version)?;
     let candidate = build_with_candidate(cli.clone()).context("building with the candidate")?;
     let reference = build_with_reference(Cli {
         path: reference_app,
@@ -75,6 +71,9 @@ fn check(app_dir: PathBuf, oecore_target_arch: Architecture) -> anyhow::Result<(
 pub struct ReplayCommand {
     #[clap(long, env = "OECORE_TARGET_ARCH")]
     oecore_target_arch: Architecture,
+    /// Fallback AXIS OS version for examples that do not record their own.
+    #[clap(long, env = "AXIS_OS_VERSION")]
+    axis_os_version: Option<String>,
     /// Directory containing the source code of one application per subdirectory.
     apps: PathBuf,
     #[clap(flatten)]
@@ -85,6 +84,7 @@ impl ReplayCommand {
     pub fn exec(self) -> anyhow::Result<()> {
         let Self {
             oecore_target_arch,
+            axis_os_version,
             apps,
             test_args,
         } = self;
@@ -95,8 +95,10 @@ impl ReplayCommand {
             if entry.file_type()?.is_dir() {
                 let app = entry.path();
                 let name = entry.file_name().to_string_lossy().into_owned();
+                let axis_os_version = axis_os_version.clone();
                 trials.push(Trial::test(name, move || {
-                    check(app, oecore_target_arch).map_err(|e| Failed::from(format!("{e:#}")))
+                    check(app, oecore_target_arch, axis_os_version)
+                        .map_err(|e| Failed::from(format!("{e:#}")))
                 }));
             }
         }

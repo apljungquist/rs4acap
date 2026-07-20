@@ -67,6 +67,12 @@ pub struct Cli {
     pub disable_manifest_validation: bool,
     #[clap(long, env = "OECORE_TARGET_ARCH")]
     pub oecore_target_arch: Architecture,
+    /// Version of AXIS OS in the build environment.
+    ///
+    /// Used to fill in manifest fields that the reference derives from it, such as an omitted
+    /// `compatibleOsVersions[].min`.
+    #[clap(long, env = "AXIS_OS_VERSION")]
+    pub axis_os_version: Option<String>,
     #[clap(
         long,
         env = "ACAP_SDK_LOCATION",
@@ -96,6 +102,8 @@ impl Cli {
             additional_file,
             disable_manifest_validation,
             oecore_target_arch,
+            // Recorded on the CLI here; the library begins consuming it in a later change.
+            axis_os_version: _,
             acap_sdk_location,
             source_date_epoch,
             acap_build_impl,
