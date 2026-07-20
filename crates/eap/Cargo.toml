@@ -9,6 +9,7 @@ homepage = "https://github.com/apljungquist/rs4acap"
 
 [dependencies]
 anyhow = { workspace = true }
+flate2 = { workspace = true }
 jsonschema = { workspace = true }
 log = { workspace = true }
 semver = { workspace = true }

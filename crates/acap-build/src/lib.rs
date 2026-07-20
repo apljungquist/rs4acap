@@ -56,6 +56,10 @@ pub struct Cli {
     pub manifest: PathBuf,
     /// Additional files to include in the package.
     /// May be specified multiple times
+    ///
+    /// If it matches the archiver's exclude patterns (`*~` and VCS names like `.git`),
+    /// then it's silently omitted from the archive but still listed in `package.conf`.
+    // TODO: Consider pushing this quirk out of the library and into this binary
     #[clap(long, short)]
     pub additional_file: Vec<PathBuf>,
     /// Disable validation of manifest file against manifest schema.
