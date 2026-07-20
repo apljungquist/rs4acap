@@ -2226,6 +2226,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "rs4a-acap-build-tester"
+version = "0.1.0"
+dependencies = [
+ "acap-build",
+ "anyhow",
+ "clap",
+ "env_logger",
+ "libtest-mimic",
+ "rs4a-eap",
+ "tempfile",
+]
+
+[[package]]
 name = "rs4a-authentication"
 version = "0.1.0"
 dependencies = [

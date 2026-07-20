@@ -65,6 +65,12 @@ impl TryFrom<u64> for Mtime {
     }
 }
 
+impl From<Mtime> for u64 {
+    fn from(value: Mtime) -> Self {
+        value.0
+    }
+}
+
 // TODO: Find a better way to support reproducible builds
 fn copy<P: AsRef<Path>, Q: AsRef<Path>>(
     src: P,

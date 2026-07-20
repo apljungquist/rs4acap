@@ -9,6 +9,7 @@ Commit messages ...
 |-------|-----------------------|--------------------|
 | a     | rs4a-authentication   |                    |
 | ab    | acap-build            |                    |
+| abt   | acap-build-tester     |                    |
 | c     | cli4a                 |                    |
 | di    | device-inventory      | device-inventory   |
 | dm    | device-manager        |                    |
