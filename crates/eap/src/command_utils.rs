@@ -4,11 +4,11 @@ use anyhow::Context;
 use log::debug;
 
 pub trait RunWith {
-    fn run_with_processed_stdout(
+    fn run_with_processed_output(
         self,
-        func: impl FnMut(std::io::Result<String>) -> anyhow::Result<()>,
+        stdout_func: impl FnMut(std::io::Result<String>) -> anyhow::Result<()>,
+        stderr_func: impl FnMut(std::io::Result<String>) -> anyhow::Result<()> + Send,
     ) -> anyhow::Result<()>;
-    fn run_with_logged_stdout(self) -> anyhow::Result<()>;
 }
 
 fn spawn(mut cmd: std::process::Command) -> anyhow::Result<std::process::Child> {
@@ -25,25 +25,47 @@ fn spawn(mut cmd: std::process::Command) -> anyhow::Result<std::process::Child> 
 }
 
 impl RunWith for std::process::Command {
-    fn run_with_processed_stdout(
+    fn run_with_processed_output(
         mut self,
-        mut func: impl FnMut(std::io::Result<String>) -> anyhow::Result<()>,
+        mut stdout_func: impl FnMut(std::io::Result<String>) -> anyhow::Result<()>,
+        mut stderr_func: impl FnMut(std::io::Result<String>) -> anyhow::Result<()> + Send,
     ) -> anyhow::Result<()> {
         self.stdout(std::process::Stdio::piped());
+        self.stderr(std::process::Stdio::piped());
         debug!("Spawning child {self:#?}...");
         let mut child = spawn(self)?;
         // PANICS:
         // `expect` will never panic because we configured `Stdio::piped()` above, so the child
-        // has a stdout handle, and this function is the only place that takes it.
+        // has the handles, and this function is the only place that takes them.
         let stdout = child
             .stdout
             .take()
             .expect("not previously taken by this function");
+        let stderr = child
+            .stderr
+            .take()
+            .expect("not previously taken by this function");
 
-        let lines = BufReader::new(stdout).lines();
-        for line in lines {
-            func(line)?;
-        }
+        let (stdout_result, stderr_result) = std::thread::scope(|scope| {
+            let stderr_thread = scope.spawn(move || -> anyhow::Result<()> {
+                for line in BufReader::new(stderr).lines() {
+                    stderr_func(line)?;
+                }
+                Ok(())
+            });
+            let stdout_result: anyhow::Result<()> = (|| {
+                for line in BufReader::new(stdout).lines() {
+                    stdout_func(line)?;
+                }
+                Ok(())
+            })();
+            let stderr_result = stderr_thread
+                .join()
+                .expect("the stderr thread does not panic");
+            (stdout_result, stderr_result)
+        });
+        let () = stdout_result?;
+        let () = stderr_result?;
 
         debug!("Waiting for child...");
         let status = child.wait()?;
@@ -51,14 +73,5 @@ impl RunWith for std::process::Command {
             anyhow::bail!("Child failed: {status}");
         }
         Ok(())
-    }
-    fn run_with_logged_stdout(self) -> anyhow::Result<()> {
-        self.run_with_processed_stdout(|line| {
-            let line = line?;
-            if !line.is_empty() {
-                debug!("Child said {line:?}.");
-            };
-            Ok(())
-        })
     }
 }

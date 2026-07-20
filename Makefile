@@ -166,7 +166,7 @@ Cargo.lock: $(wildcard crates/*/Cargo.toml)
 	cargo metadata --format-version=1 > /dev/null
 
 init-env.sh: bin/create-venv.sh
-	@<
+	$<
 
 # The `acap-build` snapshot tests need the ACAP Native SDK. This Makefile assumes
 # it is already installed and, if it is not at the default `/opt/axis`, that

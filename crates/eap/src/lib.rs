@@ -352,7 +352,7 @@ impl<'a> AppBuilder<'a> {
             }
         }
 
-        tar.run_with_logged_stdout()?;
+        tar.run_with_logged_output()?;
 
         Ok(OsString::from(eap_file_name))
     }
