@@ -5,6 +5,8 @@
 //! Bit-exactness depends on the versions of `tar` and `gzip` that are resolved.
 use std::{path::Path, process::Command};
 
+use log::{debug, warn};
+
 use crate::{command_utils::RunWith, Mtime};
 
 /// Finds an available GNU `tar`, returning its program name, or `None` if
@@ -73,8 +75,25 @@ impl EquivalentArchiveBuilder {
         self
     }
 
-    pub fn run_with_logged_stdout(mut self) -> anyhow::Result<()> {
+    pub fn run_with_logged_output(mut self) -> anyhow::Result<()> {
         self.0.arg("--verbose");
-        self.0.run_with_logged_stdout()
+        self.0.run_with_processed_output(
+            |line| {
+                let line = line?;
+                if !line.is_empty() {
+                    debug!("Child said {line:?}.");
+                }
+                Ok(())
+            },
+            |line| {
+                let line = line?;
+                if line.starts_with("tar: Option --mtime: Treating date") {
+                    debug!("Child said {line:?}.");
+                } else if !line.is_empty() {
+                    warn!("Child said {line:?}.");
+                }
+                Ok(())
+            },
+        )
     }
 }

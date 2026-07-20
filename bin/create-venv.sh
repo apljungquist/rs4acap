@@ -23,10 +23,8 @@ INIT_ENV="$REPO_ROOT/init-env.sh"
 
 mkdir -p "$SDK_DIR"
 
-# TODO: silence platform mismatch warning
-
 for arch in armv7hf aarch64; do
-  docker run $SDK_IMAGE:$SDK_VERSION-$arch-$SDK_UBUNTU tar \
+  docker run --platform linux/amd64 $SDK_IMAGE:$SDK_VERSION-$arch-$SDK_UBUNTU tar \
     --create \
     --directory /opt/ \
     --file - \
