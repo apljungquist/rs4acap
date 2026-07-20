@@ -20,6 +20,12 @@ replay_equivalence_examples:
 		crates/acap-build/tests/data
 .PHONY: replay_equivalence_examples
 
+## Compare the output from building generated apps
+fuzz_equivalence:
+	cargo run --locked -p rs4a-acap-build-tester -- \
+		fuzz
+.PHONY: fuzz_equivalence
+
 ## Checks
 ## ------
 

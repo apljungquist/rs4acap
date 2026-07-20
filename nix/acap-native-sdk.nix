@@ -14,6 +14,7 @@
 # Keep the version in sync with:
 # - .devcontainer/acap-native-sdk-12-aarch64/devcontainer.json
 # - .devcontainer/acap-native-sdk-12-armv7hf/devcontainer.json
+# - .github/workflows/fuzz.yaml
 # - .github/workflows/main.yaml
 # - bin/create-venv.sh
 {
