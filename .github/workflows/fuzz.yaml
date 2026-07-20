@@ -1,0 +1,47 @@
+name: "Fuzz"
+on:
+  workflow_dispatch:
+    inputs:
+      cases:
+        description: "Number of random inputs to try"
+        default: "100"
+        required: false
+      seed:
+        description: "Random number generator seed"
+        default: "0"
+        required: false
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        tag:
+          # Keep the versions in sync with:
+          # - .devcontainer/acap-native-sdk-12-aarch64/devcontainer.json
+          # - .devcontainer/acap-native-sdk-12-armv7hf/devcontainer.json
+          # - .github/workflows/main.yaml
+          # - bin/create-venv.sh
+          # - nix/acap-native-sdk.nix
+          # TODO: Add the SDK 13 environments when acap-build is compatible with them
+          - 12.1.0-aarch64-ubuntu24.04
+          - 12.1.0-armv7hf-ubuntu24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Build the dev container image
+        run: |
+          docker build \
+            --build-arg TAG=${{ matrix.tag }} \
+            --file .devcontainer/Dockerfile \
+            --tag devcontainer \
+            .devcontainer
+      - name: Fuzz
+        run: |
+          docker run --rm --volume "$PWD:/work" --workdir /work \
+            --env ACAP_BUILD_FUZZ_CASES='${{ inputs.cases }}' \
+            --env ACAP_BUILD_FUZZ_SEED='${{ inputs.seed }}' \
+            devcontainer \
+            bash -c '. /opt/axis/acapsdk/environment-setup-* && make fuzz_equivalence'
