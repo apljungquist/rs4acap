@@ -3,7 +3,7 @@
 use std::{
     collections::HashSet,
     ffi::OsString,
-    fmt::Display,
+    fmt::{Display, Formatter},
     fs,
     io::Write,
     os::unix::fs::{symlink, PermissionsExt},
@@ -329,7 +329,7 @@ impl<'a> AppBuilder<'a> {
 
         let arch = match manifest.try_find_architecture() {
             Ok(v) => v,
-            Err(json_ext::Error::KeyNotFound(_)) => default_architecture.nickname(),
+            Err(json_ext::Error::KeyNotFound(_)) => default_architecture.as_str(),
             Err(e) => return Err(e.into()),
         };
         let eap_file_name = format!("{package_name}_{major}_{minor}_{patch}_{arch}.eap");
@@ -458,25 +458,24 @@ impl<'a> AppBuilder<'a> {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Architecture {
     Aarch64,
     Armv7hf,
 }
 
 impl Architecture {
-    pub fn triple(&self) -> &'static str {
-        match self {
-            Architecture::Aarch64 => "aarch64-unknown-linux-gnu",
-            Architecture::Armv7hf => "thumbv7neon-unknown-linux-gnueabihf",
-        }
-    }
-
-    pub fn nickname(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             Self::Aarch64 => "aarch64",
             Self::Armv7hf => "armv7hf",
         }
+    }
+}
+
+impl Display for Architecture {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
     }
 }
 
@@ -486,8 +485,8 @@ impl FromStr for Architecture {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "aarch64" => Ok(Self::Aarch64),
-            "arm" => Ok(Self::Armv7hf),
-            _ => Err(anyhow::anyhow!("Unrecognized variant {s}")),
+            "armv7hf" => Ok(Self::Armv7hf),
+            _ => bail!("Expected 'aarch64' or 'armv7hf', but found {s:?}"),
         }
     }
 }
@@ -512,6 +511,19 @@ mod tests {
         }
         for s in ["equivalent", "compatible"] {
             assert_eq!(s.parse::<AcapBuildImpl>().unwrap().to_string(), s);
+        }
+    }
+
+    #[test]
+    fn architecture_round_trips_through_string() {
+        for variant in [Architecture::Aarch64, Architecture::Armv7hf] {
+            assert_eq!(
+                variant.to_string().parse::<Architecture>().unwrap(),
+                variant
+            );
+        }
+        for s in ["aarch64", "armv7hf"] {
+            assert_eq!(s.parse::<Architecture>().unwrap().to_string(), s);
         }
     }
 

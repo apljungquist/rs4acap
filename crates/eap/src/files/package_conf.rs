@@ -103,9 +103,7 @@ impl PackageConf {
 
     fn set_defaults(&mut self, arch: Architecture) {
         // If not set from the manifest, eap-create.sh would try to infer it.
-        self.0
-            .entry("APPTYPE")
-            .or_insert(arch.nickname().to_string());
+        self.0.entry("APPTYPE").or_insert(arch.to_string());
 
         // If not set from the manifest, eap-create.sh would try to infer it from the exe.
         // But we know that it must be set for the manifest to be valid.

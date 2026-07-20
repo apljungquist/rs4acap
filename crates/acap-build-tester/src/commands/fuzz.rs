@@ -1,4 +1,4 @@
-use acap_build::{Architecture, Cli};
+use acap_build::{Cli, OpenEmbeddedTargetArchitecture};
 use anyhow::{bail, Context};
 use proptest::test_runner::{Config, RngAlgorithm, TestCaseError, TestError, TestRng, TestRunner};
 
@@ -31,7 +31,7 @@ fn check(input: &Input) -> anyhow::Result<()> {
 }
 
 fn fuzz(
-    oecore_target_arch: Architecture,
+    oecore_target_arch: OpenEmbeddedTargetArchitecture,
     cases: u32,
     seed: u64,
 ) -> Result<(), Box<TestError<Input>>> {
@@ -58,7 +58,7 @@ fn fuzz(
 pub struct FuzzCommand {
     /// The architecture to build for.
     #[clap(long, env = "OECORE_TARGET_ARCH")]
-    oecore_target_arch: Architecture,
+    oecore_target_arch: OpenEmbeddedTargetArchitecture,
     /// Number of random inputs to try.
     #[clap(long, env = "ACAP_BUILD_FUZZ_CASES", default_value_t = 1)]
     cases: u32,

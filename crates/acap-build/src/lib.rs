@@ -9,21 +9,20 @@ use std::{
 use anyhow::Context;
 use clap::{Parser, ValueEnum};
 use log::debug;
-use rs4a_eap::{AcapBuildImpl, AppBuilder, Mtime, SchemaSource};
+use rs4a_eap::{AcapBuildImpl, AppBuilder, Architecture, Mtime, SchemaSource};
 use tempdir::TempDir;
 
-#[derive(Clone, Copy, Debug, ValueEnum)]
-pub enum Architecture {
+#[derive(Clone, Copy, Debug, clap::ValueEnum)]
+pub enum OpenEmbeddedTargetArchitecture {
     Aarch64,
-    #[value(name = "arm")]
-    Armv7hf,
+    Arm,
 }
 
-impl From<Architecture> for rs4a_eap::Architecture {
-    fn from(value: Architecture) -> Self {
+impl From<OpenEmbeddedTargetArchitecture> for Architecture {
+    fn from(value: OpenEmbeddedTargetArchitecture) -> Self {
         match value {
-            Architecture::Aarch64 => Self::Aarch64,
-            Architecture::Armv7hf => Self::Armv7hf,
+            OpenEmbeddedTargetArchitecture::Aarch64 => Self::Aarch64,
+            OpenEmbeddedTargetArchitecture::Arm => Self::Armv7hf,
         }
     }
 }
@@ -66,7 +65,7 @@ pub struct Cli {
     #[clap(long)]
     pub disable_manifest_validation: bool,
     #[clap(long, env = "OECORE_TARGET_ARCH")]
-    pub oecore_target_arch: Architecture,
+    pub oecore_target_arch: OpenEmbeddedTargetArchitecture,
     #[clap(
         long,
         env = "ACAP_SDK_LOCATION",
