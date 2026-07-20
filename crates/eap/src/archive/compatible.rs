@@ -311,7 +311,7 @@ fn create_gnu_tar(root: &Path, operands: &[String], mtime: Mtime) -> io::Result<
 /// Compresses `data` as gzip, deterministically and without any external process.
 ///
 /// The pure-Rust `miniz_oxide` backend, a fixed mtime of 0, an empty file name and a pinned OS byte
-/// make the output depend only on `data` and the compressor  version.
+/// make the output depend only on `data` and the compressor version.
 /// It is therefore reproducible across platforms,
 /// but it is *not* bit-identical to GNU `gzip` (and hence to the upstream `acap-build`).
 fn gzip(data: &[u8]) -> io::Result<Vec<u8>> {
@@ -416,6 +416,7 @@ mod tests {
         assert_eq!(actual, expected, "archive bytes differ");
     }
 
+    #[ignore = "requires a tier 2 developer environment"]
     #[test]
     fn excluded_operands_match_gnu_tar() {
         let dir = tempdir().unwrap();

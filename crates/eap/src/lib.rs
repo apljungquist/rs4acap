@@ -3,6 +3,7 @@
 use std::{
     collections::HashSet,
     ffi::OsString,
+    fmt::Display,
     fs,
     io::Write,
     os::unix::fs::{symlink, PermissionsExt},
@@ -124,6 +125,7 @@ fn copy_recursively(src: &Path, dst: &Path, copy_permissions: bool) -> anyhow::R
 
 /// The implementation used to package the EAP.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
 pub enum AcapBuildImpl {
     /// Produces artifacts bit-identical to those produced by the reference implementation.
     ///
@@ -136,6 +138,15 @@ pub enum AcapBuildImpl {
     ///
     /// Requires no external programs.
     Compatible,
+}
+
+impl Display for AcapBuildImpl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AcapBuildImpl::Equivalent => write!(f, "equivalent"),
+            AcapBuildImpl::Compatible => write!(f, "compatible"),
+        }
+    }
 }
 
 impl FromStr for AcapBuildImpl {
@@ -489,6 +500,19 @@ mod tests {
     fn mtime_can_be_constructed_only_from_values_that_fit_in_the_headers() {
         let Mtime(_) = Mtime::try_from(Mtime::MAX.0).unwrap();
         assert!(Mtime::try_from(Mtime::MAX.0 + 1).is_err());
+    }
+
+    #[test]
+    fn acap_build_impl_round_trips_through_string() {
+        for variant in [AcapBuildImpl::Equivalent, AcapBuildImpl::Compatible] {
+            assert_eq!(
+                variant.to_string().parse::<AcapBuildImpl>().unwrap(),
+                variant
+            );
+        }
+        for s in ["equivalent", "compatible"] {
+            assert_eq!(s.parse::<AcapBuildImpl>().unwrap().to_string(), s);
+        }
     }
 
     #[test]

@@ -9,7 +9,7 @@ use std::{
 use anyhow::Context;
 use clap::{Parser, ValueEnum};
 use log::debug;
-use rs4a_eap::{AppBuilder, Mtime, SchemaSource};
+use rs4a_eap::{AcapBuildImpl, AppBuilder, Mtime, SchemaSource};
 use tempdir::TempDir;
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -78,6 +78,9 @@ pub struct Cli {
     /// Defaults to the current time.
     #[clap(long, env = "SOURCE_DATE_EPOCH", value_parser = parse_mtime)]
     pub source_date_epoch: Option<Mtime>,
+    /// Implementation used to package the EAP.
+    #[clap(long = "impl", env = "ACAP_BUILD_IMPL", default_value_t = AcapBuildImpl::Equivalent)]
+    pub acap_build_impl: AcapBuildImpl,
 }
 
 fn parse_mtime(s: &str) -> anyhow::Result<Mtime> {
@@ -95,6 +98,7 @@ impl Cli {
             oecore_target_arch,
             acap_sdk_location,
             source_date_epoch,
+            acap_build_impl,
         } = self;
 
         let schema = if disable_manifest_validation {
@@ -137,6 +141,7 @@ impl Cli {
 
         builder.schema(schema);
         builder.mtime(mtime);
+        builder.implementation(acap_build_impl);
 
         for name in builder.mandatory_files() {
             builder.add(&path.join(name))?;

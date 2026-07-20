@@ -6,7 +6,7 @@ use std::{
 use acap_build::{Architecture, BuildOption, Cli};
 use anyhow::{bail, ensure, Context};
 use libtest_mimic::{Arguments, Failed, Trial};
-use rs4a_eap::{Mtime, DEFAULT_ACAP_SDK_LOCATION};
+use rs4a_eap::{AcapBuildImpl, Mtime, DEFAULT_ACAP_SDK_LOCATION};
 
 use crate::invocation::{build_with_candidate, build_with_reference};
 
@@ -51,6 +51,7 @@ fn check(app_dir: PathBuf, oecore_target_arch: Architecture) -> anyhow::Result<(
         oecore_target_arch,
         acap_sdk_location: PathBuf::from(DEFAULT_ACAP_SDK_LOCATION),
         source_date_epoch: Some(Mtime::default()),
+        acap_build_impl: AcapBuildImpl::Equivalent,
     };
     let candidate = build_with_candidate(cli.clone()).context("building with the candidate")?;
     let reference = build_with_reference(Cli {
