@@ -19,7 +19,10 @@ pub struct Input {
     pub invocation: Cli,
 }
 
-pub fn arbitrary_input(oecore_target_arch: Architecture) -> BoxedStrategy<Input> {
+pub fn arbitrary_input(
+    oecore_target_arch: Architecture,
+    sdk_target_sysroot: Option<PathBuf>,
+) -> BoxedStrategy<Input> {
     (
         any::<Source>(),
         any::<bool>(),
@@ -44,6 +47,7 @@ pub fn arbitrary_input(oecore_target_arch: Architecture) -> BoxedStrategy<Input>
                 // Only the default is generated: the reference does not read it, so any other
                 // location would make only the candidate use different schema which is an
                 // unnecessary potential source of divergence.
+                sdk_target_sysroot: sdk_target_sysroot.clone(),
                 acap_sdk_location: PathBuf::from(DEFAULT_ACAP_SDK_LOCATION),
                 // Always set: `None` falls back to the current time, which the two
                 // implementations would sample at different moments.

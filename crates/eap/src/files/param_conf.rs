@@ -2,9 +2,8 @@
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    files::manifest::Manifest,
-    json_ext,
-    json_ext::{MapExt, ValueExt},
+    json_ext::{self, MapExt, ValueExt},
+    original_manifest::OriginalManifest,
 };
 
 #[derive(Debug)]
@@ -24,7 +23,7 @@ enum Entry {
 pub(crate) struct ParamConf(Vec<Entry>);
 
 impl ParamConf {
-    pub(crate) fn new(manifest: &Manifest) -> anyhow::Result<Option<Self>> {
+    pub(crate) fn new(manifest: &OriginalManifest) -> anyhow::Result<Option<Self>> {
         let param_config = match manifest.try_find_param_config() {
             Ok(v) => v,
             Err(json_ext::Error::KeyNotFound(_)) => return Ok(None),

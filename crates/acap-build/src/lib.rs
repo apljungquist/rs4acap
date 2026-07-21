@@ -1,18 +1,18 @@
 use std::{
     fmt::{Display, Formatter},
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use anyhow::Context;
+use anyhow::{ensure, Context};
 use clap::{Parser, ValueEnum};
 use log::debug;
 use rs4a_eap::{AppBuilder, Mtime, SchemaSource};
 use tempdir::TempDir;
 
-#[derive(Clone, Copy, Debug, ValueEnum)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
 pub enum Architecture {
     Aarch64,
     #[value(name = "arm")]
@@ -25,6 +25,19 @@ impl From<Architecture> for rs4a_eap::Architecture {
             Architecture::Aarch64 => Self::Aarch64,
             Architecture::Armv7hf => Self::Armv7hf,
         }
+    }
+}
+
+pub fn architecture_from_sdktargetsysroot(sysroot: &Path) -> Result<Architecture, &'static str> {
+    let name = sysroot
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or("path has no file name")?;
+    let name = name.split("-poky-linux").next().unwrap_or(name);
+    match name {
+        "cortexa9hf-neon" | "armv7hf" => Ok(Architecture::Armv7hf),
+        "cortexa53-crypto" | "aarch64" => Ok(Architecture::Aarch64),
+        _ => Err("unsupported SDK sysroot"),
     }
 }
 
@@ -63,6 +76,11 @@ pub struct Cli {
     pub disable_manifest_validation: bool,
     #[clap(long, env = "OECORE_TARGET_ARCH")]
     pub oecore_target_arch: Architecture,
+    /// Location of the SDK target sysroot.
+    ///
+    /// Used to determine the package architecture when the manifest does not declare one.
+    #[clap(long, env = "SDKTARGETSYSROOT")]
+    pub sdk_target_sysroot: Option<PathBuf>,
     #[clap(
         long,
         env = "ACAP_SDK_LOCATION",
@@ -89,9 +107,19 @@ impl Cli {
             additional_file,
             disable_manifest_validation,
             oecore_target_arch,
+            sdk_target_sysroot,
             acap_sdk_location,
             source_date_epoch,
         } = self;
+
+        if let Some(sdk_target_sysroot) = sdk_target_sysroot {
+            if let Ok(arch) = architecture_from_sdktargetsysroot(&sdk_target_sysroot) {
+                ensure!(
+                    arch == oecore_target_arch,
+                    "inconsistent environment; OECORE_TARGET_ARCH and SDKTARGETSYSROOT disagree"
+                );
+            }
+        }
 
         let schema = if disable_manifest_validation {
             SchemaSource::None

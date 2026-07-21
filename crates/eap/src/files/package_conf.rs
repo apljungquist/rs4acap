@@ -1,6 +1,6 @@
 //! Code for populating the `package.conf` file
 use std::{
-    collections::HashMap,
+    collections::{hash_map::Entry, HashMap},
     fmt::{Display, Formatter},
 };
 
@@ -10,25 +10,29 @@ use regex::Regex;
 use semver::Version;
 use serde_json::{Map, Value};
 
-use crate::{files::manifest::Manifest, Architecture};
+use crate::{original_manifest::OriginalManifest, Architecture};
 
 #[derive(Clone, Debug)]
 pub(crate) struct PackageConf(HashMap<&'static str, String>);
 
 impl PackageConf {
     pub(crate) fn new(
-        manifest: &Manifest,
+        manifest: &OriginalManifest,
         other_files: &[&str],
-        default_arch: Architecture,
+        default_app_type: Option<Architecture>,
     ) -> anyhow::Result<PackageConf> {
         let mut package_conf = Self(HashMap::new());
         package_conf.set_custom_from_manifest(manifest)?;
         package_conf.set_custom_from_other_files(other_files)?;
-        package_conf.set_defaults(default_arch);
+        package_conf.set_defaults(default_app_type)?;
         Ok(package_conf)
     }
 
-    fn set_custom_from_manifest(&mut self, manifest: &Manifest) -> anyhow::Result<()> {
+    pub(crate) fn app_type(&self) -> Option<&str> {
+        self.0.get("APPTYPE").map(String::as_str)
+    }
+
+    fn set_custom_from_manifest(&mut self, manifest: &OriginalManifest) -> anyhow::Result<()> {
         let parameters: HashMap<_, _> = PARAMETERS
             .iter()
             .flat_map(|p| p.source.map(|s| (s, p.name)))
@@ -101,11 +105,17 @@ impl PackageConf {
         Ok(())
     }
 
-    fn set_defaults(&mut self, arch: Architecture) {
+    fn set_defaults(&mut self, arch: Option<Architecture>) -> anyhow::Result<()> {
         // If not set from the manifest, eap-create.sh would try to infer it.
-        self.0
-            .entry("APPTYPE")
-            .or_insert(arch.nickname().to_string());
+        match (self.0.entry("APPTYPE"), arch) {
+            (Entry::Occupied(_), _) => {} // Do nothing, already set
+            (Entry::Vacant(_), None) => {
+                bail!("Manifest contains no architecture and no default was provided")
+            }
+            (Entry::Vacant(entry), Some(arch)) => {
+                entry.insert(arch.nickname().to_string());
+            }
+        }
 
         // If not set from the manifest, eap-create.sh would try to infer it from the exe.
         // But we know that it must be set for the manifest to be valid.
@@ -119,6 +129,8 @@ impl PackageConf {
                 self.0.entry(name).or_insert(v.to_string());
             }
         }
+
+        Ok(())
     }
 }
 
@@ -161,7 +173,7 @@ const PARAMETERS: [Parameter; 25] = [
     Parameter {
         name: "APPTYPE",
         source: Some("acapPackageConf.setup.architecture"),
-        default: Some(""),
+        default: None,
     },
     Parameter {
         name: "APPNAME",

@@ -25,6 +25,7 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
         additional_file,
         disable_manifest_validation,
         oecore_target_arch,
+        sdk_target_sysroot,
         acap_sdk_location: _,
         source_date_epoch,
     } = cli;
@@ -39,6 +40,9 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
             .expect("no architecture variant is skipped")
             .get_name(),
     );
+    if let Some(sdk_target_sysroot) = sdk_target_sysroot {
+        command.env("SDKTARGETSYSROOT", sdk_target_sysroot);
+    }
     match source_date_epoch {
         Some(epoch) => command.env("SOURCE_DATE_EPOCH", u64::from(epoch).to_string()),
         None => command.env_remove("SOURCE_DATE_EPOCH"),

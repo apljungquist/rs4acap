@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use acap_build::{Architecture, Cli};
 use anyhow::{bail, Context};
 use proptest::test_runner::{Config, RngAlgorithm, TestCaseError, TestError, TestRng, TestRunner};
@@ -32,6 +34,7 @@ fn check(input: &Input) -> anyhow::Result<()> {
 
 fn fuzz(
     oecore_target_arch: Architecture,
+    sdk_target_sysroot: Option<PathBuf>,
     cases: u32,
     seed: u64,
 ) -> Result<(), Box<TestError<Input>>> {
@@ -48,9 +51,10 @@ fn fuzz(
     let rng = TestRng::from_seed(RngAlgorithm::ChaCha, &rng_seed);
 
     TestRunner::new_with_rng(config, rng)
-        .run(&arbitrary_input(oecore_target_arch), |input| {
-            check(&input).map_err(|e| TestCaseError::fail(format!("{e:#}")))
-        })
+        .run(
+            &arbitrary_input(oecore_target_arch, sdk_target_sysroot),
+            |input| check(&input).map_err(|e| TestCaseError::fail(format!("{e:#}"))),
+        )
         .map_err(Box::new)
 }
 
@@ -59,6 +63,8 @@ pub struct FuzzCommand {
     /// The architecture to build for.
     #[clap(long, env = "OECORE_TARGET_ARCH")]
     oecore_target_arch: Architecture,
+    #[clap(long, env = "SDKTARGETSYSROOT")]
+    pub sdk_target_sysroot: Option<PathBuf>,
     /// Number of random inputs to try.
     #[clap(long, env = "ACAP_BUILD_FUZZ_CASES", default_value_t = 1)]
     cases: u32,
@@ -71,11 +77,12 @@ impl FuzzCommand {
     pub fn exec(self) -> anyhow::Result<()> {
         let Self {
             oecore_target_arch,
+            sdk_target_sysroot,
             cases,
             seed,
         } = self;
 
-        match fuzz(oecore_target_arch, cases, seed).map_err(|e| *e) {
+        match fuzz(oecore_target_arch, sdk_target_sysroot, cases, seed).map_err(|e| *e) {
             Ok(()) => Ok(()),
             Err(TestError::Fail(reason, input)) => {
                 bail!("Property violated by {input:#?}:\n{reason}")

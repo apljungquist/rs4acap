@@ -15,6 +15,8 @@ Options:
           Disable validation of manifest file against manifest schema
       --oecore-target-arch <OECORE_TARGET_ARCH>
           [env: OECORE_TARGET_ARCH=] [possible values: aarch64, arm]
+      --sdk-target-sysroot <SDK_TARGET_SYSROOT>
+          Location of the SDK sysroot [env: SDKTARGETSYSROOT=]
       --acap-sdk-location <ACAP_SDK_LOCATION>
           [env: ACAP_SDK_LOCATION=] [default: /opt/axis/]
       --source-date-epoch <SOURCE_DATE_EPOCH>

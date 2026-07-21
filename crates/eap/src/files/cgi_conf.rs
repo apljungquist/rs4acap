@@ -4,9 +4,8 @@ use std::fmt::{Display, Formatter};
 use log::debug;
 
 use crate::{
-    files::manifest::Manifest,
-    json_ext,
-    json_ext::{MapExt, ValueExt},
+    json_ext::{self, MapExt, ValueExt},
+    original_manifest::OriginalManifest,
 };
 
 #[derive(Debug)]
@@ -19,7 +18,7 @@ enum Entry {
 pub(crate) struct CgiConf(Vec<Entry>);
 
 impl CgiConf {
-    pub(crate) fn new(manifest: &Manifest) -> anyhow::Result<Option<Self>> {
+    pub(crate) fn new(manifest: &OriginalManifest) -> anyhow::Result<Option<Self>> {
         let conf = match manifest.try_find_http_config() {
             Ok(v) => v,
             Err(json_ext::Error::KeyNotFound(_)) => return Ok(None),
@@ -77,26 +76,21 @@ mod tests {
     use serde_json::{json, Value};
 
     use super::*;
-    use crate::Architecture;
 
-    fn manifest_with_http_config(http_config: Value) -> Manifest {
-        Manifest::new(
-            json!({
-                "schemaVersion": "1.3",
-                "acapPackageConf": {
-                    "setup": {
-                        "appName": "a",
-                        "runMode": "never",
-                        "version": "0.0.0"
-                    },
-                    "configuration": {
-                        "httpConfig": http_config
-                    }
+    fn manifest_with_http_config(http_config: Value) -> OriginalManifest {
+        OriginalManifest::new(json!({
+            "schemaVersion": "1.3",
+            "acapPackageConf": {
+                "setup": {
+                    "appName": "a",
+                    "runMode": "never",
+                    "version": "0.0.0"
+                },
+                "configuration": {
+                    "httpConfig": http_config
                 }
-            }),
-            Architecture::Aarch64,
-        )
-        .unwrap()
+            }
+        }))
     }
 
     #[test]

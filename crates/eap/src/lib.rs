@@ -13,15 +13,18 @@ use std::{
 use anyhow::{bail, ensure, Context};
 use log::debug;
 use semver::Version;
-use serde_json::Value;
 
-use crate::files::{
-    cgi_conf::CgiConf, manifest::Manifest, package_conf::PackageConf, param_conf::ParamConf,
+use crate::{
+    files::{
+        cgi_conf::CgiConf, manifest::Manifest, package_conf::PackageConf, param_conf::ParamConf,
+    },
+    original_manifest::OriginalManifest,
 };
 
 mod archive;
 mod command_utils;
 mod json_ext;
+mod original_manifest;
 mod schema;
 
 mod files;
@@ -142,9 +145,10 @@ impl FromStr for AcapBuildImpl {
 pub struct AppBuilder<'a> {
     preserve_permissions: bool,
     staging_dir: &'a Path,
-    manifest: Manifest,
+    /// The manifest as authored
+    manifest: OriginalManifest,
     files: Vec<String>,
-    default_architecture: Architecture,
+    target_architecture: Architecture,
     app_name: String,
     acap_build_impl: AcapBuildImpl,
     schema: SchemaSource,
@@ -156,10 +160,9 @@ impl<'a> AppBuilder<'a> {
         preserve_permissions: bool,
         staging_dir: &'a Path,
         manifest: &Path,
-        default_architecture: Architecture,
+        target_architecture: Architecture,
     ) -> anyhow::Result<Self> {
-        let manifest: Value = serde_json::from_reader(fs::File::open(manifest)?)?;
-        let manifest = Manifest::new(manifest, default_architecture)?;
+        let manifest = OriginalManifest::new(serde_json::from_reader(fs::File::open(manifest)?)?);
         let app_name = manifest.try_find_app_name()?.to_string();
         Ok(Self {
             preserve_permissions,
@@ -167,7 +170,7 @@ impl<'a> AppBuilder<'a> {
             manifest,
             app_name,
             files: Vec::new(),
-            default_architecture,
+            target_architecture,
             acap_build_impl: AcapBuildImpl::Equivalent,
             schema: Default::default(),
             mtime: Mtime::default(),
@@ -265,17 +268,25 @@ impl<'a> AppBuilder<'a> {
     }
 
     fn build_native(self) -> anyhow::Result<OsString> {
-        schema::validate(self.manifest.as_value(), &self.schema)
+        let normalized_manifest = Manifest::new(&self.manifest, self.target_architecture)?;
+        schema::validate(normalized_manifest.as_value(), &self.schema)
             .context("validating manifest against schema")?;
 
         let Self {
+            preserve_permissions: _,
             staging_dir,
             manifest,
-
-            default_architecture,
+            files: _,
+            target_architecture,
             app_name,
-            ..
+            acap_build_impl: _,
+            schema: _,
+            mtime: _,
         } = &self;
+
+        // Generate derived files
+        let package_conf =
+            PackageConf::new(manifest, &self.other_files(), Some(*target_architecture))?;
 
         // Compute file name
         let package_name = match manifest.try_find_friendly_name() {
@@ -290,19 +301,13 @@ impl<'a> AppBuilder<'a> {
             patch,
             ..
         } = manifest.try_find_version().context("no version")?.parse()?;
-
-        let arch = match manifest.try_find_architecture() {
-            Ok(v) => v,
-            Err(json_ext::Error::KeyNotFound(_)) => default_architecture.nickname(),
-            Err(e) => return Err(e.into()),
-        };
+        let arch = package_conf
+            .app_type()
+            .context("package.conf has no APPTYPE")?;
         let eap_file_name = format!("{package_name}_{major}_{minor}_{patch}_{arch}.eap");
 
-        // Generate derived files
-        let package_conf =
-            PackageConf::new(manifest, &self.other_files(), *default_architecture)?.to_string();
         fs::File::create_new(staging_dir.join("package.conf"))?
-            .write_all(package_conf.as_bytes())?;
+            .write_all(package_conf.to_string().as_bytes())?;
 
         let param_conf = match ParamConf::new(manifest)? {
             None => {
@@ -327,7 +332,8 @@ impl<'a> AppBuilder<'a> {
         // This file is included in the EAP, so for as long as we want bit-exact output, we must
         // take care to serialize the manifest the same way as the python implementation.
         let manifest_file = staging_dir.join("manifest.json");
-        fs::File::create_new(&manifest_file)?.write_all(manifest.try_to_string()?.as_bytes())?;
+        fs::File::create_new(&manifest_file)?
+            .write_all(normalized_manifest.try_to_string()?.as_bytes())?;
         // Replicate the permissions that temporary files get by default.
         let mut permissions = fs::metadata(&manifest_file)?.permissions();
         permissions.set_mode(0o600);
@@ -437,6 +443,7 @@ impl<'a> AppBuilder<'a> {
 pub enum Architecture {
     Aarch64,
     Armv7hf,
+    // TODO: Add armv5tejl and mipsisa32r2el
 }
 
 impl Architecture {
