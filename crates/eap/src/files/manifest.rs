@@ -21,7 +21,7 @@ impl Manifest {
             .to_string();
 
         // Make it valid semver
-        for _ in 0..(2 - schema_version.chars().filter(|&c| c == '.').count()) {
+        for _ in 0..2usize.saturating_sub(schema_version.chars().filter(|&c| c == '.').count()) {
             schema_version.push_str(".0");
         }
         let schema_version = semver::Version::parse(&schema_version)?;
@@ -194,6 +194,26 @@ mod tests {
                 "schemaVersion {schema_version:?}"
             );
         }
+    }
+
+    #[test]
+    fn malformed_schema_version_is_an_error_not_a_panic() {
+        // A version with more segments than semver allows must not underflow the
+        // padding loop; it should surface as an ordinary parse error.
+        let err = Manifest::new(
+            json!({
+                "schemaVersion": "1.2.3.4",
+                "acapPackageConf": {
+                    "setup": {
+                        "appName": "a",
+                        "runMode": "never",
+                        "version": "0.0.0"
+                    }
+                }
+            }),
+            Architecture::Aarch64,
+        );
+        assert!(err.is_err());
     }
 
     #[test]

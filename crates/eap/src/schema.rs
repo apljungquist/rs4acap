@@ -127,13 +127,7 @@ fn collect_json(dir: &Path, out: &mut Vec<PathBuf>) {
 
 /// Whether a schema file named `file_name` should be used for `version`.
 fn version_matches_file(version: &str, file_name: &str) -> bool {
-    // v1.3 and earlier all have two segments,
-    // v1.3.1 and later all have three segments.
-    if matches!(version, "1.0" | "1.1" | "1.2" | "1.3") {
-        file_name.contains(&format!("{version}.json"))
-    } else {
-        file_name.contains(version)
-    }
+    file_name.ends_with(&format!("v{version}.json"))
 }
 
 #[cfg(test)]
@@ -146,5 +140,20 @@ mod tests {
     fn none_skips_validation() {
         // An obviously invalid manifest passes when validation is disabled.
         validate(&json!({}), &SchemaSource::None).unwrap();
+    }
+
+    #[test]
+    fn version_matches_only_its_exact_schema_file() {
+        let file = |v: &str| format!("application-manifest-schema-v{v}.json");
+
+        assert!(version_matches_file("1.3", &file("1.3")));
+        assert!(version_matches_file("1.7.5", &file("1.7.5")));
+
+        // A two-segment version must not match its three-segment successors.
+        assert!(!version_matches_file("1.3", &file("1.3.1")));
+        // A version must not match a longer version that merely contains it.
+        assert!(!version_matches_file("1.1", &file("1.10.0")));
+        assert!(!version_matches_file("1.1", &file("1.11.0")));
+        assert!(!version_matches_file("1.7", &file("1.7.5")));
     }
 }
