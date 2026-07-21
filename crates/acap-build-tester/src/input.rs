@@ -1,6 +1,6 @@
 //! The input that affects the execution of an `acap-build` implementation.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use acap_build::{BuildOption, Cli, OpenEmbeddedTargetArchitecture};
 use proptest::{
@@ -19,7 +19,13 @@ pub struct Input {
     pub invocation: Cli,
 }
 
-pub fn arbitrary_input(oecore_target_arch: OpenEmbeddedTargetArchitecture) -> BoxedStrategy<Input> {
+pub fn arbitrary_input(
+    oecore_target_arch: OpenEmbeddedTargetArchitecture,
+    oecore_native_sysroot: &Path,
+    sdk_target_sysroot: &Path,
+) -> BoxedStrategy<Input> {
+    let oecore_native_sysroot = oecore_native_sysroot.to_path_buf();
+    let sdk_target_sysroot = sdk_target_sysroot.to_path_buf();
     (
         any::<Source>(),
         any::<bool>(),
@@ -41,6 +47,10 @@ pub fn arbitrary_input(oecore_target_arch: OpenEmbeddedTargetArchitecture) -> Bo
                 // interesting inputs given a realistic environment.
                 // TODO: Consider varying this, including leaving it unset.
                 oecore_target_arch,
+                // Only the reference reads these; taken from the environment so they point at the
+                // SDK the reference is built against.
+                oecore_native_sysroot: oecore_native_sysroot.clone(),
+                sdk_target_sysroot: sdk_target_sysroot.clone(),
                 // Only the default is generated: the reference does not read it, so any other
                 // location would make only the candidate use different schema which is an
                 // unnecessary potential source of divergence.

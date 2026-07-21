@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 use acap_build::{Cli, OpenEmbeddedTargetArchitecture};
 use anyhow::{bail, Context};
 use proptest::test_runner::{Config, RngAlgorithm, TestCaseError, TestError, TestRng, TestRunner};
@@ -32,6 +34,8 @@ fn check(input: &Input) -> anyhow::Result<()> {
 
 fn fuzz(
     oecore_target_arch: OpenEmbeddedTargetArchitecture,
+    oecore_native_sysroot: &Path,
+    sdk_target_sysroot: &Path,
     cases: u32,
     seed: u64,
 ) -> Result<(), Box<TestError<Input>>> {
@@ -48,9 +52,14 @@ fn fuzz(
     let rng = TestRng::from_seed(RngAlgorithm::ChaCha, &rng_seed);
 
     TestRunner::new_with_rng(config, rng)
-        .run(&arbitrary_input(oecore_target_arch), |input| {
-            check(&input).map_err(|e| TestCaseError::fail(format!("{e:#}")))
-        })
+        .run(
+            &arbitrary_input(
+                oecore_target_arch,
+                oecore_native_sysroot,
+                sdk_target_sysroot,
+            ),
+            |input| check(&input).map_err(|e| TestCaseError::fail(format!("{e:#}"))),
+        )
         .map_err(Box::new)
 }
 
@@ -59,6 +68,12 @@ pub struct FuzzCommand {
     /// The architecture to build for.
     #[clap(long, env = "OECORE_TARGET_ARCH")]
     oecore_target_arch: OpenEmbeddedTargetArchitecture,
+    /// Native sysroot of the SDK the reference implementation is built against.
+    #[clap(long, env = "OECORE_NATIVE_SYSROOT")]
+    oecore_native_sysroot: PathBuf,
+    /// Target sysroot of the SDK the reference implementation is built against.
+    #[clap(long, env = "SDKTARGETSYSROOT")]
+    sdk_target_sysroot: PathBuf,
     /// Number of random inputs to try.
     #[clap(long, env = "ACAP_BUILD_FUZZ_CASES", default_value_t = 1)]
     cases: u32,
@@ -71,11 +86,21 @@ impl FuzzCommand {
     pub fn exec(self) -> anyhow::Result<()> {
         let Self {
             oecore_target_arch,
+            oecore_native_sysroot,
+            sdk_target_sysroot,
             cases,
             seed,
         } = self;
 
-        match fuzz(oecore_target_arch, cases, seed).map_err(|e| *e) {
+        match fuzz(
+            oecore_target_arch,
+            &oecore_native_sysroot,
+            &sdk_target_sysroot,
+            cases,
+            seed,
+        )
+        .map_err(|e| *e)
+        {
             Ok(()) => Ok(()),
             Err(TestError::Fail(reason, input)) => {
                 bail!("Property violated by {input:#?}:\n{reason}")

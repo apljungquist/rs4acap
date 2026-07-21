@@ -66,6 +66,18 @@ pub struct Cli {
     pub disable_manifest_validation: bool,
     #[clap(long, env = "OECORE_TARGET_ARCH")]
     pub oecore_target_arch: OpenEmbeddedTargetArchitecture,
+    /// Native sysroot of the ACAP SDK.
+    ///
+    /// Not used by this implementation; modelled because the reference implementation's
+    /// `eap-create.sh` reads it to locate its configuration.
+    #[clap(long, env = "OECORE_NATIVE_SYSROOT")]
+    pub oecore_native_sysroot: PathBuf,
+    /// Target sysroot of the ACAP SDK.
+    ///
+    /// Not used by this implementation; modelled because the reference implementation's
+    /// `eap-create.sh` reads it to derive the package architecture.
+    #[clap(long, env = "SDKTARGETSYSROOT")]
+    pub sdk_target_sysroot: PathBuf,
     #[clap(
         long,
         env = "ACAP_SDK_LOCATION",
@@ -95,6 +107,8 @@ impl Cli {
             additional_file,
             disable_manifest_validation,
             oecore_target_arch,
+            oecore_native_sysroot: _,
+            sdk_target_sysroot: _,
             acap_sdk_location,
             source_date_epoch,
             acap_build_impl,

@@ -39,6 +39,8 @@ fn scratch_copy(app_dir: &Path) -> anyhow::Result<(tempfile::TempDir, PathBuf)> 
 fn check(
     app_dir: PathBuf,
     oecore_target_arch: OpenEmbeddedTargetArchitecture,
+    oecore_native_sysroot: PathBuf,
+    sdk_target_sysroot: PathBuf,
 ) -> anyhow::Result<()> {
     let (_candidate_scratch, candidate_app) = scratch_copy(&app_dir)?;
     let (_reference_scratch, reference_app) = scratch_copy(&app_dir)?;
@@ -52,6 +54,8 @@ fn check(
         additional_file: Vec::new(),
         disable_manifest_validation: true,
         oecore_target_arch,
+        oecore_native_sysroot,
+        sdk_target_sysroot,
         acap_sdk_location: PathBuf::from(DEFAULT_ACAP_SDK_LOCATION),
         source_date_epoch: Some(Mtime::default()),
         acap_build_impl: AcapBuildImpl::Equivalent,
@@ -78,6 +82,12 @@ fn check(
 pub struct ReplayCommand {
     #[clap(long, env = "OECORE_TARGET_ARCH")]
     oecore_target_arch: OpenEmbeddedTargetArchitecture,
+    /// Native sysroot of the SDK the reference implementation is built against.
+    #[clap(long, env = "OECORE_NATIVE_SYSROOT")]
+    oecore_native_sysroot: PathBuf,
+    /// Target sysroot of the SDK the reference implementation is built against.
+    #[clap(long, env = "SDKTARGETSYSROOT")]
+    sdk_target_sysroot: PathBuf,
     /// Directory containing the source code of one application per subdirectory.
     apps: PathBuf,
     #[clap(flatten)]
@@ -88,6 +98,8 @@ impl ReplayCommand {
     pub fn exec(self) -> anyhow::Result<()> {
         let Self {
             oecore_target_arch,
+            oecore_native_sysroot,
+            sdk_target_sysroot,
             apps,
             test_args,
         } = self;
@@ -98,8 +110,16 @@ impl ReplayCommand {
             if entry.file_type()?.is_dir() {
                 let app = entry.path();
                 let name = entry.file_name().to_string_lossy().into_owned();
+                let oecore_native_sysroot = oecore_native_sysroot.clone();
+                let sdk_target_sysroot = sdk_target_sysroot.clone();
                 trials.push(Trial::test(name, move || {
-                    check(app, oecore_target_arch).map_err(|e| Failed::from(format!("{e:#}")))
+                    check(
+                        app,
+                        oecore_target_arch,
+                        oecore_native_sysroot,
+                        sdk_target_sysroot,
+                    )
+                    .map_err(|e| Failed::from(format!("{e:#}")))
                 }));
             }
         }
