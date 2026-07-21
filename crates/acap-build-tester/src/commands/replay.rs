@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use acap_build::{Architecture, BuildOption, Cli};
+use acap_build::{BuildOption, Cli, OpenEmbeddedTargetArchitecture};
 use anyhow::{bail, ensure, Context};
 use libtest_mimic::{Arguments, Failed, Trial};
 use rs4a_eap::{AcapBuildImpl, Mtime, DEFAULT_ACAP_SDK_LOCATION};
@@ -36,7 +36,10 @@ fn scratch_copy(app_dir: &Path) -> anyhow::Result<(tempfile::TempDir, PathBuf)> 
     Ok((scratch, app))
 }
 
-fn check(app_dir: PathBuf, oecore_target_arch: Architecture) -> anyhow::Result<()> {
+fn check(
+    app_dir: PathBuf,
+    oecore_target_arch: OpenEmbeddedTargetArchitecture,
+) -> anyhow::Result<()> {
     let (_candidate_scratch, candidate_app) = scratch_copy(&app_dir)?;
     let (_reference_scratch, reference_app) = scratch_copy(&app_dir)?;
 
@@ -74,7 +77,7 @@ fn check(app_dir: PathBuf, oecore_target_arch: Architecture) -> anyhow::Result<(
 #[derive(clap::Parser)]
 pub struct ReplayCommand {
     #[clap(long, env = "OECORE_TARGET_ARCH")]
-    oecore_target_arch: Architecture,
+    oecore_target_arch: OpenEmbeddedTargetArchitecture,
     /// Directory containing the source code of one application per subdirectory.
     apps: PathBuf,
     #[clap(flatten)]

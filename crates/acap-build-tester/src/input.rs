@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use acap_build::{Architecture, BuildOption, Cli};
+use acap_build::{BuildOption, Cli, OpenEmbeddedTargetArchitecture};
 use proptest::{
     arbitrary::any,
     prelude::{BoxedStrategy, Just, Strategy},
@@ -19,7 +19,7 @@ pub struct Input {
     pub invocation: Cli,
 }
 
-pub fn arbitrary_input(oecore_target_arch: Architecture) -> BoxedStrategy<Input> {
+pub fn arbitrary_input(oecore_target_arch: OpenEmbeddedTargetArchitecture) -> BoxedStrategy<Input> {
     (
         any::<Source>(),
         any::<bool>(),

@@ -28,7 +28,7 @@ impl Manifest {
         if schema_version >= semver::Version::new(1, 3, 0) {
             let setup = manifest.try_find_setup_mut()?;
             if let Some(a) = setup.get("architecture") {
-                if a != "all" && a != architecture.nickname() {
+                if a != "all" && a != architecture.as_str() {
                     bail!(
                         "Architecture in manifest ({a}) is not compatible with built target ({:?})",
                         architecture
@@ -41,7 +41,7 @@ impl Manifest {
                 );
                 setup.insert(
                     "architecture".to_string(),
-                    Value::String(architecture.nickname().to_string()),
+                    Value::String(architecture.to_string()),
                 );
             }
         }
