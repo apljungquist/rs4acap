@@ -12,6 +12,10 @@ use log::debug;
 use rs4a_eap::{AcapBuildImpl, AppBuilder, Architecture, Mtime, SchemaSource};
 use tempdir::TempDir;
 
+mod conservative;
+
+pub use conservative::ConservativeRejection;
+
 /// The location where the ACAP SDK is installed by default.
 pub const DEFAULT_ACAP_SDK_LOCATION: &str = "/opt/axis/";
 
@@ -69,6 +73,12 @@ pub struct Cli {
     pub disable_manifest_validation: bool,
     #[clap(long, env = "OECORE_TARGET_ARCH")]
     pub oecore_target_arch: OpenEmbeddedTargetArchitecture,
+    /// Used by `--conservative`.
+    #[clap(long, env = "OECORE_NATIVE_SYSROOT")]
+    pub oecore_native_sysroot: Option<PathBuf>,
+    /// Used by `--conservative`.
+    #[clap(long, env = "SDKTARGETSYSROOT")]
+    pub sdk_target_sysroot: Option<PathBuf>,
     #[clap(
         long,
         env = "ACAP_SDK_LOCATION",
@@ -83,6 +93,9 @@ pub struct Cli {
     /// Implementation used to package the EAP.
     #[clap(long = "impl", env = "ACAP_BUILD_IMPL", default_value_t = AcapBuildImpl::Equivalent)]
     pub acap_build_impl: AcapBuildImpl,
+    /// Reject inputs for which the correct behavior is ambiguous.
+    #[clap(long)]
+    pub conservative: bool,
 }
 
 fn parse_mtime(s: &str) -> anyhow::Result<Mtime> {
@@ -104,6 +117,10 @@ fn sdk_schema_dir(acap_sdk_location: &Path) -> PathBuf {
 
 impl Cli {
     pub fn exec(self) -> anyhow::Result<String> {
+        if self.conservative {
+            conservative::error_for_rejection(&self)?;
+        }
+
         let Self {
             path,
             build,
@@ -111,9 +128,12 @@ impl Cli {
             additional_file,
             disable_manifest_validation,
             oecore_target_arch,
+            oecore_native_sysroot: _,
+            sdk_target_sysroot: _,
             acap_sdk_location,
             source_date_epoch,
             acap_build_impl,
+            conservative: _,
         } = self;
 
         let schema = if disable_manifest_validation {
