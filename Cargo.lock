@@ -2262,6 +2262,7 @@ dependencies = [
  "clap",
  "env_logger",
  "libtest-mimic",
+ "log",
  "proptest",
  "rs4a-eap",
  "serde_json",
