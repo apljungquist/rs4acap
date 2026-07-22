@@ -31,11 +31,6 @@ pub use schema::SchemaSource;
 
 use crate::archive::{CompatibleArchiveBuilder, EquivalentArchiveBuilder};
 
-/// The location where the ACAP SDK is installed by default.
-///
-/// Used as the default location for resolving manifest schemas; see [`SchemaSource::Resolve`].
-pub const DEFAULT_ACAP_SDK_LOCATION: &str = "/opt/axis/";
-
 /// A modification time, in seconds after the Unix epoch, that the tar headers in the EAP can
 /// represent.
 ///

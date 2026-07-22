@@ -1,7 +1,7 @@
 use std::{
     fmt::{Display, Formatter},
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -11,6 +11,9 @@ use clap::{Parser, ValueEnum};
 use log::debug;
 use rs4a_eap::{AcapBuildImpl, AppBuilder, Architecture, Mtime, SchemaSource};
 use tempdir::TempDir;
+
+/// The location where the ACAP SDK is installed by default.
+pub const DEFAULT_ACAP_SDK_LOCATION: &str = "/opt/axis/";
 
 #[derive(Clone, Copy, Debug, clap::ValueEnum)]
 pub enum OpenEmbeddedTargetArchitecture {
@@ -69,7 +72,7 @@ pub struct Cli {
     #[clap(
         long,
         env = "ACAP_SDK_LOCATION",
-        default_value = rs4a_eap::DEFAULT_ACAP_SDK_LOCATION
+        default_value = DEFAULT_ACAP_SDK_LOCATION
     )]
     pub acap_sdk_location: PathBuf,
     /// Time to stamp on every archive member, in seconds after the Unix epoch.
@@ -84,6 +87,19 @@ pub struct Cli {
 
 fn parse_mtime(s: &str) -> anyhow::Result<Mtime> {
     s.trim().parse::<u64>()?.try_into()
+}
+
+/// The directory under an installed ACAP SDK that holds the manifest schemas.
+///
+/// The schemas are nested deeply within the reference SDK layout; deriving the path here keeps that
+/// knowledge in the binary rather than in the `eap` library, whose `SchemaSource::Resolve` takes the
+/// schemas dir directly.
+fn sdk_schema_dir(acap_sdk_location: &Path) -> PathBuf {
+    acap_sdk_location
+        .join("acapsdk")
+        .join("axis-acap-manifest-tools")
+        .join("schema")
+        .join("schemas")
 }
 
 impl Cli {
@@ -103,7 +119,7 @@ impl Cli {
         let schema = if disable_manifest_validation {
             SchemaSource::None
         } else {
-            SchemaSource::Resolve(acap_sdk_location)
+            SchemaSource::Resolve(sdk_schema_dir(&acap_sdk_location))
         };
 
         // Reading the clock here, and the environment via clap, keeps the library deterministic

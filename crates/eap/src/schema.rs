@@ -16,6 +16,8 @@ pub enum SchemaSource {
     /// Validate against the schema at this path, ignoring the manifest's `schemaVersion`.
     File(PathBuf),
     /// Resolve a schema by the manifest's `schemaVersion` from an installed SDK.
+    ///
+    /// The path should be that of the `schemas` dir.
     Resolve(PathBuf),
     /// Do not validate the manifest.
     #[default]
@@ -33,7 +35,7 @@ pub fn validate(manifest: &Value, source: &SchemaSource) -> anyhow::Result<()> {
             debug!("Validating manifest against schema {path:?}");
             read_schema(path)?
         }
-        SchemaSource::Resolve(acap_sdk_location) => resolve(acap_sdk_location, manifest)?,
+        SchemaSource::Resolve(schemas_dir) => resolve(schemas_dir, manifest)?,
     };
 
     let validator = jsonschema::options()
@@ -64,8 +66,8 @@ fn read_schema(path: &Path) -> anyhow::Result<Value> {
 }
 
 /// Resolve a schema by the manifest's `schemaVersion` from the installed SDK.
-fn resolve(acap_sdk_location: &Path, manifest: &Value) -> anyhow::Result<Value> {
-    resolve_in_dir(manifest, &sdk_schema_dir(acap_sdk_location))
+fn resolve(schemas_dir: &Path, manifest: &Value) -> anyhow::Result<Value> {
+    resolve_in_dir(manifest, schemas_dir)
 }
 
 fn resolve_in_dir(manifest: &Value, sdk_dir: &Path) -> anyhow::Result<Value> {
@@ -85,14 +87,6 @@ fn resolve_in_dir(manifest: &Value, sdk_dir: &Path) -> anyhow::Result<Value> {
              provides it, or skip validation with `SchemaSource::None`."
         ),
     }
-}
-
-fn sdk_schema_dir(acap_sdk_location: &Path) -> PathBuf {
-    acap_sdk_location
-        .join("acapsdk")
-        .join("axis-acap-manifest-tools")
-        .join("schema")
-        .join("schemas")
 }
 
 /// Find the schema file matching `version` under `dir`, if any.
