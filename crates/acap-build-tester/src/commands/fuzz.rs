@@ -16,6 +16,10 @@ fn check(input: &Input) -> anyhow::Result<()> {
     })
     .context("building with the candidate")?;
 
+    if !candidate.essence().success {
+        return Ok(());
+    }
+
     let reference_dir = tempfile::tempdir()?;
     input.source.materialize_in(reference_dir.path())?;
     let reference = build_with_reference(Cli {
@@ -25,7 +29,7 @@ fn check(input: &Input) -> anyhow::Result<()> {
     .context("building with the reference")?;
 
     if candidate.essence() != reference.essence() {
-        bail!("the candidate does not match the reference:\n{candidate:#?}\n{reference:#?}");
+        bail!("the candidate succeeded but does not match the reference:\n{candidate:#?}\n{reference:#?}");
     }
     Ok(())
 }

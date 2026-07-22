@@ -29,8 +29,8 @@ impl Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Verify that this workspace's `acap-build` builds generated apps like the reference
-    /// `acap-build` on the `PATH` on generated examples.
+    /// Verify that, on generated examples, whenever this workspace's `acap-build` succeeds it
+    /// produces artifacts bit-identical to the reference `acap-build` on the `PATH`.
     Fuzz(FuzzCommand),
     /// Verify that this workspace's `acap-build` builds the given apps like the reference
     /// `acap-build` on the `PATH` on recorded examples.
