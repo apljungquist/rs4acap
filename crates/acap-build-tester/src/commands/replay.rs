@@ -3,10 +3,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use acap_build::{BuildOption, Cli, OpenEmbeddedTargetArchitecture};
+use acap_build::{BuildOption, Cli, OpenEmbeddedTargetArchitecture, DEFAULT_ACAP_SDK_LOCATION};
 use anyhow::{bail, ensure, Context};
 use libtest_mimic::{Arguments, Failed, Trial};
-use rs4a_eap::{AcapBuildImpl, Mtime, DEFAULT_ACAP_SDK_LOCATION};
+use rs4a_eap::{AcapBuildImpl, Mtime};
 
 use crate::invocation::{build_with_candidate, build_with_reference};
 

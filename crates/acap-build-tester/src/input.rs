@@ -2,13 +2,13 @@
 
 use std::path::PathBuf;
 
-use acap_build::{BuildOption, Cli, OpenEmbeddedTargetArchitecture};
+use acap_build::{BuildOption, Cli, OpenEmbeddedTargetArchitecture, DEFAULT_ACAP_SDK_LOCATION};
 use proptest::{
     arbitrary::any,
     prelude::{BoxedStrategy, Just, Strategy},
     prop_oneof,
 };
-use rs4a_eap::{AcapBuildImpl, Mtime, DEFAULT_ACAP_SDK_LOCATION};
+use rs4a_eap::{AcapBuildImpl, Mtime};
 
 use crate::source::Source;
 
