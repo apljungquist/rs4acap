@@ -18,6 +18,19 @@ pub struct Environment {
     pub(crate) sdk_target_sysroot: Option<PathBuf>,
 }
 
+impl Environment {
+    /// Whether a recorded invocation was captured in this same environment.
+    ///
+    /// The reference derives the package architecture and locates its SDK from these variables, so
+    /// replaying an invocation captured elsewhere would either fail to find the SDK or build for a
+    /// different architecture than was recorded. Such invocations are skipped rather than replayed.
+    pub(crate) fn matches(&self, cli: &Cli) -> bool {
+        self.oecore_target_arch == cli.oecore_target_arch
+            && self.oecore_native_sysroot == cli.oecore_native_sysroot
+            && self.sdk_target_sysroot == cli.sdk_target_sysroot
+    }
+}
+
 /// Run the workspace `acap-build` in-process.
 ///
 /// GNU `tar` must be on the `PATH`.

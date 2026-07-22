@@ -37,7 +37,10 @@ use crate::archive::{CompatibleArchiveBuilder, EquivalentArchiveBuilder};
 /// The 12-byte mtime header field holds 11 octal digits; GNU tar silently encodes larger
 /// values with its base-256 extension, which not every unpacker understands, so conversion
 /// fails for values above [`Self::MAX`].
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+// Go through `u64` so that deserialization enforces the same `MAX` invariant as every other way of
+// constructing an `Mtime`, instead of accepting an out-of-range field.
+#[serde(into = "u64", try_from = "u64")]
 pub struct Mtime(u64);
 
 impl Mtime {
@@ -119,7 +122,8 @@ fn copy_recursively(src: &Path, dst: &Path, copy_permissions: bool) -> anyhow::R
 }
 
 /// The implementation used to package the EAP.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
 #[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
 pub enum AcapBuildImpl {
     /// Produces artifacts bit-identical to those produced by the reference implementation.

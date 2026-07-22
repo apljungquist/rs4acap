@@ -1,7 +1,12 @@
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 use acap_build::Cli;
 use anyhow::{bail, Context};
+use clap::ValueEnum;
 use proptest::test_runner::{Config, RngAlgorithm, TestCaseError, TestError, TestRng, TestRunner};
 
 use crate::{
@@ -97,6 +102,45 @@ fn fuzz(environment: Environment, cases: u32, seed: u64) -> Result<(), Box<TestE
     result
 }
 
+/// Materialize a failing input as a replayable example.
+///
+/// The source is written into `example_dir` and the invocation into the sibling
+/// `invocations/<example>` tree that `replay` reads, mirroring how the examples are laid out.
+fn save_example(example_dir: &Path, input: &Input) -> anyhow::Result<PathBuf> {
+    input.source.materialize_in(example_dir)?;
+
+    let name = example_dir
+        .file_name()
+        .context("--save-failing path has no final component")?;
+    let invocations_dir = example_dir
+        .parent()
+        .context("--save-failing path has no parent")?
+        .with_file_name("invocations")
+        .join(name);
+    fs::create_dir_all(&invocations_dir)?;
+
+    // The stem names the replay trial and keeps sibling invocations distinct. The architecture is
+    // the only thing that varies between the reference environments and is what replay gates on, so
+    // it is the natural, collision-free key.
+    let arch = input
+        .invocation
+        .oecore_target_arch
+        .to_possible_value()
+        .expect("every architecture variant has a name");
+    let path = invocations_dir.join(format!("{}.json", arch.get_name()));
+
+    // Record the whole invocation, but with a `path` relative to the example directory so that
+    // replay can resolve it against a scratch copy.
+    let invocation = Cli {
+        path: PathBuf::from("."),
+        ..input.invocation.clone()
+    };
+    let mut json = serde_json::to_string_pretty(&invocation)?;
+    json.push('\n');
+    fs::write(&path, json)?;
+    Ok(path)
+}
+
 #[derive(clap::Parser)]
 pub struct FuzzCommand {
     /// Number of random inputs to try.
@@ -105,6 +149,9 @@ pub struct FuzzCommand {
     /// Seed for the random number generator.
     #[clap(long, env = "ACAP_BUILD_FUZZ_SEED", default_value_t = 0)]
     seed: u64,
+    /// Directory in which to record the shrunk failing input as an example, if any.
+    #[clap(long)]
+    save_failing: Option<PathBuf>,
     #[clap(flatten)]
     environment: Environment,
 }
@@ -114,15 +161,100 @@ impl FuzzCommand {
         let Self {
             cases,
             seed,
+            save_failing,
             environment,
         } = self;
 
         match fuzz(environment, cases, seed).map_err(|e| *e) {
             Ok(()) => Ok(()),
             Err(TestError::Fail(reason, input)) => {
-                bail!("Property violated by {input:#?}:\n{reason}")
+                let saved = match &save_failing {
+                    Some(dir) => {
+                        let path = save_example(dir, &input).context("saving the failing input")?;
+                        format!("\nSaved failing example to {path:?}")
+                    }
+                    None => String::new(),
+                };
+                bail!("Property violated by {input:#?}:\n{reason}{saved}")
             }
             Err(e @ TestError::Abort(_)) => bail!("Fuzzing aborted: {e}"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+
+    use acap_build::{BuildOption, OpenEmbeddedTargetArchitecture};
+    use rs4a_eap::{AcapBuildImpl, Mtime};
+
+    use super::*;
+    use crate::source::{Manifest, Source, DEFAULT_MANIFEST_NAME};
+
+    fn sample_invocation() -> Cli {
+        Cli {
+            path: PathBuf::from("."),
+            build: BuildOption::NoBuild,
+            manifest: PathBuf::from("manifest.json"),
+            additional_file: vec![PathBuf::from("extra.txt")],
+            disable_manifest_validation: true,
+            oecore_target_arch: OpenEmbeddedTargetArchitecture::Arm,
+            oecore_native_sysroot: Some(PathBuf::from("/native")),
+            sdk_target_sysroot: Some(PathBuf::from("/target/armv7hf")),
+            acap_sdk_location: PathBuf::from("/opt/axis/"),
+            source_date_epoch: Some(Mtime::try_from(0).unwrap()),
+            acap_build_impl: AcapBuildImpl::Equivalent,
+            conservative: false,
+        }
+    }
+
+    #[test]
+    fn recorded_invocation_round_trips() {
+        let cli = sample_invocation();
+
+        let json = serde_json::to_string_pretty(&cli).unwrap();
+        // Lock the on-disk spellings the recorded examples depend on.
+        assert!(json.contains("\"no-build\""), "{json}");
+        assert!(json.contains("\"arm\""), "{json}");
+        assert!(json.contains("\"equivalent\""), "{json}");
+
+        let back: Cli = serde_json::from_str(&json).unwrap();
+        assert_eq!(cli, back);
+    }
+
+    #[test]
+    fn save_example_writes_replayable_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let example_dir = tmp.path().join("data").join("myapp");
+        let input = Input {
+            source: Source {
+                manifest: Manifest {
+                    schema_version: "1.3",
+                    app_name: "myapp".to_string(),
+                    version: "1.0.0".to_string(),
+                    friendly_name: None,
+                },
+                manifest_name: DEFAULT_MANIFEST_NAME.to_string(),
+                additional_files: BTreeSet::new(),
+                html: false,
+            },
+            invocation: sample_invocation(),
+        };
+
+        let path = save_example(&example_dir, &input).unwrap();
+
+        // The source lands in the example dir; the invocation in the sibling `invocations` tree,
+        // stemmed by architecture, exactly where `replay` looks for it.
+        assert!(example_dir.join("manifest.json").exists());
+        assert_eq!(
+            path,
+            tmp.path().join("invocations").join("myapp").join("arm.json")
+        );
+
+        // The recorded invocation deserializes back with its `path` relative to the example dir.
+        let recorded: Cli =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(recorded, input.invocation);
     }
 }

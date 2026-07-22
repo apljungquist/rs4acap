@@ -1,0 +1,14 @@
+{
+  "path": ".",
+  "build": "no-build",
+  "manifest": "manifest.json",
+  "additional_file": [],
+  "disable_manifest_validation": true,
+  "oecore_target_arch": "aarch64",
+  "oecore_native_sysroot": "/opt/axis/acapsdk/sysroots/x86_64-pokysdk-linux",
+  "sdk_target_sysroot": "/opt/axis/acapsdk/sysroots/aarch64",
+  "acap_sdk_location": "/opt/axis/",
+  "source_date_epoch": 0,
+  "acap_build_impl": "equivalent",
+  "conservative": false
+}

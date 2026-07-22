@@ -14,7 +14,7 @@ proptest = { workspace = true }
 serde_json = { workspace = true }
 tempfile = { workspace = true }
 
-acap-build = { workspace = true }
+acap-build = { workspace = true, features = ["serde"] }
 rs4a-eap = { workspace = true }
 
 [lints]

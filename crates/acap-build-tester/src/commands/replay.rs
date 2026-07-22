@@ -3,10 +3,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use acap_build::{BuildOption, Cli, DEFAULT_ACAP_SDK_LOCATION};
+use acap_build::Cli;
 use anyhow::{bail, ensure, Context};
 use libtest_mimic::{Arguments, Failed, Trial};
-use rs4a_eap::{AcapBuildImpl, Mtime};
 
 use crate::invocation::{build_with_candidate, build_with_reference, Environment};
 
@@ -36,30 +35,29 @@ fn scratch_copy(app_dir: &Path) -> anyhow::Result<(tempfile::TempDir, PathBuf)> 
     Ok((scratch, app))
 }
 
-fn check(app_dir: PathBuf, environment: &Environment) -> anyhow::Result<()> {
-    let (_candidate_scratch, candidate_app) = scratch_copy(&app_dir)?;
-    let (_reference_scratch, reference_app) = scratch_copy(&app_dir)?;
+/// Read a recorded invocation, i.e. a [`Cli`] serialized to JSON.
+///
+/// A malformed or outdated file is an error rather than a fallback to defaults, so that a schema
+/// change forces every example to be migrated deliberately.
+fn read_invocation(path: &Path) -> anyhow::Result<Cli> {
+    let text = fs::read_to_string(path).with_context(|| format!("reading {path:?}"))?;
+    serde_json::from_str(&text).with_context(|| format!("parsing {path:?}"))
+}
 
-    // Both implementations receive the same inputs, except for the directory they build in.
-    let cli = Cli {
-        path: candidate_app,
-        build: BuildOption::NoBuild,
-        manifest: PathBuf::from("manifest.json"),
-        // TODO: Enable storing arguments alongside examples
-        additional_file: Vec::new(),
-        disable_manifest_validation: true,
-        oecore_target_arch: environment.oecore_target_arch,
-        oecore_native_sysroot: environment.oecore_native_sysroot.clone(),
-        sdk_target_sysroot: environment.sdk_target_sysroot.clone(),
-        acap_sdk_location: PathBuf::from(DEFAULT_ACAP_SDK_LOCATION),
-        source_date_epoch: Some(Mtime::default()),
-        acap_build_impl: AcapBuildImpl::Equivalent,
-        conservative: false,
-    };
-    let candidate = build_with_candidate(cli.clone()).context("building with the candidate")?;
+fn check(app_dir: &Path, invocation: &Cli) -> anyhow::Result<()> {
+    let (_candidate_scratch, candidate_app) = scratch_copy(app_dir)?;
+    let (_reference_scratch, reference_app) = scratch_copy(app_dir)?;
+
+    // The recorded `path` is relative to the app's working directory, so resolve it against each
+    // scratch copy. This lets both implementations build in a copy of their own.
+    let candidate = build_with_candidate(Cli {
+        path: candidate_app.join(&invocation.path),
+        ..invocation.clone()
+    })
+    .context("building with the candidate")?;
     let reference = build_with_reference(Cli {
-        path: reference_app,
-        ..cli
+        path: reference_app.join(&invocation.path),
+        ..invocation.clone()
     })
     .context("building with the reference")?;
 
@@ -74,11 +72,25 @@ fn check(app_dir: PathBuf, environment: &Environment) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// The recorded invocations of one app, read from its `invocations/<app>` directory.
+fn invocation_files(dir: &Path) -> anyhow::Result<Vec<PathBuf>> {
+    let mut files: Vec<PathBuf> = fs::read_dir(dir)
+        .with_context(|| format!("reading {dir:?} (every app must have recorded invocations)"))?
+        .map(|entry| Ok(entry?.path()))
+        .collect::<anyhow::Result<_>>()?;
+    files.retain(|p| p.extension().is_some_and(|e| e == "json"));
+    files.sort();
+    ensure!(!files.is_empty(), "found no invocations in {dir:?}");
+    Ok(files)
+}
+
 #[derive(clap::Parser)]
 pub struct ReplayCommand {
     #[clap(flatten)]
     environment: Environment,
     /// Directory containing the source code of one application per subdirectory.
+    ///
+    /// Each app's recorded invocations are read from the sibling `invocations/<app>` directory.
     apps: PathBuf,
     #[clap(flatten)]
     test_args: Arguments,
@@ -92,16 +104,31 @@ impl ReplayCommand {
             test_args,
         } = self;
 
+        let invocations_root = apps.with_file_name("invocations");
+
         let mut trials = Vec::new();
         for entry in fs::read_dir(&apps).with_context(|| format!("reading {apps:?}"))? {
             let entry = entry?;
-            if entry.file_type()?.is_dir() {
-                let app = entry.path();
-                let name = entry.file_name().to_string_lossy().into_owned();
-                let environment = environment.clone();
-                trials.push(Trial::test(name, move || {
-                    check(app, &environment).map_err(|e| Failed::from(format!("{e:#}")))
-                }));
+            if !entry.file_type()?.is_dir() {
+                continue;
+            }
+            let app = entry.path();
+            let name = entry.file_name().to_string_lossy().into_owned();
+
+            for file in invocation_files(&invocations_root.join(&name))? {
+                let invocation = read_invocation(&file)?;
+                let stem = file.file_stem().unwrap_or_default().to_string_lossy();
+                let trial_name = format!("{name}::{stem}");
+                // The reference derives the architecture and locates its SDK from the environment,
+                // so an invocation recorded elsewhere cannot be replayed here.
+                let ignored = !environment.matches(&invocation);
+                let app = app.clone();
+                trials.push(
+                    Trial::test(trial_name, move || {
+                        check(&app, &invocation).map_err(|e| Failed::from(format!("{e:#}")))
+                    })
+                    .with_ignored_flag(ignored),
+                );
             }
         }
         trials.sort_by(|a, b| a.name().cmp(b.name()));

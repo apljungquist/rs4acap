@@ -19,7 +19,9 @@ pub use conservative::ConservativeRejection;
 /// The location where the ACAP SDK is installed by default.
 pub const DEFAULT_ACAP_SDK_LOCATION: &str = "/opt/axis/";
 
-#[derive(Clone, Copy, Debug, clap::ValueEnum)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, clap::ValueEnum)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum OpenEmbeddedTargetArchitecture {
     Aarch64,
     Arm,
@@ -35,6 +37,8 @@ impl From<OpenEmbeddedTargetArchitecture> for Architecture {
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, ValueEnum)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 #[clap(rename_all = "kebab-case")]
 pub enum BuildOption {
     #[default]
@@ -51,7 +55,8 @@ impl Display for BuildOption {
     }
 }
 
-#[derive(Clone, Debug, Parser)]
+#[derive(Clone, Debug, Eq, PartialEq, Parser)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cli {
     pub path: PathBuf,
     /// Build tool, if any, to run before packaging.

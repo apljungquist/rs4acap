@@ -7,11 +7,16 @@ license = "MIT"
 description = "Utilities for creating Embedded Application Packages (EAPs)"
 homepage = "https://github.com/apljungquist/rs4acap"
 
+[features]
+## Implement `serde` traits for `Cli` so an invocation can be recorded and replayed.
+serde = ["dep:serde"]
+
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive", "env"] }
 env_logger = { workspace = true }
 log = { workspace = true }
+serde = { workspace = true, features = ["derive"], optional = true }
 tempfile = { workspace = true }
 tempdir = { workspace = true }
 thiserror = { workspace = true }
