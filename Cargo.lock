@@ -14,6 +14,7 @@ dependencies = [
  "rs4a-eap",
  "tempdir",
  "tempfile",
+ "thiserror",
 ]
 
 [[package]]

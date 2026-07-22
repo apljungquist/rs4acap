@@ -3,12 +3,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use acap_build::{BuildOption, Cli, OpenEmbeddedTargetArchitecture, DEFAULT_ACAP_SDK_LOCATION};
+use acap_build::{BuildOption, Cli, DEFAULT_ACAP_SDK_LOCATION};
 use anyhow::{bail, ensure, Context};
 use libtest_mimic::{Arguments, Failed, Trial};
 use rs4a_eap::{AcapBuildImpl, Mtime};
 
-use crate::invocation::{build_with_candidate, build_with_reference};
+use crate::invocation::{build_with_candidate, build_with_reference, Environment};
 
 fn copy_dir(src: &Path, dst: &Path) -> anyhow::Result<()> {
     fs::create_dir_all(dst)?;
@@ -36,10 +36,7 @@ fn scratch_copy(app_dir: &Path) -> anyhow::Result<(tempfile::TempDir, PathBuf)> 
     Ok((scratch, app))
 }
 
-fn check(
-    app_dir: PathBuf,
-    oecore_target_arch: OpenEmbeddedTargetArchitecture,
-) -> anyhow::Result<()> {
+fn check(app_dir: PathBuf, environment: &Environment) -> anyhow::Result<()> {
     let (_candidate_scratch, candidate_app) = scratch_copy(&app_dir)?;
     let (_reference_scratch, reference_app) = scratch_copy(&app_dir)?;
 
@@ -51,10 +48,13 @@ fn check(
         // TODO: Enable storing arguments alongside examples
         additional_file: Vec::new(),
         disable_manifest_validation: true,
-        oecore_target_arch,
+        oecore_target_arch: environment.oecore_target_arch,
+        oecore_native_sysroot: environment.oecore_native_sysroot.clone(),
+        sdk_target_sysroot: environment.sdk_target_sysroot.clone(),
         acap_sdk_location: PathBuf::from(DEFAULT_ACAP_SDK_LOCATION),
         source_date_epoch: Some(Mtime::default()),
         acap_build_impl: AcapBuildImpl::Equivalent,
+        conservative: false,
     };
     let candidate = build_with_candidate(cli.clone()).context("building with the candidate")?;
     let reference = build_with_reference(Cli {
@@ -76,8 +76,8 @@ fn check(
 
 #[derive(clap::Parser)]
 pub struct ReplayCommand {
-    #[clap(long, env = "OECORE_TARGET_ARCH")]
-    oecore_target_arch: OpenEmbeddedTargetArchitecture,
+    #[clap(flatten)]
+    environment: Environment,
     /// Directory containing the source code of one application per subdirectory.
     apps: PathBuf,
     #[clap(flatten)]
@@ -87,7 +87,7 @@ pub struct ReplayCommand {
 impl ReplayCommand {
     pub fn exec(self) -> anyhow::Result<()> {
         let Self {
-            oecore_target_arch,
+            environment,
             apps,
             test_args,
         } = self;
@@ -98,8 +98,9 @@ impl ReplayCommand {
             if entry.file_type()?.is_dir() {
                 let app = entry.path();
                 let name = entry.file_name().to_string_lossy().into_owned();
+                let environment = environment.clone();
                 trials.push(Trial::test(name, move || {
-                    check(app, oecore_target_arch).map_err(|e| Failed::from(format!("{e:#}")))
+                    check(app, &environment).map_err(|e| Failed::from(format!("{e:#}")))
                 }));
             }
         }

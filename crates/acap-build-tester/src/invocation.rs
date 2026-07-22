@@ -1,9 +1,22 @@
-use std::process::Command;
+use std::{path::PathBuf, process::Command};
 
-use acap_build::Cli;
+use acap_build::{Cli, OpenEmbeddedTargetArchitecture};
 use clap::ValueEnum;
 
 use crate::output::Output;
+
+#[derive(Clone, clap::Parser)]
+pub struct Environment {
+    /// Passed through to implementations
+    #[clap(long, env = "OECORE_TARGET_ARCH")]
+    pub(crate) oecore_target_arch: OpenEmbeddedTargetArchitecture,
+    /// Passed through to implementations
+    #[clap(long, env = "OECORE_NATIVE_SYSROOT")]
+    pub(crate) oecore_native_sysroot: Option<PathBuf>,
+    /// Passed through to implementations
+    #[clap(long, env = "SDKTARGETSYSROOT")]
+    pub(crate) sdk_target_sysroot: Option<PathBuf>,
+}
 
 /// Run the workspace `acap-build` in-process.
 ///
@@ -25,9 +38,13 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
         additional_file,
         disable_manifest_validation,
         oecore_target_arch,
-        acap_sdk_location: _,
+        oecore_native_sysroot,
+        sdk_target_sysroot,
         source_date_epoch,
+        // Not part of the reference interface
+        acap_sdk_location: _,
         acap_build_impl: _,
+        conservative: _,
     } = cli;
 
     let mut command = Command::new("acap-build");
@@ -40,6 +57,17 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
             .expect("no architecture variant is skipped")
             .get_name(),
     );
+
+    match oecore_native_sysroot {
+        Some(v) => command.env("OECORE_NATIVE_SYSROOT", v),
+        None => command.env_remove("OECORE_NATIVE_SYSROOT"),
+    };
+
+    match sdk_target_sysroot {
+        Some(v) => command.env("SDKTARGETSYSROOT", v),
+        None => command.env_remove("SDKTARGETSYSROOT"),
+    };
+
     match source_date_epoch {
         Some(epoch) => command.env("SOURCE_DATE_EPOCH", u64::from(epoch).to_string()),
         None => command.env_remove("SOURCE_DATE_EPOCH"),

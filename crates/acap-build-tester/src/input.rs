@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use acap_build::{BuildOption, Cli, OpenEmbeddedTargetArchitecture, DEFAULT_ACAP_SDK_LOCATION};
+use acap_build::{BuildOption, Cli, DEFAULT_ACAP_SDK_LOCATION};
 use proptest::{
     arbitrary::any,
     prelude::{BoxedStrategy, Just, Strategy},
@@ -10,7 +10,7 @@ use proptest::{
 };
 use rs4a_eap::{AcapBuildImpl, Mtime};
 
-use crate::source::Source;
+use crate::{invocation::Environment, source::Source};
 
 /// The complete, known input to an `acap-build` implementation.
 #[derive(Clone, Debug)]
@@ -19,7 +19,13 @@ pub struct Input {
     pub invocation: Cli,
 }
 
-pub fn arbitrary_input(oecore_target_arch: OpenEmbeddedTargetArchitecture) -> BoxedStrategy<Input> {
+pub fn arbitrary_input(environment: Environment) -> BoxedStrategy<Input> {
+    let Environment {
+        oecore_target_arch,
+        oecore_native_sysroot,
+        sdk_target_sysroot,
+    } = environment;
+
     (
         any::<Source>(),
         any::<bool>(),
@@ -41,6 +47,8 @@ pub fn arbitrary_input(oecore_target_arch: OpenEmbeddedTargetArchitecture) -> Bo
                 // interesting inputs given a realistic environment.
                 // TODO: Consider varying this, including leaving it unset.
                 oecore_target_arch,
+                oecore_native_sysroot: oecore_native_sysroot.clone(),
+                sdk_target_sysroot: sdk_target_sysroot.clone(),
                 // Only the default is generated: the reference does not read it, so any other
                 // location would make only the candidate use different schema which is an
                 // unnecessary potential source of divergence.
@@ -51,6 +59,7 @@ pub fn arbitrary_input(oecore_target_arch: OpenEmbeddedTargetArchitecture) -> Bo
                     Mtime::try_from(epoch).expect("generated values fit in the tar headers"),
                 ),
                 acap_build_impl: AcapBuildImpl::Equivalent,
+                conservative: true,
             },
             source,
         })
