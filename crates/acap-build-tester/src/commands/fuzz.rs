@@ -102,10 +102,26 @@ fn fuzz(environment: Environment, cases: u32, seed: u64) -> Result<(), Box<TestE
     result
 }
 
+/// A stable 64-bit FNV-1a hash of `bytes`.
+///
+/// Used to derive a recorded invocation's filename from its contents. Unlike the standard
+/// library's `DefaultHasher`, this does not change between toolchain versions, so regenerating an
+/// example yields the same filename instead of orphaning the committed one.
+fn content_hash(bytes: &[u8]) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for &byte in bytes {
+        hash ^= byte as u64;
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    hash
+}
+
 /// Materialize a failing input as a replayable example.
 ///
-/// The source is written into `example_dir` and the invocation into the sibling
-/// `invocations/<example>` tree that `replay` reads, mirroring how the examples are laid out.
+/// The source is written into `example_dir` and the invocation into a file in the sibling
+/// `invocations/<example>` directory that `replay` reads. One example can hold any number of
+/// recorded invocations — differing in architecture, conservative mode, source date epoch, and so
+/// on — so the file is keyed on the whole invocation rather than on any single field.
 fn save_example(example_dir: &Path, input: &Input) -> anyhow::Result<PathBuf> {
     input.source.materialize_in(example_dir)?;
 
@@ -119,24 +135,27 @@ fn save_example(example_dir: &Path, input: &Input) -> anyhow::Result<PathBuf> {
         .join(name);
     fs::create_dir_all(&invocations_dir)?;
 
-    // The stem names the replay trial and keeps sibling invocations distinct. The architecture is
-    // the only thing that varies between the reference environments and is what replay gates on, so
-    // it is the natural, collision-free key.
-    let arch = input
-        .invocation
-        .oecore_target_arch
-        .to_possible_value()
-        .expect("every architecture variant has a name");
-    let path = invocations_dir.join(format!("{}.json", arch.get_name()));
-
-    // Record the whole invocation, but with a `path` relative to the example directory so that
-    // replay can resolve it against a scratch copy.
+    // Record the whole invocation. `path` is an ephemeral scratch directory that replay overrides
+    // with a copy of its own, so store a neutral placeholder rather than this run's build path.
     let invocation = Cli {
         path: PathBuf::from("."),
         ..input.invocation.clone()
     };
     let mut json = serde_json::to_string_pretty(&invocation)?;
     json.push('\n');
+
+    // The architecture leads the stem because it is what a reader most wants to see and what
+    // replay gates on, but validation, epoch, conservative mode, and the source all vary
+    // independently, so it is not a unique key. A hash of the whole invocation disambiguates the
+    // rest and keeps the name stable, so re-recording an identical invocation overwrites its own
+    // file instead of accumulating copies.
+    let arch = input
+        .invocation
+        .oecore_target_arch
+        .to_possible_value()
+        .expect("every architecture variant has a name");
+    let stem = format!("{}-{:016x}", arch.get_name(), content_hash(json.as_bytes()));
+    let path = invocations_dir.join(format!("{stem}.json"));
     fs::write(&path, json)?;
     Ok(path)
 }
@@ -223,38 +242,81 @@ mod tests {
         assert_eq!(cli, back);
     }
 
+    fn sample_source() -> Source {
+        Source {
+            manifest: Manifest {
+                schema_version: "1.3",
+                app_name: "myapp".to_string(),
+                version: "1.0.0".to_string(),
+                friendly_name: None,
+            },
+            manifest_name: DEFAULT_MANIFEST_NAME.to_string(),
+            additional_files: BTreeSet::new(),
+            html: false,
+        }
+    }
+
     #[test]
     fn save_example_writes_replayable_files() {
         let tmp = tempfile::tempdir().unwrap();
         let example_dir = tmp.path().join("data").join("myapp");
         let input = Input {
-            source: Source {
-                manifest: Manifest {
-                    schema_version: "1.3",
-                    app_name: "myapp".to_string(),
-                    version: "1.0.0".to_string(),
-                    friendly_name: None,
-                },
-                manifest_name: DEFAULT_MANIFEST_NAME.to_string(),
-                additional_files: BTreeSet::new(),
-                html: false,
-            },
+            source: sample_source(),
             invocation: sample_invocation(),
         };
 
         let path = save_example(&example_dir, &input).unwrap();
 
         // The source lands in the example dir; the invocation in the sibling `invocations` tree,
-        // stemmed by architecture, exactly where `replay` looks for it.
+        // keyed by architecture and a hash of the whole invocation, where `replay` looks for it.
         assert!(example_dir.join("manifest.json").exists());
-        assert_eq!(
-            path,
-            tmp.path().join("invocations").join("myapp").join("arm.json")
+        let invocations_dir = tmp.path().join("invocations").join("myapp");
+        assert_eq!(path.parent().unwrap(), invocations_dir);
+        assert!(
+            path.file_stem()
+                .unwrap()
+                .to_string_lossy()
+                .starts_with("arm-"),
+            "{path:?}"
         );
 
         // The recorded invocation deserializes back with its `path` relative to the example dir.
-        let recorded: Cli =
-            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        let recorded: Cli = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(recorded, input.invocation);
+
+        // Re-recording the same invocation is idempotent: it overwrites its own file.
+        assert_eq!(save_example(&example_dir, &input).unwrap(), path);
+    }
+
+    #[test]
+    fn one_example_can_hold_several_invocations() {
+        let tmp = tempfile::tempdir().unwrap();
+        let example_dir = tmp.path().join("data").join("myapp");
+
+        // Two invocations of the same example that differ only in conservative mode; nothing about
+        // the architecture distinguishes them.
+        let base = sample_invocation();
+        let lenient = Input {
+            source: sample_source(),
+            invocation: Cli {
+                conservative: false,
+                ..base.clone()
+            },
+        };
+        let conservative = Input {
+            source: sample_source(),
+            invocation: Cli {
+                conservative: true,
+                ..base
+            },
+        };
+
+        let lenient_path = save_example(&example_dir, &lenient).unwrap();
+        let conservative_path = save_example(&example_dir, &conservative).unwrap();
+
+        // Both are stored side by side rather than one overwriting the other.
+        assert_ne!(lenient_path, conservative_path);
+        assert!(lenient_path.exists());
+        assert!(conservative_path.exists());
     }
 }

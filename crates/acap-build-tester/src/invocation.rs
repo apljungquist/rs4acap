@@ -18,22 +18,15 @@ pub struct Environment {
     pub(crate) sdk_target_sysroot: Option<PathBuf>,
 }
 
-impl Environment {
-    /// Whether a recorded invocation was captured in this same environment.
-    ///
-    /// The reference derives the package architecture and locates its SDK from these variables, so
-    /// replaying an invocation captured elsewhere would either fail to find the SDK or build for a
-    /// different architecture than was recorded. Such invocations are skipped rather than replayed.
-    pub(crate) fn matches(&self, cli: &Cli) -> bool {
-        self.oecore_target_arch == cli.oecore_target_arch
-            && self.oecore_native_sysroot == cli.oecore_native_sysroot
-            && self.sdk_target_sysroot == cli.sdk_target_sysroot
-    }
-}
-
 /// Run the workspace `acap-build` in-process.
 ///
 /// GNU `tar` must be on the `PATH`.
+// TODO: Exercise the path argument the same way for both implementations.
+// The candidate is handed `cli.path` as a real path argument, whereas the reference is always
+// driven from the app directory with a path argument of "." (see `build_with_reference`), so the
+// two are not tested on equal footing there. Matching them would mean running the candidate in a
+// subprocess so it too can be given "." from a chosen working directory, but that risks being slow
+// now that the candidate also runs to filter every generated input during fuzzing.
 pub fn build_with_candidate(cli: Cli) -> anyhow::Result<Output> {
     let dir = cli.path.clone();
     let result = cli.exec();
@@ -97,7 +90,9 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
     }
 
     let output = command
-        // TODO: Consider testing other working dir different from manifest dir
+        // The reference mishandles a path argument other than ".", so drive it by changing into
+        // the app directory and always passing ".". This is why recorded invocations do not carry
+        // a meaningful `path`; see `save_example`.
         .arg(".")
         .current_dir(&path)
         .env_remove("RUST_LOG")

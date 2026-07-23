@@ -7,7 +7,7 @@ use acap_build::Cli;
 use anyhow::{bail, ensure, Context};
 use libtest_mimic::{Arguments, Failed, Trial};
 
-use crate::invocation::{build_with_candidate, build_with_reference, Environment};
+use crate::invocation::{build_with_candidate, build_with_reference};
 
 fn copy_dir(src: &Path, dst: &Path) -> anyhow::Result<()> {
     fs::create_dir_all(dst)?;
@@ -36,9 +36,6 @@ fn scratch_copy(app_dir: &Path) -> anyhow::Result<(tempfile::TempDir, PathBuf)> 
 }
 
 /// Read a recorded invocation, i.e. a [`Cli`] serialized to JSON.
-///
-/// A malformed or outdated file is an error rather than a fallback to defaults, so that a schema
-/// change forces every example to be migrated deliberately.
 fn read_invocation(path: &Path) -> anyhow::Result<Cli> {
     let text = fs::read_to_string(path).with_context(|| format!("reading {path:?}"))?;
     serde_json::from_str(&text).with_context(|| format!("parsing {path:?}"))
@@ -48,15 +45,15 @@ fn check(app_dir: &Path, invocation: &Cli) -> anyhow::Result<()> {
     let (_candidate_scratch, candidate_app) = scratch_copy(app_dir)?;
     let (_reference_scratch, reference_app) = scratch_copy(app_dir)?;
 
-    // The recorded `path` is relative to the app's working directory, so resolve it against each
-    // scratch copy. This lets both implementations build in a copy of their own.
+    // The recorded `path` is only a placeholder; override it so each implementation builds in a
+    // scratch copy of its own and cannot see the other's output.
     let candidate = build_with_candidate(Cli {
-        path: candidate_app.join(&invocation.path),
+        path: candidate_app,
         ..invocation.clone()
     })
     .context("building with the candidate")?;
     let reference = build_with_reference(Cli {
-        path: reference_app.join(&invocation.path),
+        path: reference_app,
         ..invocation.clone()
     })
     .context("building with the reference")?;
@@ -86,8 +83,6 @@ fn invocation_files(dir: &Path) -> anyhow::Result<Vec<PathBuf>> {
 
 #[derive(clap::Parser)]
 pub struct ReplayCommand {
-    #[clap(flatten)]
-    environment: Environment,
     /// Directory containing the source code of one application per subdirectory.
     ///
     /// Each app's recorded invocations are read from the sibling `invocations/<app>` directory.
@@ -98,11 +93,7 @@ pub struct ReplayCommand {
 
 impl ReplayCommand {
     pub fn exec(self) -> anyhow::Result<()> {
-        let Self {
-            environment,
-            apps,
-            test_args,
-        } = self;
+        let Self { apps, test_args } = self;
 
         let invocations_root = apps.with_file_name("invocations");
 
@@ -121,14 +112,11 @@ impl ReplayCommand {
                 let trial_name = format!("{name}::{stem}");
                 // The reference derives the architecture and locates its SDK from the environment,
                 // so an invocation recorded elsewhere cannot be replayed here.
-                let ignored = !environment.matches(&invocation);
+
                 let app = app.clone();
-                trials.push(
-                    Trial::test(trial_name, move || {
-                        check(&app, &invocation).map_err(|e| Failed::from(format!("{e:#}")))
-                    })
-                    .with_ignored_flag(ignored),
-                );
+                trials.push(Trial::test(trial_name, move || {
+                    check(&app, &invocation).map_err(|e| Failed::from(format!("{e:#}")))
+                }));
             }
         }
         trials.sort_by(|a, b| a.name().cmp(b.name()));

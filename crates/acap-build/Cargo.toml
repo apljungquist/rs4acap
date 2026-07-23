@@ -8,8 +8,8 @@ description = "Utilities for creating Embedded Application Packages (EAPs)"
 homepage = "https://github.com/apljungquist/rs4acap"
 
 [features]
-## Implement `serde` traits for `Cli` so an invocation can be recorded and replayed.
-serde = ["dep:serde"]
+## Implement `serde` traits for `Cli` and other selected public types.
+serde = ["dep:serde", "rs4a-eap/serde"]
 
 [dependencies]
 anyhow = { workspace = true }
