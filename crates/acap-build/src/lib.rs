@@ -90,11 +90,22 @@ pub struct Cli {
     /// Defaults to the current time.
     #[clap(long, env = "SOURCE_DATE_EPOCH", value_parser = parse_mtime)]
     pub source_date_epoch: Option<Mtime>,
+    // The current default values are equivalent+progressive.
+    // This feels a bit like a contradiction; users get neither
+    // - the safety of equivalent+conservative nor
+    // - the convenience of compatible+progressive
+    // TODO: Consider flipping one of the default values
     /// Implementation used to package the EAP.
     #[clap(long = "impl", env = "ACAP_BUILD_IMPL", default_value_t = AcapBuildImpl::Equivalent)]
     pub acap_build_impl: AcapBuildImpl,
-    /// Reject inputs for which the correct behavior is ambiguous.
-    #[clap(long)]
+    /// Reject inputs for which behavior may differ from the reference implementation
+    #[clap(
+        long,
+        env = "ACAP_BUILD_CONSERVATIVE",
+        action = clap::ArgAction::Set,
+        value_parser = clap::builder::BoolishValueParser::new(),
+        default_value_t = false
+    )]
     pub conservative: bool,
 }
 

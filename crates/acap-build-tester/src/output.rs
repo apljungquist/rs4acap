@@ -3,7 +3,6 @@
 use std::{
     fmt::{Debug, Formatter},
     fs,
-    os::unix::process::ExitStatusExt,
     path::{Path, PathBuf},
     process::ExitStatus,
 };
@@ -73,22 +72,6 @@ impl Output {
             eaps: Self::eaps(dir)?,
             stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
             stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-        })
-    }
-
-    /// The output of an implementation that ran in this process on `dir`.
-    pub fn from_result(result: &anyhow::Result<String>, dir: &Path) -> anyhow::Result<Self> {
-        Ok(Self {
-            status: ExitStatus::from_raw(if result.is_ok() { 0 } else { 1 }),
-            eaps: Self::eaps(dir)?,
-            stdout: match result {
-                Ok(eap_file_path) => eap_file_path.clone(),
-                Err(_) => String::new(),
-            },
-            stderr: match result {
-                Ok(_) => String::new(),
-                Err(e) => format!("{e:?}"),
-            },
         })
     }
 
