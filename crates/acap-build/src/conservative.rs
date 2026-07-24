@@ -17,22 +17,35 @@ macro_rules! reject {
     };
 }
 
-/// Return an error if the correct behavior is ambiguous
-pub fn error_for_rejection(cli: &Cli) -> Result<(), ConservativeRejection> {
-    let Cli {
-        oecore_native_sysroot,
-        oecore_target_arch,
-        sdk_target_sysroot,
-        acap_build_impl,
-        ..
-    } = cli;
+impl Cli {
+    /// Return an error on inputs for which behavior may differ from the reference implementation.
+    pub fn error_for_conservative(&self) -> Result<(), ConservativeRejection> {
+        let Self {
+            path: _,
+            build: _,
+            manifest: _,
+            additional_file: _,
+            disable_manifest_validation: _,
+            oecore_target_arch,
+            oecore_native_sysroot,
+            sdk_target_sysroot,
+            acap_sdk_location: _,
+            source_date_epoch: _,
+            acap_build_impl,
+            conservative,
+        } = self;
 
-    // Ordered cheapest-first
-    error_for_inequivalent_impl(acap_build_impl)?;
-    error_for_unset_native_sysroot(oecore_native_sysroot.as_deref())?;
-    let sdk_target_sysroot = error_for_unset_target_sysroot(sdk_target_sysroot.as_deref())?;
-    error_for_inconsistent_architecture(sdk_target_sysroot, *oecore_target_arch)?;
-    Ok(())
+        if !conservative {
+            return Ok(());
+        }
+
+        // Ordered cheapest-first
+        error_for_inequivalent_impl(acap_build_impl)?;
+        error_for_unset_native_sysroot(oecore_native_sysroot.as_deref())?;
+        let sdk_target_sysroot = error_for_unset_target_sysroot(sdk_target_sysroot.as_deref())?;
+        error_for_inconsistent_architecture(sdk_target_sysroot, *oecore_target_arch)?;
+        Ok(())
+    }
 }
 
 fn error_for_inequivalent_impl(value: &AcapBuildImpl) -> Result<(), ConservativeRejection> {

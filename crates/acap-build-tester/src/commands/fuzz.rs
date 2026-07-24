@@ -11,18 +11,7 @@ use crate::{
     invocation::{build_with, Environment},
 };
 
-/// The outcome of comparing the candidate against the reference on one input.
-enum Comparison {
-    /// The candidate succeeded and produced the same essence as the reference.
-    Matched,
-    /// The candidate declined the input, so there was nothing to compare against.
-    ///
-    /// Conservative mode is allowed to fail, so this is not a property violation. It is reported
-    /// separately so that a candidate which "passes" by declining every input does not go unnoticed.
-    Declined,
-}
-
-fn check(candidate_exe: &Path, input: &Input) -> anyhow::Result<Comparison> {
+fn check(candidate_exe: &Path, input: &Input) -> anyhow::Result<()> {
     let candidate_dir = tempfile::tempdir()?;
     input.source.materialize_in(candidate_dir.path())?;
     let candidate = build_with(
@@ -32,13 +21,6 @@ fn check(candidate_exe: &Path, input: &Input) -> anyhow::Result<Comparison> {
     )
     .context("building with the candidate")?;
 
-    // This does not distinguish between inputs rejected by the conservative mode and genuine
-    // crashes.
-    // TODO: Consider distinguishing between failure modes in `acap-build`
-    if !candidate.essence().success {
-        return Ok(Comparison::Declined);
-    }
-
     let reference_dir = tempfile::tempdir()?;
     input.source.materialize_in(reference_dir.path())?;
     let reference = build_with("acap-build", reference_dir.path(), input.invocation.clone())
@@ -47,7 +29,7 @@ fn check(candidate_exe: &Path, input: &Input) -> anyhow::Result<Comparison> {
     if candidate.essence() != reference.essence() {
         bail!("the candidate succeeded but does not match the reference:\n{candidate:#?}\n{reference:#?}");
     }
-    Ok(Comparison::Matched)
+    Ok(())
 }
 
 fn fuzz(
@@ -71,31 +53,31 @@ fn fuzz(
     };
     let rng = TestRng::from_seed(RngAlgorithm::ChaCha, &rng_seed);
 
-    let matched = AtomicU64::new(0);
-    let declined = AtomicU64::new(0);
+    let compared = AtomicU64::new(0);
+    let rejected = AtomicU64::new(0);
 
     let result = TestRunner::new_with_rng(config, rng)
         .run(&arbitrary_input(environment), |input| {
-            match check(candidate, &input).map_err(|e| TestCaseError::fail(format!("{e:#}")))? {
-                Comparison::Matched => {
-                    matched.fetch_add(1, Ordering::Relaxed);
-                    Ok(())
+            match input.invocation.error_for_conservative() {
+                Ok(()) => {
+                    compared.fetch_add(1, Ordering::Relaxed);
+                    check(candidate, &input).map_err(|e| TestCaseError::fail(format!("{e:#}")))
                 }
-                Comparison::Declined => {
-                    declined.fetch_add(1, Ordering::Relaxed);
-                    Err(TestCaseError::reject("the candidate declined the input"))
+                Err(e) => {
+                    rejected.fetch_add(1, Ordering::Relaxed);
+                    Err(TestCaseError::reject(e.to_string()))
                 }
             }
         })
         .map_err(Box::new);
 
-    let matched = matched.load(Ordering::Relaxed);
-    let declined = declined.load(Ordering::Relaxed);
-    let total = matched + declined;
+    let compared = compared.load(Ordering::Relaxed);
+    let rejected = rejected.load(Ordering::Relaxed);
+    let total = compared + rejected;
     if total != 0 {
         log::info!(
-            "The candidate matched the reference on {matched} and declined {declined} of {total} inputs ({percent:.1}% declined).",
-            percent = 100.0 * declined as f64 / total as f64,
+            "The candidate was compared to the reference on {compared} and rejected {rejected} of {total} inputs ({percent:.1}% rejected).",
+            percent = 100.0 * rejected as f64 / total as f64,
         );
     }
 

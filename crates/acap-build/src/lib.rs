@@ -128,9 +128,7 @@ fn sdk_schema_dir(acap_sdk_location: &Path) -> PathBuf {
 
 impl Cli {
     pub fn exec(self) -> anyhow::Result<String> {
-        if self.conservative {
-            conservative::error_for_rejection(&self)?;
-        }
+        self.error_for_conservative()?;
 
         let Self {
             path,
