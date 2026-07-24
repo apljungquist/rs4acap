@@ -1,4 +1,4 @@
-use std::{path::PathBuf, process::Command};
+use std::{ffi::OsStr, path::PathBuf, process::Command};
 
 use acap_build::{Cli, OpenEmbeddedTargetArchitecture};
 use clap::ValueEnum;
@@ -18,19 +18,8 @@ pub struct Environment {
     pub(crate) sdk_target_sysroot: Option<PathBuf>,
 }
 
-/// Run the workspace `acap-build` in-process.
-///
-/// GNU `tar` must be on the `PATH`.
-pub fn build_with_candidate(cli: Cli) -> anyhow::Result<Output> {
-    let dir = cli.path.clone();
-    let result = cli.exec();
-    Output::from_result(&result, &dir)
-}
-
-/// Run the reference `acap-build` in a sub-process.
-///
-/// It must be on the path on the `PATH`.
-pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
+/// Run an `acap-build` implementation in a sub-process.
+pub fn build_with<S: AsRef<OsStr>>(program: S, cli: Cli) -> anyhow::Result<Output> {
     let Cli {
         path,
         build,
@@ -47,7 +36,7 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
         conservative: _,
     } = cli;
 
-    let mut command = Command::new("acap-build");
+    let mut command = Command::new(program);
 
     // Environment variables
     command.env(

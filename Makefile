@@ -14,15 +14,17 @@ help:
 	@mkhelp $(firstword $(MAKEFILE_LIST))
 
 ## Compare the output from building example apps
-replay_equivalence_examples:
+replay_equivalence_examples: target/debug/acap-build
 	cargo run --locked -p rs4a-acap-build-tester -- \
+		--candidate $(abspath $<) \
 		replay \
 		crates/acap-build/tests/data
 .PHONY: replay_equivalence_examples
 
 ## Compare the output from building generated apps
-fuzz_equivalence:
+fuzz_equivalence: target/debug/acap-build
 	cargo run --locked -p rs4a-acap-build-tester -- \
+		--candidate $(abspath $<) \
 		fuzz
 .PHONY: fuzz_equivalence
 
@@ -167,6 +169,9 @@ Cargo.lock: $(wildcard crates/*/Cargo.toml)
 
 init-env.sh: bin/create-venv.sh
 	$<
+
+target/debug/acap-build: .FORCE
+	cargo build --locked -p acap-build --bin acap-build
 
 # The `acap-build` snapshot tests need the ACAP Native SDK. This Makefile assumes
 # it is already installed and, if it is not at the default `/opt/axis`, that

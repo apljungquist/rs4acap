@@ -1,4 +1,7 @@
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::{
+    path::Path,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 use acap_build::Cli;
 use anyhow::{bail, Context};
@@ -6,7 +9,7 @@ use proptest::test_runner::{Config, RngAlgorithm, TestCaseError, TestError, Test
 
 use crate::{
     input::{arbitrary_input, Input},
-    invocation::{build_with_candidate, build_with_reference, Environment},
+    invocation::{build_with, Environment},
 };
 
 /// The outcome of comparing the candidate against the reference on one input.
@@ -20,13 +23,16 @@ enum Comparison {
     Declined,
 }
 
-fn check(input: &Input) -> anyhow::Result<Comparison> {
+fn check(candidate_exe: &Path, input: &Input) -> anyhow::Result<Comparison> {
     let candidate_dir = tempfile::tempdir()?;
     input.source.materialize_in(candidate_dir.path())?;
-    let candidate = build_with_candidate(Cli {
-        path: candidate_dir.path().to_path_buf(),
-        ..input.invocation.clone()
-    })
+    let candidate = build_with(
+        candidate_exe,
+        Cli {
+            path: candidate_dir.path().to_path_buf(),
+            ..input.invocation.clone()
+        },
+    )
     .context("building with the candidate")?;
 
     // This does not distinguish between inputs rejected by the conservative mode and genuine
@@ -38,10 +44,13 @@ fn check(input: &Input) -> anyhow::Result<Comparison> {
 
     let reference_dir = tempfile::tempdir()?;
     input.source.materialize_in(reference_dir.path())?;
-    let reference = build_with_reference(Cli {
-        path: reference_dir.path().to_path_buf(),
-        ..input.invocation.clone()
-    })
+    let reference = build_with(
+        "acap-build",
+        Cli {
+            path: reference_dir.path().to_path_buf(),
+            ..input.invocation.clone()
+        },
+    )
     .context("building with the reference")?;
 
     if candidate.essence() != reference.essence() {
@@ -50,7 +59,12 @@ fn check(input: &Input) -> anyhow::Result<Comparison> {
     Ok(Comparison::Matched)
 }
 
-fn fuzz(environment: Environment, cases: u32, seed: u64) -> Result<(), Box<TestError<Input>>> {
+fn fuzz(
+    candidate: &Path,
+    environment: Environment,
+    cases: u32,
+    seed: u64,
+) -> Result<(), Box<TestError<Input>>> {
     let mut rng_seed = [0u8; 32];
     for (dst, src) in rng_seed.iter_mut().zip(seed.to_le_bytes()) {
         *dst = src;
@@ -71,7 +85,7 @@ fn fuzz(environment: Environment, cases: u32, seed: u64) -> Result<(), Box<TestE
 
     let result = TestRunner::new_with_rng(config, rng)
         .run(&arbitrary_input(environment), |input| {
-            match check(&input).map_err(|e| TestCaseError::fail(format!("{e:#}")))? {
+            match check(candidate, &input).map_err(|e| TestCaseError::fail(format!("{e:#}")))? {
                 Comparison::Matched => {
                     matched.fetch_add(1, Ordering::Relaxed);
                     Ok(())
@@ -110,14 +124,14 @@ pub struct FuzzCommand {
 }
 
 impl FuzzCommand {
-    pub fn exec(self) -> anyhow::Result<()> {
+    pub fn exec(self, candidate: &Path) -> anyhow::Result<()> {
         let Self {
             cases,
             seed,
             environment,
         } = self;
 
-        match fuzz(environment, cases, seed).map_err(|e| *e) {
+        match fuzz(candidate, environment, cases, seed).map_err(|e| *e) {
             Ok(()) => Ok(()),
             Err(TestError::Fail(reason, input)) => {
                 bail!("Property violated by {input:#?}:\n{reason}")
