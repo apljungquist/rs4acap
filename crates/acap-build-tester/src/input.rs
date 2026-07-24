@@ -35,10 +35,7 @@ pub fn arbitrary_input(environment: Environment) -> BoxedStrategy<Input> {
     )
         .prop_map(move |(source, disable_manifest_validation, epoch)| Input {
             invocation: Cli {
-                // A placeholder; each implementation builds in a scratch directory of its own.
-                // Easy to forget to overwriting, so avoiding this would be one advantage of moving
-                // away from the `Cli` as input model
-                path: PathBuf::new(),
+                path: PathBuf::from("."),
                 build: BuildOption::NoBuild,
                 manifest: PathBuf::from(&source.manifest_name),
                 additional_file: source.additional_files.iter().map(PathBuf::from).collect(),

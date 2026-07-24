@@ -8,7 +8,7 @@ use anyhow::{bail, ensure, Context};
 use libtest_mimic::{Arguments, Failed, Trial};
 use rs4a_eap::{AcapBuildImpl, Mtime};
 
-use crate::invocation::{build_with_candidate, build_with_reference, Environment};
+use crate::invocation::{build_with, Environment};
 
 fn copy_dir(src: &Path, dst: &Path) -> anyhow::Result<()> {
     fs::create_dir_all(dst)?;
@@ -36,13 +36,13 @@ fn scratch_copy(app_dir: &Path) -> anyhow::Result<(tempfile::TempDir, PathBuf)> 
     Ok((scratch, app))
 }
 
-fn check(app_dir: PathBuf, environment: &Environment) -> anyhow::Result<()> {
+fn check(candidate_exe: &Path, app_dir: PathBuf, environment: &Environment) -> anyhow::Result<()> {
     let (_candidate_scratch, candidate_app) = scratch_copy(&app_dir)?;
     let (_reference_scratch, reference_app) = scratch_copy(&app_dir)?;
 
     // Both implementations receive the same inputs, except for the directory they build in.
     let cli = Cli {
-        path: candidate_app,
+        path: PathBuf::from("."),
         build: BuildOption::NoBuild,
         manifest: PathBuf::from("manifest.json"),
         // TODO: Enable storing arguments alongside examples
@@ -56,12 +56,10 @@ fn check(app_dir: PathBuf, environment: &Environment) -> anyhow::Result<()> {
         acap_build_impl: AcapBuildImpl::Equivalent,
         conservative: false,
     };
-    let candidate = build_with_candidate(cli.clone()).context("building with the candidate")?;
-    let reference = build_with_reference(Cli {
-        path: reference_app,
-        ..cli
-    })
-    .context("building with the reference")?;
+    let candidate = build_with(candidate_exe, &candidate_app, cli.clone())
+        .context("building with the candidate")?;
+    let reference =
+        build_with("acap-build", &reference_app, cli).context("building with the reference")?;
 
     if candidate.essence() != reference.essence() {
         bail!("the candidate does not match the reference:\n{candidate:#?}\n{reference:#?}");
@@ -85,7 +83,7 @@ pub struct ReplayCommand {
 }
 
 impl ReplayCommand {
-    pub fn exec(self) -> anyhow::Result<()> {
+    pub fn exec(self, candidate: &Path) -> anyhow::Result<()> {
         let Self {
             environment,
             apps,
@@ -98,9 +96,10 @@ impl ReplayCommand {
             if entry.file_type()?.is_dir() {
                 let app = entry.path();
                 let name = entry.file_name().to_string_lossy().into_owned();
+                let candidate = candidate.to_path_buf();
                 let environment = environment.clone();
                 trials.push(Trial::test(name, move || {
-                    check(app, &environment).map_err(|e| Failed::from(format!("{e:#}")))
+                    check(&candidate, app, &environment).map_err(|e| Failed::from(format!("{e:#}")))
                 }));
             }
         }

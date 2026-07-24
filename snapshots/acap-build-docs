@@ -25,7 +25,7 @@ Options:
           Time to stamp on every archive member, in seconds after the Unix epoch [env: SOURCE_DATE_EPOCH=]
       --impl <ACAP_BUILD_IMPL>
           Implementation used to package the EAP [env: ACAP_BUILD_IMPL=] [default: equivalent] [possible values: equivalent, compatible]
-      --conservative
-          Reject inputs for which the correct behavior is ambiguous
+      --conservative <CONSERVATIVE>
+          Reject inputs for which behavior may differ from the reference implementation [env: ACAP_BUILD_CONSERVATIVE=] [default: false] [possible values: true, false]
   -h, --help
           Print help (see more with '--help')

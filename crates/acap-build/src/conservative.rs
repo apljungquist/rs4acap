@@ -2,7 +2,7 @@
 
 use std::{ffi::OsStr, path::Path};
 
-use rs4a_eap::Architecture;
+use rs4a_eap::{AcapBuildImpl, Architecture};
 
 use crate::{Cli, OpenEmbeddedTargetArchitecture};
 
@@ -23,14 +23,23 @@ pub fn error_for_rejection(cli: &Cli) -> Result<(), ConservativeRejection> {
         oecore_native_sysroot,
         oecore_target_arch,
         sdk_target_sysroot,
+        acap_build_impl,
         ..
     } = cli;
 
     // Ordered cheapest-first
+    error_for_inequivalent_impl(acap_build_impl)?;
     error_for_unset_native_sysroot(oecore_native_sysroot.as_deref())?;
     let sdk_target_sysroot = error_for_unset_target_sysroot(sdk_target_sysroot.as_deref())?;
     error_for_inconsistent_architecture(sdk_target_sysroot, *oecore_target_arch)?;
     Ok(())
+}
+
+fn error_for_inequivalent_impl(value: &AcapBuildImpl) -> Result<(), ConservativeRejection> {
+    match value {
+        AcapBuildImpl::Equivalent => Ok(()),
+        AcapBuildImpl::Compatible => reject!("ACAP_BUILD_IMPL is not set to equivalent"),
+    }
 }
 
 /// The reference implementation depends on `OECORE_NATIVE_SYSROOT` being set correctly to

@@ -1,4 +1,8 @@
-use std::{path::PathBuf, process::Command};
+use std::{
+    ffi::OsStr,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 use acap_build::{Cli, OpenEmbeddedTargetArchitecture};
 use clap::ValueEnum;
@@ -18,19 +22,12 @@ pub struct Environment {
     pub(crate) sdk_target_sysroot: Option<PathBuf>,
 }
 
-/// Run the workspace `acap-build` in-process.
-///
-/// GNU `tar` must be on the `PATH`.
-pub fn build_with_candidate(cli: Cli) -> anyhow::Result<Output> {
-    let dir = cli.path.clone();
-    let result = cli.exec();
-    Output::from_result(&result, &dir)
-}
-
-/// Run the reference `acap-build` in a sub-process.
-///
-/// It must be on the path on the `PATH`.
-pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
+/// Run an `acap-build` implementation in a sub-process.
+pub fn build_with<S: AsRef<OsStr>>(
+    program: S,
+    current_dir: &Path,
+    cli: Cli,
+) -> anyhow::Result<Output> {
     let Cli {
         path,
         build,
@@ -40,14 +37,13 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
         oecore_target_arch,
         oecore_native_sysroot,
         sdk_target_sysroot,
+        acap_sdk_location,
         source_date_epoch,
-        // Not part of the reference interface
-        acap_sdk_location: _,
-        acap_build_impl: _,
-        conservative: _,
+        acap_build_impl,
+        conservative,
     } = cli;
 
-    let mut command = Command::new("acap-build");
+    let mut command = Command::new(program);
 
     // Environment variables
     command.env(
@@ -68,10 +64,16 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
         None => command.env_remove("SDKTARGETSYSROOT"),
     };
 
+    command.env("ACAP_SDK_LOCATION", acap_sdk_location);
+
     match source_date_epoch {
         Some(epoch) => command.env("SOURCE_DATE_EPOCH", u64::from(epoch).to_string()),
         None => command.env_remove("SOURCE_DATE_EPOCH"),
     };
+
+    command.env("ACAP_BUILD_IMPL", acap_build_impl.to_string());
+
+    command.env("ACAP_BUILD_CONSERVATIVE", conservative.to_string());
 
     // Arguments
     command.arg("--build").arg(build.to_string());
@@ -85,12 +87,17 @@ pub fn build_with_reference(cli: Cli) -> anyhow::Result<Output> {
 
     let output = command
         // TODO: Consider testing other working dir different from manifest dir
-        .arg(".")
-        .current_dir(&path)
+        .arg(&path)
+        .current_dir(current_dir)
         .env_remove("RUST_LOG")
         // cargo sets LD_LIBRARY_PATH for the programs it runs,
         // which interferes with the reference implementation.
         .env_remove("LD_LIBRARY_PATH")
         .output()?;
-    Output::from_command(output, &path)
+    debug_assert_eq!(
+        path,
+        Path::new("."),
+        "Verify that the output lands in current dir before exploring paths different from '.'"
+    );
+    Output::from_command(output, current_dir)
 }
