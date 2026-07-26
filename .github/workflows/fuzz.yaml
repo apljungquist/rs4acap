@@ -46,3 +46,10 @@ jobs:
             --env ACAP_BUILD_FUZZ_SEED='${{ inputs.seed }}' \
             devcontainer \
             bash -c '. /opt/axis/acapsdk/environment-setup-* && make fuzz_equivalence'
+      - name: Upload failing examples
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failing-examples-${{ matrix.tag }}
+          path: failing-examples
+          if-no-files-found: ignore

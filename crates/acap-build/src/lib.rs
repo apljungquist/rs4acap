@@ -19,7 +19,9 @@ pub use conservative::ConservativeRejection;
 /// The location where the ACAP SDK is installed by default.
 pub const DEFAULT_ACAP_SDK_LOCATION: &str = "/opt/axis/";
 
-#[derive(Clone, Copy, Debug, clap::ValueEnum)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, clap::ValueEnum)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum OpenEmbeddedTargetArchitecture {
     Aarch64,
     Arm,
@@ -35,6 +37,8 @@ impl From<OpenEmbeddedTargetArchitecture> for Architecture {
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, ValueEnum)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 #[clap(rename_all = "kebab-case")]
 pub enum BuildOption {
     #[default]
@@ -51,7 +55,42 @@ impl Display for BuildOption {
     }
 }
 
-#[derive(Clone, Debug, Parser)]
+// A recorded invocation is replayed on a possibly different host, so the fields clap reads from the
+// environment are omitted when they hold the value the environment would supply (their clap
+// default, or `None`); deserialization restores that default, and `replay` additionally overrides
+// the sysroots with the host's own. The fields that are not read from the environment define the
+// test case itself and are always written, so a record stays self-describing regardless of host.
+// Only the environment-read fields below carry `skip_serializing_if`; keep that set in step with
+// the `#[clap(… env = …)]` attributes. The named helpers cover the two whose clap default is not
+// the type's `Default`; `conservative` uses the generic `is_default` and the `Option`s use
+// `Option::is_none`.
+#[cfg(feature = "serde")]
+fn is_default<T: Default + PartialEq>(value: &T) -> bool {
+    value == &T::default()
+}
+
+#[cfg(feature = "serde")]
+fn default_acap_sdk_location() -> PathBuf {
+    PathBuf::from(DEFAULT_ACAP_SDK_LOCATION)
+}
+
+#[cfg(feature = "serde")]
+fn is_default_acap_sdk_location(value: &PathBuf) -> bool {
+    value == &default_acap_sdk_location()
+}
+
+#[cfg(feature = "serde")]
+fn default_acap_build_impl() -> AcapBuildImpl {
+    AcapBuildImpl::Equivalent
+}
+
+#[cfg(feature = "serde")]
+fn is_default_acap_build_impl(value: &AcapBuildImpl) -> bool {
+    value == &default_acap_build_impl()
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Parser)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Cli {
     pub path: PathBuf,
     /// Build tool, if any, to run before packaging.
@@ -75,20 +114,39 @@ pub struct Cli {
     pub oecore_target_arch: OpenEmbeddedTargetArchitecture,
     /// Used by `--conservative`.
     #[clap(long, env = "OECORE_NATIVE_SYSROOT")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub oecore_native_sysroot: Option<PathBuf>,
     /// Used by `--conservative`.
     #[clap(long, env = "SDKTARGETSYSROOT")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub sdk_target_sysroot: Option<PathBuf>,
     #[clap(
         long,
         env = "ACAP_SDK_LOCATION",
         default_value = DEFAULT_ACAP_SDK_LOCATION
     )]
+    #[cfg_attr(
+        feature = "serde",
+        serde(
+            default = "default_acap_sdk_location",
+            skip_serializing_if = "is_default_acap_sdk_location"
+        )
+    )]
     pub acap_sdk_location: PathBuf,
     /// Time to stamp on every archive member, in seconds after the Unix epoch.
     ///
     /// Defaults to the current time.
     #[clap(long, env = "SOURCE_DATE_EPOCH", value_parser = parse_mtime)]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub source_date_epoch: Option<Mtime>,
     // The current default values are equivalent+progressive.
     // This feels a bit like a contradiction; users get neither
@@ -97,6 +155,13 @@ pub struct Cli {
     // TODO: Consider flipping one of the default values
     /// Implementation used to package the EAP.
     #[clap(long = "impl", env = "ACAP_BUILD_IMPL", default_value_t = AcapBuildImpl::Equivalent)]
+    #[cfg_attr(
+        feature = "serde",
+        serde(
+            default = "default_acap_build_impl",
+            skip_serializing_if = "is_default_acap_build_impl"
+        )
+    )]
     pub acap_build_impl: AcapBuildImpl,
     /// Reject inputs for which behavior may differ from the reference implementation
     #[clap(
@@ -106,6 +171,7 @@ pub struct Cli {
         value_parser = clap::builder::BoolishValueParser::new(),
         default_value_t = false
     )]
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_default"))]
     pub conservative: bool,
 }
 

@@ -12,6 +12,7 @@ dependencies = [
  "expect-test",
  "log",
  "rs4a-eap",
+ "serde",
  "tempdir",
  "tempfile",
  "thiserror",

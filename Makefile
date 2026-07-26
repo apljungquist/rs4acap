@@ -25,7 +25,8 @@ replay_equivalence_examples: target/debug/acap-build
 fuzz_equivalence: target/debug/acap-build
 	cargo run --locked -p rs4a-acap-build-tester -- \
 		--candidate $(abspath $<) \
-		fuzz
+		fuzz \
+		--save-failing failing-examples/data
 .PHONY: fuzz_equivalence
 
 ## Checks

@@ -38,6 +38,8 @@ use crate::archive::{CompatibleArchiveBuilder, EquivalentArchiveBuilder};
 /// values with its base-256 extension, which not every unpacker understands, so conversion
 /// fails for values above [`Self::MAX`].
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(into = "u64", try_from = "u64"))]
 pub struct Mtime(u64);
 
 impl Mtime {
@@ -120,6 +122,8 @@ fn copy_recursively(src: &Path, dst: &Path, copy_permissions: bool) -> anyhow::R
 
 /// The implementation used to package the EAP.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 #[cfg_attr(feature = "clap", derive(clap::ValueEnum))]
 pub enum AcapBuildImpl {
     /// Produces artifacts bit-identical to those produced by the reference implementation.
