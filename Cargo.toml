@@ -60,6 +60,7 @@ allow_attributes_without_reason = "warn"
 clone_on_ref_ptr = "warn"
 indexing_slicing = "warn"
 non_ascii_literal = "warn"
+unnecessary_safety_doc = "warn"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
