@@ -131,7 +131,7 @@ impl SoapResponse for RemoveActionRuleResponse {
         #[derive(Deserialize)]
         #[serde(rename_all = "PascalCase")]
         struct Envelope {
-            #[allow(dead_code, reason = "Required for shape validation")]
+            #[expect(dead_code, reason = "Required for shape validation")]
             body: Body,
         }
         #[derive(Deserialize)]
