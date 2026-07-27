@@ -57,6 +57,7 @@ edition = "2021"
 [workspace.lints.clippy]
 indexing_slicing = "warn"
 allow_attributes_without_reason = "warn"
+clone_on_ref_ptr = "warn"
 non_ascii_literal = "warn"
 
 [workspace.lints.rust]
