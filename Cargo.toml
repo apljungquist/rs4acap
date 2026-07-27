@@ -57,6 +57,7 @@ edition = "2021"
 [workspace.lints.clippy]
 allow_attributes = "warn"
 allow_attributes_without_reason = "warn"
+as_conversions = "warn"
 clone_on_ref_ptr = "warn"
 indexing_slicing = "warn"
 mod_module_files = "warn"

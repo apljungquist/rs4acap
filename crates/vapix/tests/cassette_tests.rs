@@ -108,14 +108,16 @@ type TestFn = for<'a> fn(
 type Substitutions = &'static [(&'static str, &'static str)];
 type TestEntry = (&'static str, TestFn, Substitutions);
 
+const fn test_entry(name: &'static str, test: TestFn, substitutions: Substitutions) -> TestEntry {
+    (name, test, substitutions)
+}
+
 macro_rules! cassette_tests {
     (@entry $name:ident => [$($sub:expr),* $(,)?]) => {
-        (
+        test_entry(
             stringify!($name),
-            (|client, prelude| {
-                Box::pin($name(client, prelude))
-            }) as TestFn,
-            &[$($sub),*] as Substitutions,
+            |client, prelude| Box::pin($name(client, prelude)),
+            &[$($sub),*],
         )
     };
     (@entry $name:ident) => {
