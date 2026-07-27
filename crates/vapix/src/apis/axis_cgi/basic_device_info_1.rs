@@ -209,6 +209,11 @@ pub enum SocSerialNumber {
 }
 
 impl Display for SocSerialNumber {
+    #[expect(
+        clippy::as_conversions,
+        reason = "each cast deliberately truncates to a 32-bit hex window of a wider integer; \
+        `TryFrom` would be misleading since truncation, not overflow, is the point"
+    )]
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Plain(v) => write!(f, "{v:016X}"),
@@ -240,7 +245,7 @@ fn parse_dashed_soc_serial_128(s: &str) -> anyhow::Result<u128> {
             );
         }
         let segment = u32::from_str_radix(part, 16)?;
-        bits |= (segment as u128) << (96 - i * 32);
+        bits |= u128::from(segment) << (96 - i * 32);
     }
     Ok(bits)
 }
@@ -260,7 +265,7 @@ fn parse_dashed_soc_serial_64(s: &str) -> anyhow::Result<u64> {
             );
         }
         let segment = u32::from_str_radix(part, 16)?;
-        bits |= (segment as u64) << (32 - i * 32);
+        bits |= u64::from(segment) << (32 - i * 32);
     }
     Ok(bits)
 }

@@ -23,6 +23,15 @@ const RECORD_SIZE: usize = 20 * BLOCK_SIZE;
 // TODO: Consider adding support for larger files
 const MAX_SIZE: u64 = (1 << 33) - 1;
 
+#[expect(
+    clippy::as_conversions,
+    reason = "lossless on every supported platform, per the const assertion"
+)]
+const fn u64_from_usize(value: usize) -> u64 {
+    const _: () = assert!(usize::BITS <= u64::BITS);
+    value as u64
+}
+
 /// The files and directories excluded by `--exclude-vcs` in GNU tar 1.35.
 // TODO: Consider exposing this concern on the library interface or even pushing it into callers
 const VCS_NAMES: &[&str] = &[
@@ -77,7 +86,7 @@ fn put_octal(field: &mut [u8], value: u64) {
         reason = "`last` is `field.len() - 1`, so the end of the range is in bounds"
     )]
     for slot in field[..last].iter_mut().rev() {
-        *slot = b'0' + (remaining & 7) as u8;
+        *slot = b'0' + u8::try_from(remaining & 7).expect("masked with `& 7`, so at most 7");
         remaining >>= 3;
     }
     #[expect(
@@ -179,7 +188,7 @@ impl Tar {
         let block = header(
             b"././@LongLink",
             0o644,
-            (value.len() + 1) as u64,
+            u64_from_usize(value.len() + 1),
             0,
             typeflag,
             b"",
@@ -256,7 +265,8 @@ impl Tar {
             }
         } else {
             let data = fs::read(&abs)?;
-            if data.len() as u64 > MAX_SIZE {
+            let len = u64_from_usize(data.len());
+            if len > MAX_SIZE {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
                     format!(
@@ -265,14 +275,7 @@ impl Tar {
                     ),
                 ));
             }
-            self.append(
-                &tar_name(rel, false),
-                mode,
-                data.len() as u64,
-                b'0',
-                b"",
-                Some(&data),
-            );
+            self.append(&tar_name(rel, false), mode, len, b'0', b"", Some(&data));
         }
         Ok(())
     }
