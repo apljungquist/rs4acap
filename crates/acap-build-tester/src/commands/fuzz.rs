@@ -1,6 +1,6 @@
 use std::{
     path::Path,
-    sync::atomic::{AtomicU64, Ordering},
+    sync::atomic::{AtomicU32, Ordering},
 };
 
 use anyhow::{bail, Context};
@@ -53,8 +53,8 @@ fn fuzz(
     };
     let rng = TestRng::from_seed(RngAlgorithm::ChaCha, &rng_seed);
 
-    let compared = AtomicU64::new(0);
-    let rejected = AtomicU64::new(0);
+    let compared = AtomicU32::new(0);
+    let rejected = AtomicU32::new(0);
 
     let result = TestRunner::new_with_rng(config, rng)
         .run(&arbitrary_input(environment), |input| {
@@ -71,13 +71,13 @@ fn fuzz(
         })
         .map_err(Box::new);
 
-    let compared = compared.load(Ordering::Relaxed);
-    let rejected = rejected.load(Ordering::Relaxed);
+    let compared: f64 = compared.load(Ordering::Relaxed).into();
+    let rejected: f64 = rejected.load(Ordering::Relaxed).into();
     let total = compared + rejected;
-    if total != 0 {
+    if total != 0.0 {
         log::info!(
             "The candidate was compared to the reference on {compared} and rejected {rejected} of {total} inputs ({percent:.1}% rejected).",
-            percent = 100.0 * rejected as f64 / total as f64,
+            percent = 100.0 * rejected / total
         );
     }
 

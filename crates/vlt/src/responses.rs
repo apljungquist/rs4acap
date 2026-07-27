@@ -150,6 +150,10 @@ impl TryFrom<u8> for DeviceStatus {
 }
 
 impl From<DeviceStatus> for u8 {
+    #[expect(
+        clippy::as_conversions,
+        reason = "better than the alternative: enumerating variants and risking it goes out of sync"
+    )]
     fn from(status: DeviceStatus) -> Self {
         status as u8
     }
@@ -221,7 +225,7 @@ impl InternalIp {
         // Replace the first digit of `self.base_port` with `protocol_index`
         let scale = 10u16.pow(self.base_port.checked_ilog10().unwrap_or(0));
         let suffix = self.base_port % scale;
-        protocol_index as u16 * scale + suffix
+        u16::from(protocol_index) * scale + suffix
     }
 
     /// Returns the port forwarded to port 80.

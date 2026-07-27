@@ -84,8 +84,8 @@ impl TimeOption {
 
     fn end(&self) -> DateTime<Utc> {
         match self.unit {
-            TimeUnit::Days => self.start + chrono::Duration::days(self.count as i64),
-            TimeUnit::Hours => self.start + chrono::Duration::hours(self.count as i64),
+            TimeUnit::Days => self.start + chrono::Duration::days(i64::from(self.count)),
+            TimeUnit::Hours => self.start + chrono::Duration::hours(i64::from(self.count)),
         }
     }
 
