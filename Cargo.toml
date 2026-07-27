@@ -55,9 +55,10 @@ rs4a-vlt = { path = "crates/vlt" }
 edition = "2021"
 
 [workspace.lints.clippy]
-indexing_slicing = "warn"
+allow_attributes = "warn"
 allow_attributes_without_reason = "warn"
 clone_on_ref_ptr = "warn"
+indexing_slicing = "warn"
 non_ascii_literal = "warn"
 
 [workspace.lints.rust]
