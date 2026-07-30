@@ -22,6 +22,7 @@ use crate::{
 };
 
 #[derive(Parser)]
+#[command(version)]
 struct Cli {
     /// Location of the application data.
     #[clap(long, env = "DEVICE_INVENTORY_LOCATION")]
