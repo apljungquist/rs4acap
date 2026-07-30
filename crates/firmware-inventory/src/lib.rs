@@ -1,6 +1,7 @@
 pub mod commands;
 mod db;
 mod scrape;
+mod version;
 
 use std::path::PathBuf;
 

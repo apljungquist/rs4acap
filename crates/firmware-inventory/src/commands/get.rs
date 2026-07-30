@@ -2,9 +2,9 @@ use std::fs;
 
 use anyhow::{bail, Context};
 use log::info;
-use semver::{Version, VersionReq};
+use semver::VersionReq;
 
-use crate::{authenticated_client, db::Database};
+use crate::{authenticated_client, db::Database, version::version_from_underscore};
 
 const MPQT_BASE_URL: &str = "https://www.axis.com/ftp/pub/axis/software/MPQT/";
 
@@ -14,19 +14,6 @@ pub struct GetCommand {
     pub product: glob::Pattern,
     /// Semver version requirement (e.g. "12", "^12.8", "<13")
     pub version: VersionReq,
-}
-
-fn version_from_underscore(s: &str) -> Option<Version> {
-    let dotted = s.replace('_', ".");
-    coerce_firmware_version(&dotted).ok()
-}
-
-fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
-    let mut parts = s.splitn(4, '.');
-    let major = parts.next().unwrap_or_default().parse()?;
-    let minor = parts.next().unwrap_or_default().parse()?;
-    let patch = parts.next().unwrap_or_default().parse()?;
-    Ok(Version::new(major, minor, patch))
 }
 
 impl GetCommand {
