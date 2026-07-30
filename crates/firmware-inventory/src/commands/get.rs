@@ -68,7 +68,7 @@ impl GetCommand {
 
         let (version_str, semver) = best.context("No versions matched the requirement")?;
 
-        info!("Best match: {product} {semver} ({})", version_str);
+        info!("Best match: {product} {semver} ({version_str})");
 
         let path = db.firmware_path(product, &version_str);
 

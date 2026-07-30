@@ -13,7 +13,6 @@ clap = { workspace = true, features = ["derive", "env"] }
 env_logger = { workspace = true }
 log = { workspace = true }
 tempfile = { workspace = true }
-tempdir = { workspace = true }
 thiserror = { workspace = true }
 
 rs4a-eap = { workspace = true, features = ["clap"] }

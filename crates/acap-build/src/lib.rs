@@ -10,7 +10,6 @@ use anyhow::Context;
 use clap::{Parser, ValueEnum};
 use log::debug;
 use rs4a_eap::{AcapBuildImpl, AppBuilder, Architecture, Mtime, SchemaSource};
-use tempdir::TempDir;
 
 mod conservative;
 
@@ -175,7 +174,9 @@ impl Cli {
 
         let manifest = path.join(&manifest);
 
-        let staging_dir = TempDir::new_in(&path, "acap-build")?;
+        let staging_dir = tempfile::Builder::new()
+            .prefix("acap-build")
+            .tempdir_in(&path)?;
         let mut builder = AppBuilder::new(
             true,
             staging_dir.path(),

@@ -144,7 +144,7 @@ impl TryFrom<u8> for DeviceStatus {
         match value {
             1 => Ok(DeviceStatus::Connected),
             3 => Ok(DeviceStatus::OnLoan),
-            _ => Err(format!("Unknown device status: {}", value)),
+            _ => Err(format!("Unknown device status: {value}")),
         }
     }
 }
