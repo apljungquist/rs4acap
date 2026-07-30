@@ -22,7 +22,7 @@ impl RemoveCommand {
             warn!("No devices matched the pattern");
         }
         for (alias, _) in removed {
-            info!("Removing device {}", alias);
+            info!("Removing device {alias}");
         }
 
         db.write_devices(&retained.into_iter().collect())?;

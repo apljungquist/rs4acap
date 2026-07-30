@@ -22,7 +22,7 @@ fn decompress<'a>(mut image: impl Read + 'a) -> anyhow::Result<Box<dyn Read + 'a
     let image = Cursor::new(magic).chain(image);
     if magic == ZSTD_MAGIC {
         Ok(Box::new(
-            ruzstd::StreamingDecoder::new(image)
+            ruzstd::decoding::StreamingDecoder::new(image)
                 .context("Failed to start decompressing the image")?,
         ))
     } else if magic.starts_with(&GZIP_MAGIC) {
