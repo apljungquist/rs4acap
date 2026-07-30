@@ -1,6 +1,7 @@
 pub mod commands;
 mod db;
 mod scrape;
+mod track;
 mod version;
 
 use std::path::PathBuf;
@@ -10,10 +11,11 @@ use clap::{Parser, Subcommand};
 use rs4a_authentication::SessionCookie;
 use rs4a_bin_utils::completions_command::CompletionsCommand;
 
-pub use crate::commands::{
-    get::GetCommand, list::ListCommand, login::LoginCommand, update::UpdateCommand,
-};
 use crate::db::Database;
+pub use crate::{
+    commands::{get::GetCommand, list::ListCommand, login::LoginCommand, update::UpdateCommand},
+    track::{Selector, Track},
+};
 
 pub(crate) fn authenticated_client(cookie: SessionCookie) -> anyhow::Result<reqwest::Client> {
     let mut headers = reqwest::header::HeaderMap::new();
@@ -64,7 +66,7 @@ pub enum Commands {
     Update(UpdateCommand),
     /// List indexed firmware versions, showing which are cached locally
     List(ListCommand),
-    /// Get firmware matching product and version requirement
+    /// Get firmware for each product, matching a version requirement or a track
     Get(GetCommand),
     /// Print a completion file for the given shell.
     ///

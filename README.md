@@ -117,7 +117,7 @@ Commands:
   login        Login to access firmware downloads
   update       Update the local firmware index for products matching a glob
   list         List indexed firmware versions, showing which are cached locally
-  get          Get firmware matching product and version requirement
+  get          Get firmware for each product, matching a version requirement or a track
   completions  Print a completion file for the given shell
   help         Print this message or the help of the given subcommand(s)
 

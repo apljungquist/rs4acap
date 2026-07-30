@@ -1,29 +1,26 @@
 use std::fmt::Write;
 
 use anyhow::bail;
-use semver::VersionReq;
 
-use crate::{db::Database, version::version_from_underscore};
+use crate::{db::Database, track::Selector, version};
 
 #[derive(Clone, Debug, clap::Args)]
+#[command(group(clap::ArgGroup::new("list_selector").args(["version", "track"])))]
 pub struct ListCommand {
-    /// Glob pattern to match product names (default: all)
-    pub product: Option<glob::Pattern>,
-    /// Semver version requirement to filter versions
-    pub version: Option<VersionReq>,
+    /// Glob patterns to match product names (default: all)
+    pub products: Vec<glob::Pattern>,
+    #[command(flatten)]
+    pub selector: Selector,
 }
 
 impl ListCommand {
     pub(crate) fn exec(self, db: &Database) -> anyhow::Result<String> {
-        let Self {
-            product,
-            version: req,
-        } = self;
+        let Self { products, selector } = self;
 
         let index = db.read_index()?;
         let matching: Vec<_> = index
-            .keys()
-            .filter(|p| product.as_ref().is_none_or(|pat| pat.matches(p)))
+            .iter()
+            .filter(|(p, _)| products.is_empty() || products.iter().any(|pat| pat.matches(p)))
             .collect();
 
         if matching.is_empty() {
@@ -31,23 +28,19 @@ impl ListCommand {
         }
 
         let mut out = String::new();
-        for product in &matching {
-            #[expect(
-                clippy::indexing_slicing,
-                reason = "product is one of the keys in the index"
-            )]
-            let versions = &index[product.as_str()];
-            let mut entries: Vec<_> = versions
-                .iter()
-                .filter_map(|v| {
-                    let semver = version_from_underscore(v)?;
-                    if let Some(req) = &req {
-                        if !req.matches(&semver) {
-                            return None;
-                        }
-                    }
-                    Some((v.as_str(), semver))
-                })
+        for (product, versions) in matching {
+            let candidates = version::parse_versions(versions);
+            let semvers: Vec<_> = candidates.iter().map(|(_, v)| v.clone()).collect();
+
+            // A product with nothing on the selected track is simply not listed; unlike `get`,
+            // this command is a filter and has no single product it could fail on behalf of.
+            let Some(req) = selector.resolve(&semvers) else {
+                continue;
+            };
+
+            let mut entries: Vec<_> = candidates
+                .into_iter()
+                .filter(|(_, v)| req.matches(v))
                 .collect();
             entries.sort_by(|(_, a), (_, b)| b.cmp(a));
 

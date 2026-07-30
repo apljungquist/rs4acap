@@ -14,6 +14,16 @@ pub(crate) fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
     Ok(Version::new(major, minor, patch))
 }
 
+/// Parse each version string, pairing it with its semver form.
+///
+/// NB: drops unparseable version strings.
+pub(crate) fn parse_versions(versions: &[String]) -> Vec<(&str, Version)> {
+    versions
+        .iter()
+        .filter_map(|v| Some((v.as_str(), version_from_underscore(v)?)))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
