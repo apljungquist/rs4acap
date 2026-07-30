@@ -87,8 +87,11 @@ impl InstallCommand {
             inventory,
             offline,
             command: rs4a_firmware_inventory::Commands::Get(rs4a_firmware_inventory::GetCommand {
-                product,
-                version,
+                products: vec![product],
+                selector: rs4a_firmware_inventory::Selector {
+                    version: Some(version),
+                    track: None,
+                },
             }),
         };
         let firmware_output = get_cli.exec().await?;
