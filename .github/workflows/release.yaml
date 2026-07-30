@@ -1,0 +1,89 @@
+name: "Release"
+on:
+  push:
+    tags:
+      - "*-v[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to rehearse, e.g. firmware-inventory-v0.1.0. Builds every target and uploads nothing."
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "release-${{ inputs.tag || github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.plan.outputs.tag }}
+      bin: ${{ steps.plan.outputs.bin }}
+      version: ${{ steps.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      # The tag is `<bin>-v<version>`; split on the last `-v` to get both.
+      - id: plan
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          {
+            echo "tag=$TAG"
+            echo "bin=${TAG%-v*}"
+            echo "version=${TAG##*-v}"
+          } >> "$GITHUB_OUTPUT"
+      - name: Create the draft release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.plan.outputs.tag }}
+          TITLE: ${{ steps.plan.outputs.bin }} ${{ steps.plan.outputs.version }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::notice::release $TAG already exists, reusing it"
+          else
+            gh release create "$TAG" --draft --verify-tag --generate-notes --title "$TITLE"
+          fi
+
+  binaries:
+    needs: plan
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: ${{ needs.plan.outputs.bin }}
+          target: ${{ matrix.target }}
+          archive: $bin-$target
+          checksum: sha256
+          locked: true
+          dry-run: ${{ github.event_name == 'workflow_dispatch' }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs:
+      - plan
+      - binaries
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ needs.plan.outputs.tag }}
+        run: gh release edit "$TAG" --draft=false --repo "$REPO"
