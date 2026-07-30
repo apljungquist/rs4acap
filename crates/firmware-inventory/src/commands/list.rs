@@ -1,9 +1,9 @@
 use std::fmt::Write;
 
 use anyhow::bail;
-use semver::{Version, VersionReq};
+use semver::VersionReq;
 
-use crate::db::Database;
+use crate::{db::Database, version::version_from_underscore};
 
 #[derive(Clone, Debug, clap::Args)]
 pub struct ListCommand {
@@ -11,15 +11,6 @@ pub struct ListCommand {
     pub product: Option<glob::Pattern>,
     /// Semver version requirement to filter versions
     pub version: Option<VersionReq>,
-}
-
-fn version_from_underscore(s: &str) -> Option<Version> {
-    let dotted = s.replace('_', ".");
-    let mut parts = dotted.splitn(4, '.');
-    let major = parts.next()?.parse().ok()?;
-    let minor = parts.next()?.parse().ok()?;
-    let patch = parts.next()?.parse().ok()?;
-    Some(Version::new(major, minor, patch))
 }
 
 impl ListCommand {
