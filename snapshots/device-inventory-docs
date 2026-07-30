@@ -20,6 +20,7 @@ Options:
       --inventory <INVENTORY>  Location of the application data [env: DEVICE_INVENTORY_LOCATION=]
       --offline                [env: DEVICE_INVENTORY_OFFLINE=]
   -h, --help                   Print help
+  -V, --version                Print version
 + device-inventory help completions
 Print a completion file for the given shell.
 

@@ -6,6 +6,7 @@ use crate::commands::discover_devices::DiscoverDevicesCommand;
 mod commands;
 
 #[derive(Parser)]
+#[command(version)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,

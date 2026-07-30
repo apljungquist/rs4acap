@@ -6,6 +6,7 @@ use rs4a_bin_utils::completions_command::CompletionsCommand;
 use crate::commands::install::InstallCommand;
 
 #[derive(Parser)]
+#[command(version)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

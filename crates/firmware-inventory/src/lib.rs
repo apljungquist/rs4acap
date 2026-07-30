@@ -27,6 +27,7 @@ pub(crate) fn authenticated_client(cookie: SessionCookie) -> anyhow::Result<reqw
 }
 
 #[derive(Parser)]
+#[command(name = "firmware-inventory", version)]
 pub struct Cli {
     /// Location of the application data.
     #[clap(long, env = "FIRMWARE_INVENTORY_LOCATION")]

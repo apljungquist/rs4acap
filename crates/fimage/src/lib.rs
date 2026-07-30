@@ -7,6 +7,7 @@ use clap::{Parser, Subcommand};
 pub use crate::commands::{extract::ExtractCommand, inspect::InspectCommand};
 
 #[derive(Parser)]
+#[command(name = "fimage", version)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,

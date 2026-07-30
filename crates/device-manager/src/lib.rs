@@ -61,6 +61,7 @@ impl Netloc {
 }
 
 #[derive(Parser)]
+#[command(name = "device-manager", version)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,

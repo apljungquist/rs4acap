@@ -14,6 +14,7 @@ Options:
       --inventory <INVENTORY>  Location of the application data [env: FIRMWARE_INVENTORY_LOCATION=]
       --offline                [env: FIRMWARE_INVENTORY_OFFLINE=]
   -h, --help                   Print help
+  -V, --version                Print version
 + firmware-inventory help completions
 Print a completion file for the given shell.
 
