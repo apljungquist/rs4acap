@@ -141,6 +141,11 @@ cargo install --locked --git https://github.com/apljungquist/rs4a.git rs4a-firmw
 ```
 
 Prebuilt binaries are also published on the [Releases page](https://github.com/apljungquist/rs4a/releases) as they become available.
+On macOS, binaries downloaded this way are unsigned, so Gatekeeper will refuse to run them until you clear the quarantine flag:
+
+```shell
+xattr -d com.apple.quarantine /path/to/binary
+```
 
 If you want to install them another way, open an issue and I may be able to help.
 
