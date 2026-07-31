@@ -13,6 +13,7 @@ _A collection of language agnostic tools that facilitate development for the AXI
     - [device-manager](#device-manager)
     - [firmware-inventory](#firmware-inventory)
 - [Installation](#installation)
+- [Testing](#testing)
 - [Related projects](#related-projects)
 
 ## Preview
@@ -139,7 +140,14 @@ cargo install --locked --git https://github.com/apljungquist/rs4a.git rs4a-devic
 cargo install --locked --git https://github.com/apljungquist/rs4a.git rs4a-firmware-inventory
 ```
 
+Prebuilt binaries are also published on the [Releases page](https://github.com/apljungquist/rs4a/releases) as they become available.
+
 If you want to install them another way, open an issue and I may be able to help.
+
+## Testing
+
+These tools are tested by my own use, primarily on macOS, occasionally on Linux, and never on Windows.
+Feedback is welcome in the GitHub discussions, or wherever else you can find me.
 
 ## Related projects
 
