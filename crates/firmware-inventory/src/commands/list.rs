@@ -30,7 +30,7 @@ impl ListCommand {
         let mut out = String::new();
         for (product, versions) in matching {
             let candidates = version::parse_versions(versions);
-            let semvers: Vec<_> = candidates.iter().map(|(_, v)| v.clone()).collect();
+            let semvers: Vec<_> = candidates.iter().map(|(_, _, v)| v.clone()).collect();
 
             // A product with nothing on the selected track is simply not listed; unlike `get`,
             // this command is a filter and has no single product it could fail on behalf of.
@@ -40,11 +40,11 @@ impl ListCommand {
 
             let mut entries: Vec<_> = candidates
                 .into_iter()
-                .filter(|(_, v)| req.matches(v))
+                .filter(|(_, _, v)| req.matches(v))
                 .collect();
-            entries.sort_by(|(_, a), (_, b)| b.cmp(a));
+            entries.sort_by(|(_, _, a), (_, _, b)| b.cmp(a));
 
-            for (version_str, semver) in entries {
+            for (version_str, _fileurl, semver) in entries {
                 let cached = if db.firmware_path(product, version_str).exists() {
                     " [cached]"
                 } else {

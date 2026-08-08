@@ -1,11 +1,13 @@
+use std::collections::BTreeMap;
+
 use semver::Version;
 
-/// Parse a version the way it appears in archive directory names, e.g. `12_11_68`.
-pub(crate) fn version_from_underscore(s: &str) -> Option<Version> {
-    coerce_firmware_version(&s.replace('_', ".")).ok()
-}
-
-/// Firmware versions are not semver: some have a fourth component, which is dropped.
+/// Coerce a firmware revision into a [`Version`] by keeping only its first three components.
+///
+/// Firmware revisions aren't strict semver:
+/// - some have more than three components (a build number tail, dropped here), and
+/// - some have fewer (rejected, since major/minor/patch can't all be inferred).
+// TODO: Improve the support for non-semver versions
 pub(crate) fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
     let mut parts = s.splitn(4, '.');
     let major = parts.next().unwrap_or_default().parse()?;
@@ -14,13 +16,16 @@ pub(crate) fn coerce_firmware_version(s: &str) -> anyhow::Result<Version> {
     Ok(Version::new(major, minor, patch))
 }
 
-/// Parse each version string, pairing it with its semver form.
+/// Pair each indexed revision with its semver form and the path to its firmware file.
 ///
-/// NB: drops unparseable version strings.
-pub(crate) fn parse_versions(versions: &[String]) -> Vec<(&str, Version)> {
+/// NB: drops unparseable revisions.
+pub(crate) fn parse_versions(versions: &BTreeMap<String, String>) -> Vec<(&str, &str, Version)> {
     versions
         .iter()
-        .filter_map(|v| Some((v.as_str(), version_from_underscore(v)?)))
+        .filter_map(|(revision, fileurl)| {
+            let semver = coerce_firmware_version(revision).ok()?;
+            Some((revision.as_str(), fileurl.as_str(), semver))
+        })
         .collect()
 }
 
@@ -29,20 +34,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn version_from_underscore_drops_a_fourth_component() {
+    fn coerce_firmware_version_drops_a_fourth_component() {
         assert_eq!(
-            version_from_underscore("12_11_68"),
-            Some(Version::new(12, 11, 68))
+            coerce_firmware_version("12.11.68").unwrap(),
+            Version::new(12, 11, 68)
         );
         assert_eq!(
-            version_from_underscore("9_80_3_9"),
-            Some(Version::new(9, 80, 3))
+            coerce_firmware_version("9.80.3.9").unwrap(),
+            Version::new(9, 80, 3)
         );
     }
 
     #[test]
-    fn version_from_underscore_rejects_incomplete_versions() {
-        assert_eq!(version_from_underscore("12_11"), None);
-        assert_eq!(version_from_underscore("latest"), None);
+    fn coerce_firmware_version_rejects_incomplete_versions() {
+        assert!(coerce_firmware_version("12.11").is_err());
+        assert!(coerce_firmware_version("latest").is_err());
     }
 }

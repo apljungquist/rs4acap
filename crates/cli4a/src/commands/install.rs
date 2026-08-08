@@ -63,10 +63,7 @@ impl InstallCommand {
             .await?
             .property_list;
         let current = props.parse_version()?;
-        let model = match props.prod_nbr {
-            s if s == "P8815-2" => "P8815-2_3D_People_Counter".to_string(),
-            s => s,
-        };
+        let model = props.prod_nbr;
         info!("Device model: {model}, version: {current}");
 
         let product = glob::Pattern::new(&model)
@@ -76,9 +73,7 @@ impl InstallCommand {
             inventory: inventory.clone(),
             offline,
             command: rs4a_firmware_inventory::Commands::Update(
-                rs4a_firmware_inventory::UpdateCommand {
-                    product: product.clone(),
-                },
+                rs4a_firmware_inventory::UpdateCommand {},
             ),
         };
         update_cli.exec().await?;

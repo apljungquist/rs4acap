@@ -1,6 +1,6 @@
+mod catalog;
 pub mod commands;
 mod db;
-mod scrape;
 mod track;
 mod version;
 
@@ -25,6 +25,12 @@ pub(crate) fn authenticated_client(cookie: SessionCookie) -> anyhow::Result<reqw
         .build()
         .context("Failed to build HTTP client")
 }
+
+/// Base URL under which firmware, and the catalog describing it, are hosted.
+pub(crate) const SOFTWARE_BASE_URL: &str = "https://www.axis.com/ftp/pub/axis/software/";
+
+/// Path, relative to [`SOFTWARE_BASE_URL`], of the catalog.
+pub(crate) const CATALOG_PATH: &str = "pubtool/boxdesc/boxdesc.xml";
 
 #[derive(Parser)]
 #[command(name = "firmware-inventory", version)]
@@ -63,7 +69,7 @@ impl Cli {
 pub enum Commands {
     /// Login to access firmware downloads
     Login(LoginCommand),
-    /// Update the local firmware index for products matching a glob
+    /// Update the local firmware index from the upstream catalog
     Update(UpdateCommand),
     /// List indexed firmware versions, showing which are cached locally
     List(ListCommand),
